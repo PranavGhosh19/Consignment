@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const PageSkeleton = () => (
     <div className="container py-10">
@@ -321,7 +322,25 @@ function ExporterDashboardPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="cargo-type">Cargo Type</Label>
-                    <Input id="cargo-type" placeholder="e.g., General, Reefer, HAZMAT" value={cargoType} onChange={e => setCargoType(e.target.value)} disabled={isSubmitting} />
+                    <Select value={cargoType} onValueChange={setCargoType} disabled={isSubmitting}>
+                      <SelectTrigger id="cargo-type">
+                        <SelectValue placeholder="Select a cargo type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="General Cargo">General Cargo</SelectItem>
+                        <SelectItem value="Container (FCL/LCL)">Container (FCL/LCL)</SelectItem>
+                        <SelectItem value="Bulk (Dry)">Bulk (Dry)</SelectItem>
+                        <SelectItem value="Bulk (Liquid)">Bulk (Liquid)</SelectItem>
+                        <SelectItem value="Reefer / Temperature-Controlled">Reefer / Temperature-Controlled</SelectItem>
+                        <SelectItem value="HAZMAT / Dangerous">HAZMAT / Dangerous</SelectItem>
+                        <SelectItem value="Roll-on/Roll-off (RoRo)">Roll-on/Roll-off (RoRo)</SelectItem>
+                        <SelectItem value="Break Bulk">Break Bulk</SelectItem>
+                        <SelectItem value="Oversized / Out-of-Gauge">Oversized / Out-of-Gauge</SelectItem>
+                        <SelectItem value="Project Cargo">Project Cargo</SelectItem>
+                        <SelectItem value="Perishable Goods">Perishable Goods</SelectItem>
+                        <SelectItem value="Live Animals">Live Animals</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="quantity">Quantity</Label>

@@ -12,7 +12,8 @@ service cloud.firestore {
       allow create: if isOwner(userId);
       allow list, delete: if false;
 
-      // Products can only be created if the user is the owner AND their profile document exists.
+      // Products/shipments can only be created, read, or written to
+      // if the user is the owner AND their profile document exists.
       match /products/{productId} {
         allow read, write: if isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
       }

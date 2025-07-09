@@ -10,7 +10,7 @@ export default function Home() {
         <div className="container">
           <div className="flex flex-col items-center space-y-8 text-center">
             <div className="space-y-4">
-                <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl md:text-7xl lg:text-8xl font-headline bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-sky-400">
+                <h1 className="pb-4 text-5xl font-bold tracking-tighter text-primary sm:text-6xl md:text-7xl lg:text-8xl font-headline bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-sky-400">
                 The Global Marketplace for Freight
                 </h1>
                 <p className="mx-auto max-w-[800px] text-muted-foreground md:text-xl">

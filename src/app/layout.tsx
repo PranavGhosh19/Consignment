@@ -50,7 +50,7 @@ const LogoIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const Header = () => (
   <header
     className={cn(
-      "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      "sticky top-0 z-50 w-full border-b supports-[backdrop-filter]:bg-background/60 supports-[backdrop-filter]:backdrop-blur"
     )}
   >
     <div className="container flex h-16 items-center">

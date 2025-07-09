@@ -5,6 +5,7 @@ import { getFirestore } from "firebase/firestore";
 const firebaseConfig = {
   apiKey: "AIzaSyAIkgVfiVwZIZcnhyRxmYauewGaoN2YwXs",
   authDomain: "wisely-e0d87.firebaseapp.com",
+  databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com",
   projectId: "wisely-e0d87",
   storageBucket: "wisely-e0d87.appspot.com",
   messagingSenderId: "1052871511950",

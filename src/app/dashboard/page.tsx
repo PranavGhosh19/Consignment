@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, addDoc, query, where, getDocs, DocumentData, orderBy } from 'firebase/firestore';
+import { collection, addDoc, query, getDocs, DocumentData, orderBy } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import {
@@ -45,9 +45,10 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [router]);
   
-  const fetchProducts = async (uid: string) => {
+  const fetchProducts = useCallback(async (uid: string) => {
     try {
-      const q = query(collection(db, 'products'), where('userId', '==', uid), orderBy('createdAt', 'desc'));
+      const productsCollectionRef = collection(db, 'users', uid, 'products');
+      const q = query(productsCollectionRef, orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       const productsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(productsList);
@@ -57,13 +58,13 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     if (user) {
       fetchProducts(user.uid);
     }
-  }, [user, toast]);
+  }, [user, fetchProducts]);
 
   const handleAddProduct = async () => {
     if (!productName || !price) {
@@ -76,10 +77,9 @@ export default function DashboardPage() {
     }
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'products'), {
+      await addDoc(collection(db, 'users', user.uid, 'products'), {
         name: productName,
         price: parseFloat(price),
-        userId: user.uid,
         createdAt: new Date(),
       });
       toast({ title: "Success", description: "Product added successfully." });

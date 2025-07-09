@@ -309,7 +309,7 @@ function ExporterDashboardPage() {
               <DialogTitle className="text-2xl font-headline">{editingShipmentId ? 'Edit Shipment' : 'New Shipment'}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-8 py-4">
-              <Card>
+              <Card className="bg-secondary">
                 <CardHeader><CardTitle>Product & Cargo Details</CardTitle></CardHeader>
                 <CardContent className="grid md:grid-cols-2 gap-6">
                   <div className="grid gap-2">
@@ -356,7 +356,7 @@ function ExporterDashboardPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-secondary">
                   <CardHeader><CardTitle>Scheduling</CardTitle></CardHeader>
                   <CardContent className="grid md:grid-cols-2 gap-6">
                     <div className="grid gap-2">
@@ -399,7 +399,7 @@ function ExporterDashboardPage() {
               </Card>
               
               <div className="grid md:grid-cols-2 gap-6">
-                  <Card>
+                  <Card className="bg-secondary">
                       <CardHeader><CardTitle>Origin</CardTitle></CardHeader>
                       <CardContent className="grid gap-6">
                           <div className="grid gap-2">
@@ -412,7 +412,7 @@ function ExporterDashboardPage() {
                           </div>
                       </CardContent>
                   </Card>
-                  <Card>
+                  <Card className="bg-secondary">
                       <CardHeader><CardTitle>Destination</CardTitle></CardHeader>
                       <CardContent className="grid gap-6">
                           <div className="grid gap-2">
@@ -427,7 +427,7 @@ function ExporterDashboardPage() {
                   </Card>
               </div>
             
-              <Card>
+              <Card className="bg-secondary">
                   <CardHeader><CardTitle>Additional Information</CardTitle></CardHeader>
                   <CardContent>
                       <div className="grid gap-2">
@@ -499,3 +499,5 @@ function ExporterDashboardPage() {
     </div>
   );
 }
+
+    

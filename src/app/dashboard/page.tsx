@@ -35,6 +35,13 @@ export default function DashboardPage() {
   const [open, setOpen] = useState(false);
   
   // Form state
+  const [productName, setProductName] = useState("");
+  const [cargoType, setCargoType] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [weight, setWeight] = useState("");
+  const [dimensionL, setDimensionL] = useState("");
+  const [dimensionW, setDimensionW] = useState("");
+  const [dimensionH, setDimensionH] = useState("");
   const [departureDate, setDepartureDate] = useState<Date>();
   const [deliveryDeadline, setDeliveryDeadline] = useState<Date>();
   const [portOfLoading, setPortOfLoading] = useState("");
@@ -81,6 +88,13 @@ export default function DashboardPage() {
   }, [user, fetchProducts]);
 
   const resetForm = () => {
+    setProductName("");
+    setCargoType("");
+    setQuantity("");
+    setWeight("");
+    setDimensionL("");
+    setDimensionW("");
+    setDimensionH("");
     setDepartureDate(undefined);
     setDeliveryDeadline(undefined);
     setPortOfLoading("");
@@ -91,7 +105,7 @@ export default function DashboardPage() {
   }
 
   const handleCreateShipment = async () => {
-    if (!portOfLoading || !originZip || !portOfDelivery || !destinationZip || !departureDate || !deliveryDeadline) {
+    if (!productName || !portOfLoading || !originZip || !portOfDelivery || !destinationZip || !departureDate || !deliveryDeadline) {
       toast({ title: "Error", description: "Please fill out all required fields.", variant: "destructive" });
       return;
     }
@@ -102,6 +116,17 @@ export default function DashboardPage() {
     setIsSubmitting(true);
     try {
       await addDoc(collection(db, 'users', user.uid, 'products'), {
+        productName,
+        cargo: {
+          type: cargoType,
+          quantity,
+          weight,
+          dimensions: {
+            length: dimensionL,
+            width: dimensionW,
+            height: dimensionH,
+          },
+        },
         departureDate: departureDate ? Timestamp.fromDate(departureDate) : null,
         deliveryDeadline: deliveryDeadline ? Timestamp.fromDate(deliveryDeadline) : null,
         origin: {
@@ -149,22 +174,54 @@ export default function DashboardPage() {
               <PlusCircle className="mr-2 h-4 w-4" /> New Shipment Request
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-4xl">
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl font-headline">New Shipment</DialogTitle>
             </DialogHeader>
             <div className="grid gap-8 py-4">
-                <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader><CardTitle>Product & Cargo Details</CardTitle></CardHeader>
+                <CardContent className="grid md:grid-cols-2 gap-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="product-name">Product Name</Label>
+                    <Input id="product-name" placeholder="e.g., Electronics, Textiles" value={productName} onChange={e => setProductName(e.target.value)} disabled={isSubmitting} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="cargo-type">Cargo Type</Label>
+                    <Input id="cargo-type" placeholder="e.g., General, Reefer, HAZMAT" value={cargoType} onChange={e => setCargoType(e.target.value)} disabled={isSubmitting} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="quantity">Quantity</Label>
+                    <Input id="quantity" type="number" placeholder="e.g., 500" value={quantity} onChange={e => setQuantity(e.target.value)} disabled={isSubmitting} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="weight">Total Weight</Label>
+                    <div className="flex items-center">
+                        <Input id="weight" type="number" placeholder="e.g., 1200" value={weight} onChange={e => setWeight(e.target.value)} disabled={isSubmitting} className="rounded-r-none" />
+                        <span className="bg-muted text-muted-foreground px-3 py-2 border border-l-0 rounded-r-md">kg</span>
+                    </div>
+                  </div>
+                   <div className="grid gap-2 md:col-span-2">
+                    <Label>Dimensions</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                        <Input placeholder="Length" value={dimensionL} onChange={e => setDimensionL(e.target.value)} disabled={isSubmitting} />
+                        <Input placeholder="Width" value={dimensionW} onChange={e => setDimensionW(e.target.value)} disabled={isSubmitting} />
+                        <Input placeholder="Height" value={dimensionH} onChange={e => setDimensionH(e.target.value)} disabled={isSubmitting} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                  <CardHeader><CardTitle>Scheduling</CardTitle></CardHeader>
+                  <CardContent className="grid md:grid-cols-2 gap-6">
                     <div className="grid gap-2">
                         <Label htmlFor="departure-date">Preferred Departure Date</Label>
                         <Popover>
                         <PopoverTrigger asChild>
                             <Button
                             variant={"outline"}
-                            className={cn(
-                                "justify-start text-left font-normal",
-                                !departureDate && "text-muted-foreground"
-                            )}
+                            className={cn("justify-start text-left font-normal", !departureDate && "text-muted-foreground")}
                             disabled={isSubmitting}
                             >
                             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -172,12 +229,7 @@ export default function DashboardPage() {
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                            <Calendar
-                            mode="single"
-                            selected={departureDate}
-                            onSelect={setDepartureDate}
-                            initialFocus
-                            />
+                            <Calendar mode="single" selected={departureDate} onSelect={setDepartureDate} initialFocus />
                         </PopoverContent>
                         </Popover>
                     </div>
@@ -187,10 +239,7 @@ export default function DashboardPage() {
                         <PopoverTrigger asChild>
                             <Button
                             variant={"outline"}
-                            className={cn(
-                                "justify-start text-left font-normal",
-                                !deliveryDeadline && "text-muted-foreground"
-                            )}
+                            className={cn("justify-start text-left font-normal", !deliveryDeadline && "text-muted-foreground")}
                             disabled={isSubmitting}
                             >
                             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -198,61 +247,51 @@ export default function DashboardPage() {
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                            <Calendar
-                            mode="single"
-                            selected={deliveryDeadline}
-                            onSelect={setDeliveryDeadline}
-                            initialFocus
-                            />
+                            <Calendar mode="single" selected={deliveryDeadline} onSelect={setDeliveryDeadline} initialFocus />
                         </PopoverContent>
                         </Popover>
                     </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Origin</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="port-of-loading">Port of Loading</Label>
-                                <Input id="port-of-loading" placeholder="e.g., Port of Hamburg" value={portOfLoading} onChange={e => setPortOfLoading(e.target.value)} disabled={isSubmitting} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="origin-zip">Pin / Zip Code</Label>
-                                <Input id="origin-zip" placeholder="e.g., 20457" value={originZip} onChange={e => setOriginZip(e.target.value)} disabled={isSubmitting} />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Destination</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="port-of-delivery">Port of Delivery</Label>
-                                <Input id="port-of-delivery" placeholder="e.g., Port of Shanghai" value={portOfDelivery} onChange={e => setPortOfDelivery(e.target.value)} disabled={isSubmitting} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="destination-zip">Pin / Zip Code</Label>
-                                <Input id="destination-zip" placeholder="e.g., 200000" value={destinationZip} onChange={e => setDestinationZip(e.target.value)} disabled={isSubmitting} />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                  </CardContent>
+              </Card>
               
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Additional Information</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-2">
-                            <Label htmlFor="special-instructions">Special Instructions</Label>
-                            <Textarea id="special-instructions" placeholder="e.g., Handle with care, keep refrigerated below 5°C." value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} disabled={isSubmitting} />
-                        </div>
-                    </CardContent>
-                </Card>
+              <div className="grid md:grid-cols-2 gap-6">
+                  <Card>
+                      <CardHeader><CardTitle>Origin</CardTitle></CardHeader>
+                      <CardContent className="grid gap-6">
+                          <div className="grid gap-2">
+                              <Label htmlFor="port-of-loading">Port of Loading</Label>
+                              <Input id="port-of-loading" placeholder="e.g., Port of Hamburg" value={portOfLoading} onChange={e => setPortOfLoading(e.target.value)} disabled={isSubmitting} />
+                          </div>
+                          <div className="grid gap-2">
+                              <Label htmlFor="origin-zip">Pin / Zip Code</Label>
+                              <Input id="origin-zip" placeholder="e.g., 20457" value={originZip} onChange={e => setOriginZip(e.target.value)} disabled={isSubmitting} />
+                          </div>
+                      </CardContent>
+                  </Card>
+                  <Card>
+                      <CardHeader><CardTitle>Destination</CardTitle></CardHeader>
+                      <CardContent className="grid gap-6">
+                          <div className="grid gap-2">
+                              <Label htmlFor="port-of-delivery">Port of Delivery</Label>
+                              <Input id="port-of-delivery" placeholder="e.g., Port of Shanghai" value={portOfDelivery} onChange={e => setPortOfDelivery(e.target.value)} disabled={isSubmitting} />
+                          </div>
+                          <div className="grid gap-2">
+                              <Label htmlFor="destination-zip">Pin / Zip Code</Label>
+                              <Input id="destination-zip" placeholder="e.g., 200000" value={destinationZip} onChange={e => setDestinationZip(e.target.value)} disabled={isSubmitting} />
+                          </div>
+                      </CardContent>
+                  </Card>
+              </div>
+            
+              <Card>
+                  <CardHeader><CardTitle>Additional Information</CardTitle></CardHeader>
+                  <CardContent>
+                      <div className="grid gap-2">
+                          <Label htmlFor="special-instructions">Special Instructions</Label>
+                          <Textarea id="special-instructions" placeholder="e.g., Handle with care, keep refrigerated below 5°C." value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} disabled={isSubmitting} />
+                      </div>
+                  </CardContent>
+              </Card>
             </div>
             <DialogFooter>
               <Button type="submit" onClick={handleCreateShipment} disabled={isSubmitting} className="bg-yellow-400 hover:bg-yellow-500 text-black">
@@ -269,7 +308,7 @@ export default function DashboardPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Origin</TableHead>
+                <TableHead>Product</TableHead>
                 <TableHead>Destination</TableHead>
                 <TableHead>Departure Date</TableHead>
                 <TableHead className="text-right">Delivery Deadline</TableHead>
@@ -278,8 +317,8 @@ export default function DashboardPage() {
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.origin?.portOfLoading || product.productName || 'N/A'}</TableCell>
-                  <TableCell>{product.destination?.portOfDelivery || product.cargoType || 'N/A'}</TableCell>
+                  <TableCell className="font-medium">{product.productName || 'N/A'}</TableCell>
+                  <TableCell>{product.destination?.portOfDelivery || 'N/A'}</TableCell>
                   <TableCell>{product.departureDate ? format(product.departureDate.toDate(), "PPP") : 'N/A'}</TableCell>
                   <TableCell className="text-right">{product.deliveryDeadline ? format(product.deliveryDeadline.toDate(), "PPP") : 'N/A'}</TableCell>
                 </TableRow>

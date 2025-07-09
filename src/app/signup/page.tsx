@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -45,9 +46,10 @@ export default function SignupPage() {
       await setDoc(doc(db, "users", user.uid), {
         name: name,
         email: email,
+        userType: null,
       });
       
-      router.push("/dashboard");
+      router.push("/select-type");
     } catch (error: any) {
       toast({
         title: "Sign Up Failed",

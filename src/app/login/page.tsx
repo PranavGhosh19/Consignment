@@ -1,10 +1,12 @@
+
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { useState, useEffect } from "react";
+import { signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,6 +26,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            router.push('/dashboard');
+        }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
   const handleLogin = async () => {
     if (!email || !password) {
       toast({
@@ -35,12 +46,22 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Check if user has selected a type
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists() && userDoc.data()?.userType) {
+        router.push("/dashboard");
+      } else {
+        router.push("/select-type");
+      }
     } catch (error: any) {
       toast({
         title: "Login Failed",
-        description: error.message,
+        description: "Invalid email or password.",
         variant: "destructive",
       });
     } finally {
@@ -69,6 +90,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               />
             </div>
             <div className="grid gap-2">
@@ -88,6 +110,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               />
             </div>
             <Button onClick={handleLogin} disabled={loading} className="w-full h-12 mt-2 text-lg">

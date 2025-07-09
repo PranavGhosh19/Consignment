@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -85,13 +86,13 @@ export default function HowItWorksPage() {
                             <TabsList className="flex justify-center gap-4 bg-transparent p-0">
                                 <TabsTrigger 
                                     value="exporters" 
-                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-base font-semibold transition-colors h-12 px-6 bg-accent text-accent-foreground hover:bg-accent/90 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-primary/90"
+                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-base font-semibold transition-colors h-12 px-6 bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-primary/90"
                                 >
                                     <User className="mr-2 h-5 w-5" /> For Exporters
                                 </TabsTrigger>
                                 <TabsTrigger 
                                     value="carriers" 
-                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-base font-semibold transition-colors h-12 px-6 bg-accent text-accent-foreground hover:bg-accent/90 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-primary/90"
+                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-base font-semibold transition-colors h-12 px-6 bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-primary/90"
                                 >
                                     <Truck className="mr-2 h-5 w-5" /> For Carriers
                                 </TabsTrigger>

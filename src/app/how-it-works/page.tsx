@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Anchor, ArrowRight, Truck } from "lucide-react";
+import { User, ArrowRight, Truck } from "lucide-react";
 
 const exporterSteps = [
     {
@@ -82,11 +82,17 @@ export default function HowItWorksPage() {
 
                     <div className="mx-auto max-w-3xl pt-12">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 h-12">
-                                <TabsTrigger value="exporters" className="h-full">
-                                    <Anchor className="mr-2 h-5 w-5" /> For Exporters
+                            <TabsList className="flex justify-center gap-4 bg-transparent p-0">
+                                <TabsTrigger 
+                                    value="exporters" 
+                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-base font-semibold transition-colors h-12 px-6 bg-accent text-accent-foreground hover:bg-accent/90 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-primary/90"
+                                >
+                                    <User className="mr-2 h-5 w-5" /> For Exporters
                                 </TabsTrigger>
-                                <TabsTrigger value="carriers" className="h-full">
+                                <TabsTrigger 
+                                    value="carriers" 
+                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-base font-semibold transition-colors h-12 px-6 bg-accent text-accent-foreground hover:bg-accent/90 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-primary/90"
+                                >
                                     <Truck className="mr-2 h-5 w-5" /> For Carriers
                                 </TabsTrigger>
                             </TabsList>

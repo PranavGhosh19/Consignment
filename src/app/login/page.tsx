@@ -12,22 +12,22 @@ import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   return (
-    <div className="flex items-center justify-center py-12 px-4">
-      <Card className="mx-auto w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl font-headline">Login</CardTitle>
+    <div className="flex items-center justify-center py-12 px-4 bg-primary/10 min-h-[calc(100vh-152px)]">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-3xl font-bold font-headline">Welcome Back</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your credentials to access your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="you@example.com"
                 required
               />
             </div>
@@ -43,11 +43,8 @@ export default function LoginPage() {
               </div>
               <Input id="password" type="password" required />
             </div>
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
-            <Button variant="outline" className="w-full">
-              Login with Google
+            <Button asChild className="w-full h-12 mt-2 text-lg">
+              <Link href="/dashboard">Log In</Link>
             </Button>
           </div>
           <div className="mt-4 text-center text-sm">

@@ -6,14 +6,17 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -26,6 +29,15 @@ export function AuthButton() {
       console.error("Error signing out: ", error);
     }
   };
+
+  if (loading) {
+    return (
+      <>
+        <Skeleton className="h-10 w-20 rounded-md" />
+        <Skeleton className="h-10 w-24 rounded-md" />
+      </>
+    );
+  }
 
   if (user) {
     return (

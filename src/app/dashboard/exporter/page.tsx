@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, addDoc, query, getDocs, DocumentData, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, getDocs, DocumentData, orderBy, Timestamp, where, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import {
@@ -68,8 +68,8 @@ export default function ExporterDashboardPage() {
   
   const fetchProducts = useCallback(async (uid: string) => {
     try {
-      const productsCollectionRef = collection(db, 'users', uid, 'products');
-      const q = query(productsCollectionRef, orderBy('createdAt', 'desc'));
+      const shipmentsCollectionRef = collection(db, 'shipments');
+      const q = query(shipmentsCollectionRef, where('exporterId', '==', uid), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       const productsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(productsList);
@@ -115,7 +115,13 @@ export default function ExporterDashboardPage() {
     }
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'users', user.uid, 'products'), {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      const exporterName = userDoc.exists() ? userDoc.data().name : 'Unknown Exporter';
+
+      await addDoc(collection(db, 'shipments'), {
+        exporterId: user.uid,
+        exporterName: exporterName,
         productName,
         cargo: {
           type: cargoType,

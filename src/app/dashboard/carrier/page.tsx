@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collectionGroup, query, getDocs, DocumentData, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -40,38 +40,13 @@ export default function CarrierDashboardPage() {
   const fetchShipments = useCallback(async () => {
     setLoading(true);
     try {
-      const shipmentsQuery = query(
-          collectionGroup(db, 'products'), 
-          orderBy('createdAt', 'desc')
-      );
+      const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(shipmentsQuery);
-      
-      const shipmentsListPromises = querySnapshot.docs.map(async (shipmentDoc) => {
-          const shipmentData = shipmentDoc.data();
-          const userRef = shipmentDoc.ref.parent.parent; 
-          if (userRef) {
-              const userSnap = await getDoc(userRef);
-              if (userSnap.exists()) {
-                  shipmentData.exporterName = userSnap.data().name || 'Unknown Exporter';
-              }
-          }
-          return { id: shipmentDoc.id, ...shipmentData };
-      });
-      const shipmentsList = await Promise.all(shipmentsListPromises);
-      
+      const shipmentsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setShipments(shipmentsList);
     } catch (error: any) {
       console.error("Error fetching shipments: ", error);
-      if (error.code === 'failed-precondition') {
-          toast({ 
-              title: "Indexing required", 
-              description: "Firestore needs a new index for this query. Please check the browser console for a link to create it.",
-              variant: "destructive",
-              duration: 10000
-            });
-      } else {
-          toast({ title: "Error", description: "Could not fetch available shipments.", variant: "destructive" });
-      }
+      toast({ title: "Error", description: "Could not fetch available shipments.", variant: "destructive" });
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -51,7 +50,7 @@ const carrierSteps = [
 
 
 const Step = ({ number, title, description }: { number: number; title: string; description: string }) => (
-    <Card className="p-6 bg-card/80">
+    <Card className="p-6 bg-[#F1F5F9] dark:bg-secondary">
         <CardContent className="flex items-start gap-6 p-0">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-lg font-bold">
                 {number}

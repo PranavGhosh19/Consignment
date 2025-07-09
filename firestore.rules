@@ -4,40 +4,49 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check user role
-    function isUserType(userType) {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == userType;
+    // Helper function to get a user's data from the 'users' collection.
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
-    // Users can only read/write their own profile
+    // Helper function to check if a user is an exporter.
+    function isExporter(userId) {
+      return request.auth != null && getUserData(userId).userType == 'exporter';
+    }
+
+    // Helper function to check if a user is a carrier.
+    function isCarrier(userId) {
+      return request.auth != null && getUserData(userId).userType == 'carrier';
+    }
+
+    // Rules for the 'users' collection.
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      // Users can create their own document upon signup.
+      allow create: if request.auth.uid == userId;
+      // Users can read and update their own document (e.g., to set userType).
+      allow read, update: if request.auth.uid == userId;
     }
 
-    // Shipments collection rules
+    // Rules for the 'shipments' collection.
     match /shipments/{shipmentId} {
-      // Allow anyone authenticated to read shipments (queries will filter them)
-      allow read: if request.auth.uid != null;
+      // Exporters can create shipments. Any authenticated user can read them.
+      allow create: if isExporter(request.auth.uid) && request.resource.data.exporterId == request.auth.uid;
+      allow read: if request.auth != null;
       
-      // Only exporters can create shipments
-      allow create: if isUserType('exporter') && request.resource.data.exporterId == request.auth.uid;
-      
-      // Only the owning exporter can update their shipment
-      allow update: if isUserType('exporter') && resource.data.exporterId == request.auth.uid;
-      
-      // No one can delete a shipment for now
-      allow delete: if false;
+      // Only the owning exporter can update their shipment (e.g., go live, award a bid).
+      allow update: if isExporter(request.auth.uid) && resource.data.exporterId == request.auth.uid;
 
-      // Bids subcollection rules
+      // Rules for the 'bids' subcollection within a shipment.
       match /bids/{bidId} {
-        // Exporter who owns the shipment can read all bids
-        allow read: if get(/databases/$(database)/documents/shipments/$(shipmentId)).data.exporterId == request.auth.uid;
+        // Carriers can place bids on 'live' shipments.
+        allow create: if isCarrier(request.auth.uid) 
+                      && get(/databases/$(database)/documents/shipments/$(shipmentId)).data.status == 'live'
+                      && request.resource.data.carrierId == request.auth.uid;
 
-        // Carriers can create bids only on 'live' shipments
-        allow create: if isUserType('carrier') && get(/databases/$(database)/documents/shipments/$(shipmentId)).data.status == 'live';
-
-        // No one can update or delete bids for now
-        allow update, delete: if false;
+        // An exporter can read bids for their own shipments.
+        // Any carrier can read bids for any shipment to see live bidding data.
+        allow read: if (isExporter(request.auth.uid) && get(/databases/$(database)/documents/shipments/$(shipmentId)).data.exporterId == request.auth.uid)
+                    || isCarrier(request.auth.uid);
       }
     }
   }

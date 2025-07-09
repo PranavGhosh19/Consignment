@@ -76,6 +76,15 @@ export default function CarrierDashboardPage() {
     setBidAmount("");
   };
 
+  const handleRowClick = (shipment: DocumentData) => {
+    if (shipment.status === 'live') {
+      router.push(`/dashboard/carrier/shipment/${shipment.id}`);
+    } else {
+      // For draft, awarded, etc., open the existing details dialog
+      handleOpenBidDialog(shipment);
+    }
+  };
+
   const handlePlaceBid = async () => {
     if (!user || !selectedShipment || !bidAmount) {
       toast({ title: "Error", description: "Please enter a bid amount.", variant: "destructive" });
@@ -146,7 +155,6 @@ export default function CarrierDashboardPage() {
                 <TableHead>Destination</TableHead>
                 <TableHead>Delivery Deadline</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -167,7 +175,7 @@ export default function CarrierDashboardPage() {
                 }
 
                 return (
-                    <TableRow key={shipment.id}>
+                    <TableRow key={shipment.id} onClick={() => handleRowClick(shipment)} className="cursor-pointer">
                     <TableCell className="font-medium">{shipment.exporterName || 'N/A'}</TableCell>
                     <TableCell>{shipment.productName || 'N/A'}</TableCell>
                     <TableCell>{shipment.origin?.portOfLoading || 'N/A'}</TableCell>
@@ -175,11 +183,6 @@ export default function CarrierDashboardPage() {
                     <TableCell>{shipment.deliveryDeadline ? format(shipment.deliveryDeadline.toDate(), "PPP") : 'N/A'}</TableCell>
                     <TableCell>
                         {statusBadge}
-                    </TableCell>
-                    <TableCell className="text-right">
-                        <Button variant="outline" size="sm" onClick={() => handleOpenBidDialog(shipment)}>
-                            {shipment.status === 'live' ? 'View & Bid' : 'View Details'}
-                        </Button>
                     </TableCell>
                     </TableRow>
                 );
@@ -243,7 +246,7 @@ export default function CarrierDashboardPage() {
                                   selectedShipment.status === 'awarded' ?
                                       (selectedShipment.winningCarrierId === user?.uid ?
                                           'Congratulations! You won this bid.' :
-                                          'Better luck next time. This shipment has been awarded to another carrier.'
+                                          'This shipment has been awarded to another carrier.'
                                       ) :
                                   'Bidding for this shipment is closed.'
                                 }

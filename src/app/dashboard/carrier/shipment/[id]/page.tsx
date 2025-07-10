@@ -10,10 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send, TrendingDown, Clock } from "lucide-react";
+import { ArrowLeft, Send, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 export default function CarrierShipmentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -77,7 +78,7 @@ export default function CarrierShipmentDetailPage() {
   useEffect(() => {
     if (!shipmentId) return;
 
-    const bidsQuery = query(collection(db, "shipments", shipmentId, "bids"), orderBy("createdAt", "desc"));
+    const bidsQuery = query(collection(db, "shipments", shipmentId, "bids"), orderBy("bidAmount", "asc"));
     
     const unsubscribeBids = onSnapshot(bidsQuery, (querySnapshot) => {
       const bidsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -89,18 +90,15 @@ export default function CarrierShipmentDetailPage() {
 
     return () => unsubscribeBids();
   }, [shipmentId, toast]);
-
-  const { lowestBid, latestBid } = useMemo(() => {
+  
+  const lowestBidData = useMemo(() => {
     if (bids.length === 0) {
-      return { lowestBid: null, latestBid: null };
+      return null;
     }
-
-    const lowest = bids.reduce((min, b) => b.bidAmount < min ? b.bidAmount : min, bids[0].bidAmount);
-    // Bids are already sorted by createdAt desc, so the first one is the latest.
-    const latest = bids[0].bidAmount;
-
-    return { lowestBid: lowest, latestBid: latest };
+    // Bids are sorted by bidAmount asc, so the first one is the lowest.
+    return bids[0];
   }, [bids]);
+
 
   const handlePlaceBid = async () => {
     if (!user || !shipmentId || !bidAmount) {
@@ -109,10 +107,10 @@ export default function CarrierShipmentDetailPage() {
     }
 
     const newBidAmount = parseFloat(bidAmount);
-    if (lowestBid !== null && newBidAmount >= lowestBid) {
+    if (lowestBidData && newBidAmount >= lowestBidData.bidAmount) {
       toast({
         title: "Invalid Bid",
-        description: `Your bid must be lower than the current lowest bid of $${lowestBid.toLocaleString()}.`,
+        description: `Your bid must be lower than the current lowest bid of $${lowestBidData.bidAmount.toLocaleString()}.`,
         variant: "destructive",
       });
       return;
@@ -191,17 +189,17 @@ export default function CarrierShipmentDetailPage() {
                 <CardDescription>Place your bid for this shipment.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
-                    <TrendingDown className="h-6 w-6 text-primary mb-2" />
+                <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <TrendingDown className="h-6 w-6 text-primary" />
                     <p className="text-sm text-muted-foreground">Lowest Bid</p>
-                    <p className="text-xl font-bold">{lowestBid ? `$${lowestBid.toLocaleString()}` : 'N/A'}</p>
                   </div>
-                   <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
-                    <Clock className="h-6 w-6 text-primary mb-2" />
-                    <p className="text-sm text-muted-foreground">Latest Bid</p>
-                    <p className="text-xl font-bold">{latestBid ? `$${latestBid.toLocaleString()}` : 'N/A'}</p>
-                  </div>
+                  <p className="text-2xl font-bold mt-1">{lowestBidData ? `$${lowestBidData.bidAmount.toLocaleString()}` : 'N/A'}</p>
+                  {lowestBidData && (
+                    <Badge variant={lowestBidData.carrierId === user?.uid ? 'success' : 'outline'} className="mt-2">
+                      {lowestBidData.carrierId === user?.uid ? 'You' : 'Other Carrier'}
+                    </Badge>
+                  )}
                 </div>
                  <div className="grid gap-2">
                     <Label htmlFor="bid-amount">Your Bid Amount (USD)</Label>
@@ -210,7 +208,7 @@ export default function CarrierShipmentDetailPage() {
                         <Input
                         id="bid-amount"
                         type="number"
-                        placeholder="e.g., 2500"
+                        placeholder={lowestBidData ? `Must be < $${lowestBidData.bidAmount.toLocaleString()}` : "e.g., 2500"}
                         value={bidAmount}
                         onChange={(e) => setBidAmount(e.target.value)}
                         disabled={isSubmitting}

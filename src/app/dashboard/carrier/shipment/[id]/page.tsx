@@ -179,6 +179,7 @@ export default function CarrierShipmentDetailPage() {
                     <div><span className="font-semibold text-muted-foreground">Departure Date: </span>{shipment.departureDate ? format(shipment.departureDate.toDate(), "PPP") : 'N/A'}</div>
                     <div><span className="font-semibold text-muted-foreground">Delivery Deadline: </span>{shipment.deliveryDeadline ? format(shipment.deliveryDeadline.toDate(), "PPP") : 'N/A'}</div>
                     <div className="md:col-span-2 pt-2"><p className="font-semibold text-muted-foreground mb-1">Cargo Information</p><p>{shipment.cargo?.type || 'General'} - {shipment.cargo?.weight}kg</p></div>
+                    {(shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height) && <div className="md:col-span-2"><p className="font-semibold text-muted-foreground mb-1">Dimensions (LxWxH)</p><p>{shipment.cargo.dimensions.length} x {shipment.cargo.dimensions.width} x {shipment.cargo.dimensions.height}</p></div>}
                     {shipment.specialInstructions && <div className="md:col-span-2 pt-2"><p className="font-semibold text-muted-foreground mb-1">Special Instructions</p><p>{shipment.specialInstructions}</p></div>}
                 </CardContent>
             </Card>

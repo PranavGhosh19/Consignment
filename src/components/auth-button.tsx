@@ -3,11 +3,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,9 +17,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User as UserIcon, LayoutDashboard, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const navLinks = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/shipments", label: "Shipments" },
+  { href: "/carriers", label: "Carriers" },
+  { href: "/analytics", label: "Analytics" },
+];
 
 export function NavLinks() {
   const [user, setUser] = useState<User | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -34,21 +42,33 @@ export function NavLinks() {
   }
 
   return (
-      <nav className="hidden sm:flex items-center gap-2 text-sm font-medium text-muted-foreground">
-        <Link href="/dashboard" className="hover:text-primary transition-colors">Dashboard</Link>
-        <Link href="#" className="hover:text-primary transition-colors">Shipments</Link>
-        <Link href="#" className="hover:text-primary transition-colors">Carriers</Link>
-        <Link href="#" className="hover:text-primary transition-colors">Analytics</Link>
-      </nav>
+    <nav className="hidden sm:flex items-center gap-4 text-sm font-medium">
+      {navLinks.map((link) => {
+        const isActive = pathname.startsWith(link.href) && (link.href !== '/dashboard' || pathname === '/dashboard' || pathname.startsWith('/dashboard/'));
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={cn(
+              "transition-colors hover:text-primary",
+              isActive ? "text-primary font-semibold" : "text-muted-foreground"
+            )}
+          >
+            {link.label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 
 export function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
@@ -61,8 +81,6 @@ export function AuthButton() {
       console.error("Error signing out: ", error);
     }
   };
-
-  const router = useRouter();
 
   if (user) {
     return (

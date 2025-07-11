@@ -82,9 +82,9 @@ const Header = () => (
                 <div className="flex flex-col gap-4 p-4">
                     <nav className="flex flex-col items-start gap-4">
                         <Link href="/dashboard" className="hover:text-primary transition-colors">Dashboard</Link>
-                        <Link href="#" className="hover:text-primary transition-colors">Shipments</Link>
-                        <Link href="#" className="hover:text-primary transition-colors">Carriers</Link>
-                        <Link href="#" className="hover:text-primary transition-colors">Analytics</Link>
+                        <Link href="/shipments" className="hover:text-primary transition-colors">Shipments</Link>
+                        <Link href="/carriers" className="hover:text-primary transition-colors">Carriers</Link>
+                        <Link href="/analytics" className="hover:text-primary transition-colors">Analytics</Link>
                     </nav>
                     <div className="mt-auto">
                         <AuthButton />

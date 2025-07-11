@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User as UserIcon, LayoutDashboard, LogOut } from "lucide-react";
+import { User as UserIcon, LayoutDashboard, LogOut, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -44,7 +44,7 @@ export function NavLinks() {
   return (
     <nav className="hidden sm:flex items-center gap-4 text-sm font-medium">
       {navLinks.map((link) => {
-        const isActive = pathname.startsWith(link.href) && (link.href !== '/dashboard' || pathname === '/dashboard' || pathname.startsWith('/dashboard/'));
+        const isActive = pathname.startsWith(link.href);
         return (
           <Link
             key={link.href}
@@ -85,6 +85,15 @@ export function AuthButton() {
   if (user) {
     return (
       <div className="flex items-center gap-2 sm:gap-4">
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-5 w-5" />
+          <span className="sr-only">Notifications</span>
+          <span className="absolute top-2 right-2 flex h-3 w-3">
+            <span className="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-primary/75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+          </span>
+        </Button>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">

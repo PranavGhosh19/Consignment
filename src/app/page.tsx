@@ -1,8 +1,45 @@
+
+"use client";
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Ship, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+  
+  if (loading || user) {
+      return (
+          <div className="container py-10">
+              <div className="flex justify-between items-center mb-8">
+                  <Skeleton className="h-10 w-48" />
+              </div>
+              <Skeleton className="h-80 w-full rounded-lg" />
+          </div>
+      );
+  }
+
   return (
     <main className="flex-1">
       <section className="w-full py-20 md:py-28 lg:py-32">

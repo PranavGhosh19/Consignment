@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,33 +18,68 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User as UserIcon, LayoutDashboard, LogOut, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { doc, getDoc } from "firebase/firestore";
+import { Skeleton } from "./ui/skeleton";
 
-const navLinks = [
+const exporterNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/shipments", label: "Shipments" },
   { href: "/carriers", label: "Carriers" },
   { href: "/analytics", label: "Analytics" },
 ];
 
+const carrierNavLinks = [
+  { href: "/dashboard/carrier", label: "Dashboard" },
+  { href: "/dashboard/carrier/shipments", label: "Find Shipments" },
+  { href: "/dashboard/carrier/bids", label: "My Bids" },
+  { href: "/dashboard/carrier/earnings", label: "Earnings" },
+];
+
 export function NavLinks() {
   const [user, setUser] = useState<User | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setUserType(userDoc.data()?.userType || null);
+        }
+      } else {
+        setUser(null);
+        setUserType(null);
+      }
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
+
+  if (loading) {
+    return (
+        <nav className="hidden sm:flex items-center gap-4 text-sm font-medium">
+            <Skeleton className="h-6 w-20" />
+            <Skeleton className="h-6 w-20" />
+            <Skeleton className="h-6 w-20" />
+            <Skeleton className="h-6 w-20" />
+        </nav>
+    )
+  }
 
   if (!user) {
     return null;
   }
 
+  const links = userType === 'carrier' ? carrierNavLinks : exporterNavLinks;
+
   return (
     <nav className="hidden sm:flex items-center gap-4 text-sm font-medium">
-      {navLinks.map((link) => {
-        const isActive = pathname.startsWith(link.href);
+      {links.map((link) => {
+        const isActive = pathname === link.href;
         return (
           <Link
             key={link.href}
@@ -64,11 +99,13 @@ export function NavLinks() {
 
 export function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -81,6 +118,10 @@ export function AuthButton() {
       console.error("Error signing out: ", error);
     }
   };
+
+  if (loading) {
+      return <Skeleton className="h-10 w-28" />
+  }
 
   if (user) {
     return (
@@ -131,10 +172,10 @@ export function AuthButton() {
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
-      <Button variant="ghost" asChild className="w-full sm:w-auto justify-start">
+      <Button variant="ghost" asChild className="w-full sm:w-auto justify-start sm:justify-center">
         <Link href="/login">Log In</Link>
       </Button>
-      <Button asChild className="w-full sm:w-auto justify-start">
+      <Button asChild className="w-full sm:w-auto justify-start sm:justify-center">
         <Link href="/signup">Sign Up</Link>
       </Button>
     </div>

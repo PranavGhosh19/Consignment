@@ -141,7 +141,7 @@ export default function CarrierDashboardPage() {
   return (
     <div className="container py-6 md:py-10">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold font-headline">Available Shipments</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold font-headline">Carrier Dashboard</h1>
       </div>
 
       {shipments.length > 0 ? (

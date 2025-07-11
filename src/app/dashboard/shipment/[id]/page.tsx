@@ -174,7 +174,7 @@ export default function ShipmentDetailPage() {
         </div>
         <div className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 space-y-6">
-                <Card>
+                <Card className="bg-white dark:bg-card">
                     <CardHeader>
                         <CardTitle className="text-2xl sm:text-3xl font-headline">{shipment.productName}</CardTitle>
                         <CardDescription>Shipment Details</CardDescription>
@@ -191,7 +191,7 @@ export default function ShipmentDetailPage() {
                 </Card>
 
                  {shipment.status !== 'draft' && (
-                    <Card>
+                    <Card className="bg-white dark:bg-card">
                         <CardHeader>
                             <CardTitle>Bids Received</CardTitle>
                             <CardDescription>
@@ -237,7 +237,7 @@ export default function ShipmentDetailPage() {
                  )}
             </div>
             <div className="space-y-6 lg:sticky lg:top-24">
-                <Card className="bg-secondary">
+                <Card className="bg-white dark:bg-card">
                     <CardHeader>
                         <CardTitle>Status</CardTitle>
                         <CardDescription>{statusInfo.description}</CardDescription>

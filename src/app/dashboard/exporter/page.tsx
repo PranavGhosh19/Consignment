@@ -293,7 +293,7 @@ function ExporterDashboardPage() {
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'live':
-        return 'default';
+        return 'success';
       case 'awarded':
         return 'success';
       case 'draft':
@@ -497,7 +497,7 @@ function ExporterDashboardPage() {
                         {isSubmittingGoLive === product.id ? '...' : 'Go Live'}
                       </Button>
                     ) : (
-                      <Badge variant={getStatusVariant(product.status)} className="capitalize">
+                      <Badge variant={getStatusVariant(product.status)} className={cn("capitalize", { "animate-blink bg-green-500/80": product.status === 'live' })}>
                         {product.status}
                       </Badge>
                     )}

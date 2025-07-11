@@ -53,6 +53,12 @@ export function AuthButton() {
   if (user) {
     return (
       <div className="flex items-center gap-2 sm:gap-4">
+        <nav className="hidden sm:flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Link href="/dashboard" className="hover:text-primary transition-colors">Dashboard</Link>
+          <Link href="#" className="hover:text-primary transition-colors">Shipments</Link>
+          <Link href="#" className="hover:text-primary transition-colors">Carriers</Link>
+          <Link href="#" className="hover:text-primary transition-colors">Analytics</Link>
+        </nav>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">

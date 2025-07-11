@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -55,15 +56,15 @@ export function AuthButton() {
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+       <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
+        <Bell className="h-5 w-5" />
+        <span className="sr-only">Notifications</span>
+      </Button>
       <Button variant="ghost" asChild className="w-full sm:w-auto justify-start">
         <Link href="/login">Log In</Link>
       </Button>
       <Button asChild className="w-full sm:w-auto justify-start">
         <Link href="/signup">Sign Up</Link>
-      </Button>
-       <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-        <Bell className="h-5 w-5" />
-        <span className="sr-only">Notifications</span>
       </Button>
     </div>
   );

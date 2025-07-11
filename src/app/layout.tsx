@@ -55,21 +55,20 @@ const Header = () => (
     )}
   >
     <div className="container flex h-16 items-center">
-      <div className="mr-auto flex items-center">
+      <div className="flex items-center gap-6">
         <Link
           href="/"
           className="flex items-center gap-2 font-bold text-lg font-headline"
         >
           <LogoIcon />
-          <span className="font-bold text-base sm:text-xl">Shipping Battlefield</span>
+          <span className="hidden sm:block font-bold text-base sm:text-xl">Shipping Battlefield</span>
         </Link>
+        <div className="hidden sm:flex items-center">
+            <AuthButton />
+        </div>
       </div>
-      <div className="hidden sm:flex items-center space-x-2">
-        <nav className="flex items-center gap-2 sm:gap-2">
-          <AuthButton />
-        </nav>
-      </div>
-       <div className="sm:hidden">
+      
+       <div className="ml-auto sm:hidden">
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">

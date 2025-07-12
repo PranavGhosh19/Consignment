@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AuthButton, NavLinks } from "@/components/auth-button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -79,6 +79,9 @@ const Header = () => (
                 </Button>
             </SheetTrigger>
             <SheetContent side="right">
+                <SheetHeader>
+                    <SheetTitle className="sr-only">Menu</SheetTitle>
+                </SheetHeader>
                 <div className="flex flex-col gap-4 p-4">
                     <nav className="flex flex-col items-start gap-4">
                         <Link href="/dashboard" className="hover:text-primary transition-colors">Dashboard</Link>

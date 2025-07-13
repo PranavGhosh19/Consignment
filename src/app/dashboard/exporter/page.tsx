@@ -211,6 +211,10 @@ function ExporterDashboardPage() {
       toast({ title: "Error", description: "Please fill out all required fields.", variant: "destructive" });
       return;
     }
+    if (hsnCode && hsnCode.length < 4) {
+      toast({ title: "Invalid HSN Code", description: "HSN Code must be at least 4 digits.", variant: "destructive" });
+      return;
+    }
     if (!user) {
       toast({ title: "Error", description: "You must be logged in to create a shipment.", variant: "destructive" });
       return;

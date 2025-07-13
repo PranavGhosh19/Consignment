@@ -74,7 +74,7 @@ export default function SelectTypePage() {
       await updateDoc(userDocRef, {
         userType: selectedType,
       });
-      router.push("/dashboard");
+      router.push("/gst-verification");
     } catch (error: any) {
       toast({
         title: "Update Failed",

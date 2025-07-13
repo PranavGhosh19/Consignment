@@ -24,12 +24,12 @@ export function BottomBar() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t shadow-[0_-1px_2px_0_rgba(0,0,0,0.05)]">
-      <div className="grid h-full max-w-lg grid-cols-2 mx-auto font-medium">
-        <Button variant="ghost" asChild className="h-full rounded-none">
+    <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-20 bg-background border-t shadow-[0_-2px_4px_0_rgba(0,0,0,0.05)] p-2">
+      <div className="flex h-full items-center justify-evenly gap-2">
+        <Button variant="ghost" asChild className="h-12 w-full rounded-full text-base">
           <Link href="/login">Log In</Link>
         </Button>
-        <Button asChild className="h-full rounded-none">
+        <Button asChild className="h-12 w-full rounded-full text-base">
           <Link href="/signup">Sign Up</Link>
         </Button>
       </div>

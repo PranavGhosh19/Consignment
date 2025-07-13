@@ -363,14 +363,16 @@ function ExporterDashboardPage() {
                         <span className="bg-muted text-muted-foreground px-3 py-2 border border-l-0 rounded-r-md">kg</span>
                     </div>
                   </div>
-                   <div className="grid gap-2 md:col-span-2">
-                    <Label>Dimensions (L x W x H)</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                        <Input placeholder="Length" value={dimensionL} onChange={e => setDimensionL(e.target.value)} disabled={isSubmitting} />
-                        <Input placeholder="Width" value={dimensionW} onChange={e => setDimensionW(e.target.value)} disabled={isSubmitting} />
-                        <Input placeholder="Height" value={dimensionH} onChange={e => setDimensionH(e.target.value)} disabled={isSubmitting} />
+                   {cargoType !== 'General Cargo' && cargoType !== '' && (
+                    <div className="grid gap-2 md:col-span-2">
+                      <Label>Dimensions (L x W x H)</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                          <Input placeholder="Length" value={dimensionL} onChange={e => setDimensionL(e.target.value)} disabled={isSubmitting} />
+                          <Input placeholder="Width" value={dimensionW} onChange={e => setDimensionW(e.target.value)} disabled={isSubmitting} />
+                          <Input placeholder="Height" value={dimensionH} onChange={e => setDimensionH(e.target.value)} disabled={isSubmitting} />
+                      </div>
                     </div>
-                  </div>
+                   )}
                 </CardContent>
               </Card>
 
@@ -524,5 +526,3 @@ function ExporterDashboardPage() {
     </div>
   );
 }
-
-    

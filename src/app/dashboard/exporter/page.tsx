@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, addDoc, query, getDocs, DocumentData, Timestamp, where, doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -39,6 +39,26 @@ const PageSkeleton = () => (
         <Skeleton className="h-64 w-full" />
     </div>
 );
+
+const airCargoTypes = [
+  { value: "General Cargo", label: "General Cargo" },
+  { value: "Perishable Goods", label: "Perishable Goods" },
+  { value: "Live Animals", label: "Live Animals" },
+];
+
+const otherCargoTypes = [
+  { value: "General Cargo", label: "General Cargo" },
+  { value: "Bulk (Dry)", label: "Bulk (Dry)" },
+  { value: "Bulk (Liquid)", label: "Bulk (Liquid)" },
+  { value: "Reefer / Temperature-Controlled", label: "Reefer / Temperature-Controlled" },
+  { value: "HAZMAT / Dangerous", label: "HAZMAT / Dangerous" },
+  { value: "Roll-on/Roll-off (RoRo)", label: "Roll-on/Roll-off (RoRo)" },
+  { value: "Oversized / Out-of-Gauge", label: "Oversized / Out-of-Gauge" },
+  { value: "Project Cargo", label: "Project Cargo" },
+  { value: "Perishable Goods", label: "Perishable Goods" },
+  { value: "Live Animals", label: "Live Animals" },
+];
+
 
 export default function ExporterDashboardPageWrapper() {
   return (
@@ -78,6 +98,21 @@ function ExporterDashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+
+  const cargoTypeOptions = useMemo(() => {
+    if (modeOfShipment === 'Air') {
+        return airCargoTypes;
+    }
+    return otherCargoTypes;
+  }, [modeOfShipment]);
+
+  useEffect(() => {
+    // Reset cargo type if it's not in the current options
+    if (cargoType && !cargoTypeOptions.find(opt => opt.value === cargoType)) {
+        setCargoType("");
+    }
+  }, [cargoType, cargoTypeOptions]);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -358,21 +393,14 @@ function ExporterDashboardPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="cargo-type">Cargo Type</Label>
-                    <Select value={cargoType} onValueChange={setCargoType} disabled={isSubmitting}>
+                    <Select value={cargoType} onValueChange={setCargoType} disabled={isSubmitting || !modeOfShipment}>
                       <SelectTrigger id="cargo-type">
                         <SelectValue placeholder="Select a cargo type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="General Cargo">General Cargo</SelectItem>
-                        <SelectItem value="Bulk (Dry)">Bulk (Dry)</SelectItem>
-                        <SelectItem value="Bulk (Liquid)">Bulk (Liquid)</SelectItem>
-                        <SelectItem value="Reefer / Temperature-Controlled">Reefer / Temperature-Controlled</SelectItem>
-                        <SelectItem value="HAZMAT / Dangerous">HAZMAT / Dangerous</SelectItem>
-                        <SelectItem value="Roll-on/Roll-off (RoRo)">Roll-on/Roll-off (RoRo)</SelectItem>
-                        <SelectItem value="Oversized / Out-of-Gauge">Oversized / Out-of-Gauge</SelectItem>
-                        <SelectItem value="Project Cargo">Project Cargo</SelectItem>
-                        <SelectItem value="Perishable Goods">Perishable Goods</SelectItem>
-                        <SelectItem value="Live Animals">Live Animals</SelectItem>
+                        {cargoTypeOptions.map((option) => (
+                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -546,5 +574,3 @@ function ExporterDashboardPage() {
     </div>
   );
 }
-
-    

@@ -171,14 +171,32 @@ export default function CarrierShipmentDetailPage() {
                     <CardTitle className="text-2xl sm:text-3xl font-headline">{shipment.productName}</CardTitle>
                     <CardDescription>From: {shipment.exporterName}</CardDescription>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div><span className="font-semibold text-muted-foreground">Origin Port: </span>{shipment.origin?.portOfLoading}</div>
-                    <div><span className="font-semibold text-muted-foreground">Destination Port: </span>{shipment.destination?.portOfDelivery}</div>
-                    <div><span className="font-semibold text-muted-foreground">Departure Date: </span>{shipment.departureDate ? format(shipment.departureDate.toDate(), "PPP") : 'N/A'}</div>
-                    <div><span className="font-semibold text-muted-foreground">Delivery Deadline: </span>{shipment.deliveryDeadline ? format(shipment.deliveryDeadline.toDate(), "PPP") : 'N/A'}</div>
-                    <div className="md:col-span-2 pt-2"><p className="font-semibold text-muted-foreground mb-1">Cargo Information</p><p>{shipment.cargo?.type || 'General'} - {shipment.cargo?.weight}kg</p></div>
-                    {(shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height) && <div className="md:col-span-2"><p className="font-semibold text-muted-foreground mb-1">Dimensions (LxWxH)</p><p>{shipment.cargo.dimensions.length} x {shipment.cargo.dimensions.width} x {shipment.cargo.dimensions.height}</p></div>}
-                    {shipment.specialInstructions && <div className="md:col-span-2 pt-2"><p className="font-semibold text-muted-foreground mb-1">Special Instructions</p><p>{shipment.specialInstructions}</p></div>}
+                <CardContent className="space-y-6 text-sm">
+                    <div className="grid md:grid-cols-2 gap-4 border-b pb-6">
+                         {shipment.shipmentType && <div><span className="font-semibold text-muted-foreground block mb-1">Shipment Type</span>{shipment.shipmentType}</div>}
+                         {shipment.hsnCode && <div><span className="font-semibold text-muted-foreground block mb-1">HSN Code</span>{shipment.hsnCode}</div>}
+                         {shipment.modeOfShipment && <div className="md:col-span-2"><span className="font-semibold text-muted-foreground block mb-1">Mode of Shipment</span>{shipment.modeOfShipment}</div>}
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4 border-b pb-6">
+                         <div><span className="font-semibold text-muted-foreground block mb-1">Origin Port</span>{shipment.origin?.portOfLoading}</div>
+                         <div><span className="font-semibold text-muted-foreground block mb-1">Destination Port</span>{shipment.destination?.portOfDelivery}</div>
+                         {shipment.origin?.zipCode && <div><span className="font-semibold text-muted-foreground block mb-1">Origin Zip</span>{shipment.origin.zipCode}</div>}
+                         {shipment.destination?.zipCode && <div><span className="font-semibold text-muted-foreground block mb-1">Destination Zip</span>{shipment.destination.zipCode}</div>}
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4 border-b pb-6">
+                         <div><span className="font-semibold text-muted-foreground block mb-1">Departure Date</span>{shipment.departureDate ? format(shipment.departureDate.toDate(), "PPP") : 'N/A'}</div>
+                         <div><span className="font-semibold text-muted-foreground block mb-1">Delivery Deadline</span>{shipment.deliveryDeadline ? format(shipment.deliveryDeadline.toDate(), "PPP") : 'N/A'}</div>
+                    </div>
+                    <div className="space-y-4">
+                        <p className="font-semibold text-foreground">Cargo Information</p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div><span className="font-semibold text-muted-foreground block mb-1">Type</span>{shipment.cargo?.type || 'General'}</div>
+                            <div><span className="font-semibold text-muted-foreground block mb-1">Weight</span>{shipment.cargo?.weight} kg</div>
+                            {(shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height) && <div className="md:col-span-2"><span className="font-semibold text-muted-foreground block mb-1">Dimensions (LxWxH)</span>{shipment.cargo.dimensions.length} x {shipment.cargo.dimensions.width} x {shipment.cargo.dimensions.height}</div>}
+                        </div>
+                    </div>
+
+                    {shipment.specialInstructions && <div className="pt-2"><p className="font-semibold text-muted-foreground mb-1">Special Instructions</p><p>{shipment.specialInstructions}</p></div>}
                 </CardContent>
             </Card>
         </div>
@@ -227,3 +245,5 @@ export default function CarrierShipmentDetailPage() {
     </div>
   );
 }
+
+    

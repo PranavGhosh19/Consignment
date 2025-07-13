@@ -212,8 +212,15 @@ export default function CarrierDashboardPage() {
                               <CardDescription>From: {selectedShipment.exporterName}</CardDescription>
                           </CardHeader>
                           <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-                              <div><span className="font-semibold">Origin: </span>{selectedShipment.origin?.portOfLoading}</div>
-                              <div><span className="font-semibold">Destination: </span>{selectedShipment.destination?.portOfDelivery}</div>
+                              {selectedShipment.shipmentType && <div className="md:col-span-2"><span className="font-semibold">Shipment Type: </span>{selectedShipment.shipmentType}</div>}
+                              {selectedShipment.hsnCode && <div><span className="font-semibold">HSN Code: </span>{selectedShipment.hsnCode}</div>}
+                              {selectedShipment.modeOfShipment && <div><span className="font-semibold">Mode: </span>{selectedShipment.modeOfShipment}</div>}
+
+                              <div><span className="font-semibold">Origin Port: </span>{selectedShipment.origin?.portOfLoading}</div>
+                              <div><span className="font-semibold">Destination Port: </span>{selectedShipment.destination?.portOfDelivery}</div>
+                              {selectedShipment.origin?.zipCode && <div><span className="font-semibold">Origin Zip: </span>{selectedShipment.origin?.zipCode}</div>}
+                              {selectedShipment.destination?.zipCode && <div><span className="font-semibold">Destination Zip: </span>{selectedShipment.destination?.zipCode}</div>}
+
                               <div><span className="font-semibold">Departure: </span>{selectedShipment.departureDate ? format(selectedShipment.departureDate.toDate(), "PPP") : 'N/A'}</div>
                               <div><span className="font-semibold">Deadline: </span>{selectedShipment.deliveryDeadline ? format(selectedShipment.deliveryDeadline.toDate(), "PPP") : 'N/A'}</div>
                               <div className="md:col-span-2"><span className="font-semibold">Cargo: </span>{selectedShipment.cargo?.type || 'General'} - {selectedShipment.cargo?.weight}kg</div>
@@ -272,3 +279,5 @@ export default function CarrierDashboardPage() {
     </div>
   );
 }
+
+    

@@ -375,6 +375,12 @@ function ExporterDashboardPage() {
     }
   }
 
+  const showDimensions = useMemo(() => {
+    if (modeOfShipment !== 'Air') return false;
+    const validCargoTypes = ['General Cargo', 'HAZMAT / Dangerous', 'Perishable Goods'];
+    return validCargoTypes.includes(cargoType);
+  }, [modeOfShipment, cargoType]);
+
 
   return (
     <div className="container py-6 md:py-10">
@@ -449,7 +455,7 @@ function ExporterDashboardPage() {
                         <span className="bg-muted text-muted-foreground px-3 py-2 border border-l-0 rounded-r-md">kg</span>
                     </div>
                   </div>
-                   {(modeOfShipment === 'Air' || (cargoType !== 'General Cargo' && cargoType !== '')) && (
+                   {showDimensions && (
                     <div className="grid gap-2 md:col-span-2">
                       <Label>Dimensions (L x W x H)</Label>
                       <div className="grid grid-cols-3 gap-2">

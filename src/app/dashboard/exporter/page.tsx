@@ -60,6 +60,21 @@ const otherCargoTypes = [
   { value: "Live Animals", label: "Live Animals" },
 ];
 
+const packageTypes = [
+    { value: "PALLET", label: "PALLET" },
+    { value: "PALLETS", label: "PALLETS" },
+    { value: "BOX", label: "BOX" },
+    { value: "BOXES", label: "BOXES" },
+    { value: "UNIT", label: "UNIT" },
+    { value: "UNITS", label: "UNITS" },
+    { value: "CASE", label: "CASE" },
+    { value: "CASES", label: "CASES" },
+    { value: "INTERMEDIATE BULK CONTAINERS", label: "INTERMEDIATE BULK CONTAINERS" },
+    { value: "BALES", label: "BALES" },
+    { value: "PACKET", label: "PACKET" },
+    { value: "PACKETS", label: "PACKETS" },
+];
+
 
 export default function ExporterDashboardPageWrapper() {
   return (
@@ -82,6 +97,7 @@ function ExporterDashboardPage() {
   const [hsnCode, setHsnCode] = useState("");
   const [modeOfShipment, setModeOfShipment] = useState("");
   const [cargoType, setCargoType] = useState("");
+  const [packageType, setPackageType] = useState("");
   const [weight, setWeight] = useState("");
   const [dimensionL, setDimensionL] = useState("");
   const [dimensionW, setDimensionW] = useState("");
@@ -191,6 +207,7 @@ function ExporterDashboardPage() {
                     setHsnCode(data.hsnCode || "");
                     setModeOfShipment(data.modeOfShipment || "");
                     setCargoType(data.cargo?.type || "");
+                    setPackageType(data.cargo?.packageType || "");
                     setWeight(data.cargo?.weight || "");
                     setDimensionL(data.cargo?.dimensions?.length || "");
                     setDimensionW(data.cargo?.dimensions?.width || "");
@@ -242,6 +259,7 @@ function ExporterDashboardPage() {
     setHsnCode("");
     setModeOfShipment("");
     setCargoType("");
+    setPackageType("");
     setWeight("");
     setDimensionL("");
     setDimensionW("");
@@ -297,6 +315,7 @@ function ExporterDashboardPage() {
       modeOfShipment,
       cargo: {
         type: cargoType,
+        packageType: packageType,
         weight,
         dimensions: {
           length: dimensionL,
@@ -402,8 +421,8 @@ function ExporterDashboardPage() {
             <div className="grid gap-6 py-4">
               <Card className="bg-secondary">
                 <CardHeader><CardTitle>Product & Cargo Details</CardTitle></CardHeader>
-                <CardContent className="grid md:grid-cols-2 gap-6">
-                  <div className="grid gap-2 md:col-span-2">
+                <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid gap-2 lg:col-span-3">
                     <Label htmlFor="shipment-type">Shipment</Label>
                     <Select value={shipmentType} onValueChange={setShipmentType} disabled={isSubmitting}>
                       <SelectTrigger id="shipment-type">
@@ -424,7 +443,7 @@ function ExporterDashboardPage() {
                     <Label htmlFor="hsn-code">HSN Code</Label>
                     <Input id="hsn-code" placeholder="e.g., 85171290" value={hsnCode} onChange={e => setHsnCode(e.target.value)} disabled={isSubmitting} />
                   </div>
-                  <div className="grid gap-2">
+                   <div className="grid gap-2">
                     <Label htmlFor="mode-of-shipment">Mode of Shipment</Label>
                     <Select value={modeOfShipment} onValueChange={setModeOfShipment} disabled={isSubmitting}>
                       <SelectTrigger id="mode-of-shipment">
@@ -452,6 +471,19 @@ function ExporterDashboardPage() {
                     </Select>
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="package-type">Package Type</Label>
+                    <Select value={packageType} onValueChange={setPackageType} disabled={isSubmitting}>
+                      <SelectTrigger id="package-type">
+                        <SelectValue placeholder="Select a package type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {packageTypes.map((option) => (
+                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
                     <Label htmlFor="weight">Total Weight</Label>
                     <div className="flex items-center">
                         <Input id="weight" type="number" placeholder="e.g., 1200" value={weight} onChange={e => setWeight(e.target.value)} disabled={isSubmitting} className="rounded-r-none" />
@@ -459,7 +491,7 @@ function ExporterDashboardPage() {
                     </div>
                   </div>
                    {showDimensions && (
-                    <div className="grid gap-2 md:col-span-2">
+                    <div className="grid gap-2 lg:col-span-3">
                       <Label>Dimensions (L x W x H)</Label>
                       <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
                           <Input placeholder="Length" value={dimensionL} onChange={e => setDimensionL(e.target.value)} disabled={isSubmitting} />

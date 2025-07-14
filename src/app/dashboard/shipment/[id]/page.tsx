@@ -204,7 +204,8 @@ export default function ShipmentDetailPage() {
                         <div className="space-y-4">
                             <p className="font-semibold text-foreground">Cargo Information</p>
                             <div className="grid md:grid-cols-2 gap-4">
-                                <div><span className="font-semibold text-muted-foreground block mb-1">Type</span>{shipment.cargo?.type || 'General'}</div>
+                                <div><span className="font-semibold text-muted-foreground block mb-1">Cargo Type</span>{shipment.cargo?.type || 'General'}</div>
+                                {shipment.cargo?.packageType && <div><span className="font-semibold text-muted-foreground block mb-1">Package Type</span>{shipment.cargo.packageType}</div>}
                                 <div><span className="font-semibold text-muted-foreground block mb-1">Weight</span>{shipment.cargo?.weight} kg</div>
                                 {hasDimensions && <div className="md:col-span-2"><span className="font-semibold text-muted-foreground block mb-1">Dimensions (LxWxH)</span>{shipment.cargo.dimensions.length} x {shipment.cargo.dimensions.width} x {shipment.cargo.dimensions.height} {shipment.cargo.dimensions.unit || ''}</div>}
                             </div>

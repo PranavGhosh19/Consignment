@@ -88,6 +88,8 @@ function ExporterDashboardPage() {
   const [dimensionH, setDimensionH] = useState("");
   const [departureDate, setDepartureDate] = useState<Date>();
   const [deliveryDeadline, setDeliveryDeadline] = useState<Date>();
+  const [goLiveDate, setGoLiveDate] = useState<Date | undefined>();
+  const [goLiveTime, setGoLiveTime] = useState("12:00");
   const [portOfLoading, setPortOfLoading] = useState("");
   const [originZip, setOriginZip] = useState("");
   const [portOfDelivery, setPortOfDelivery] = useState("");
@@ -232,6 +234,8 @@ function ExporterDashboardPage() {
     setDimensionH("");
     setDepartureDate(undefined);
     setDeliveryDeadline(undefined);
+    setGoLiveDate(undefined);
+    setGoLiveTime("12:00");
     setPortOfLoading("");
     setOriginZip("");
     setPortOfDelivery("");
@@ -529,8 +533,35 @@ function ExporterDashboardPage() {
                   </CardContent>
               </Card>
             </div>
-            <DialogFooter>
-              <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
+            <DialogFooter className="items-center gap-4">
+              <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full sm:w-auto">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {goLiveDate ? format(goLiveDate, "PPP") + ` at ${goLiveTime}` : "Set Go-Live Date & Time"}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                    <Calendar
+                        mode="single"
+                        selected={goLiveDate}
+                        onSelect={setGoLiveDate}
+                        disabled={(date) => date < new Date() || !departureDate || date >= departureDate}
+                        initialFocus
+                    />
+                    <div className="p-3 border-t">
+                        <Label htmlFor="go-live-time" className="text-sm font-medium">Time</Label>
+                        <Input 
+                          id="go-live-time" 
+                          type="time" 
+                          value={goLiveTime} 
+                          onChange={(e) => setGoLiveTime(e.target.value)} 
+                          className="mt-1" 
+                        />
+                    </div>
+                </PopoverContent>
+              </Popover>
+              <Button type="submit" onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
                 {editingShipmentId ? <Pencil className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
                 {isSubmitting ? 'Saving...' : (editingShipmentId ? 'Save Changes' : 'Submit Request')}
               </Button>
@@ -592,5 +623,3 @@ function ExporterDashboardPage() {
     </div>
   );
 }
-
-    

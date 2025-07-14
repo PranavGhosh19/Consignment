@@ -86,6 +86,7 @@ function ExporterDashboardPage() {
   const [dimensionL, setDimensionL] = useState("");
   const [dimensionW, setDimensionW] = useState("");
   const [dimensionH, setDimensionH] = useState("");
+  const [dimensionUnit, setDimensionUnit] = useState("CMS");
   const [departureDate, setDepartureDate] = useState<Date>();
   const [deliveryDeadline, setDeliveryDeadline] = useState<Date>();
   const [goLiveDate, setGoLiveDate] = useState<Date | undefined>();
@@ -194,6 +195,7 @@ function ExporterDashboardPage() {
                     setDimensionL(data.cargo?.dimensions?.length || "");
                     setDimensionW(data.cargo?.dimensions?.width || "");
                     setDimensionH(data.cargo?.dimensions?.height || "");
+                    setDimensionUnit(data.cargo?.dimensions?.unit || "CMS");
                     setDepartureDate(data.departureDate?.toDate());
                     setDeliveryDeadline(data.deliveryDeadline?.toDate());
                     setPortOfLoading(data.origin?.portOfLoading || "");
@@ -244,6 +246,7 @@ function ExporterDashboardPage() {
     setDimensionL("");
     setDimensionW("");
     setDimensionH("");
+    setDimensionUnit("CMS");
     setDepartureDate(undefined);
     setDeliveryDeadline(undefined);
     setGoLiveDate(undefined);
@@ -299,6 +302,7 @@ function ExporterDashboardPage() {
           length: dimensionL,
           width: dimensionW,
           height: dimensionH,
+          unit: dimensionUnit,
         },
       },
       departureDate: departureDate ? Timestamp.fromDate(departureDate) : null,
@@ -457,10 +461,21 @@ function ExporterDashboardPage() {
                    {showDimensions && (
                     <div className="grid gap-2 md:col-span-2">
                       <Label>Dimensions (L x W x H)</Label>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
                           <Input placeholder="Length" value={dimensionL} onChange={e => setDimensionL(e.target.value)} disabled={isSubmitting} />
                           <Input placeholder="Width" value={dimensionW} onChange={e => setDimensionW(e.target.value)} disabled={isSubmitting} />
                           <Input placeholder="Height" value={dimensionH} onChange={e => setDimensionH(e.target.value)} disabled={isSubmitting} />
+                          <Select value={dimensionUnit} onValueChange={setDimensionUnit} disabled={isSubmitting}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="CMS">CMS</SelectItem>
+                                <SelectItem value="FEET">FEET</SelectItem>
+                                <SelectItem value="MM">MM</SelectItem>
+                                <SelectItem value="METRE">METRE</SelectItem>
+                            </SelectContent>
+                          </Select>
                       </div>
                     </div>
                    )}
@@ -644,3 +659,5 @@ function ExporterDashboardPage() {
     </div>
   );
 }
+
+    

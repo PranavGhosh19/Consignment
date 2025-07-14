@@ -140,6 +140,8 @@ export default function CarrierDashboardPage() {
     )
   }
 
+  const hasDimensions = selectedShipment?.cargo?.dimensions?.length && selectedShipment?.cargo?.dimensions?.width && selectedShipment?.cargo?.dimensions?.height;
+
   return (
     <div className="container py-6 md:py-10">
       <div className="flex justify-between items-center mb-8">
@@ -225,7 +227,7 @@ export default function CarrierDashboardPage() {
                               <div><span className="font-semibold">Departure: </span>{selectedShipment.departureDate ? format(selectedShipment.departureDate.toDate(), "PPP") : 'N/A'}</div>
                               <div><span className="font-semibold">Deadline: </span>{selectedShipment.deliveryDeadline ? format(selectedShipment.deliveryDeadline.toDate(), "PPP") : 'N/A'}</div>
                               <div className="md:col-span-2"><span className="font-semibold">Cargo: </span>{selectedShipment.cargo?.type || 'General'} - {selectedShipment.cargo?.weight}kg</div>
-                              {(selectedShipment.cargo?.dimensions?.length && selectedShipment.cargo?.dimensions?.width && selectedShipment.cargo?.dimensions?.height) && <div className="md:col-span-2"><span className="font-semibold">Dimensions (LxWxH): </span>{selectedShipment.cargo.dimensions.length} x {selectedShipment.cargo.dimensions.width} x {selectedShipment.cargo.dimensions.height}</div>}
+                              {hasDimensions && <div className="md:col-span-2"><span className="font-semibold">Dimensions (LxWxH): </span>{selectedShipment.cargo.dimensions.length} x {selectedShipment.cargo.dimensions.width} x {selectedShipment.cargo.dimensions.height} {selectedShipment.cargo.dimensions.unit || ''}</div>}
                               {selectedShipment.specialInstructions && <div className="md:col-span-2"><span className="font-semibold">Instructions: </span>{selectedShipment.specialInstructions}</div>}
                           </CardContent>
                       </Card>
@@ -281,3 +283,5 @@ export default function CarrierDashboardPage() {
     </div>
   );
 }
+
+    

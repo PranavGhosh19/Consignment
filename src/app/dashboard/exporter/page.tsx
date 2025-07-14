@@ -124,6 +124,18 @@ function ExporterDashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  
+  const showDimensions = useMemo(() => {
+    if (modeOfShipment === 'Air') {
+      const validCargoTypes = ['General Cargo', 'HAZMAT / Dangerous', 'Perishable Goods'];
+      return validCargoTypes.includes(cargoType);
+    }
+    if (modeOfShipment === 'Less than Container Load') {
+      const validCargoTypes = ['General Cargo', 'HAZMAT / Dangerous'];
+      return validCargoTypes.includes(cargoType);
+    }
+    return false;
+  }, [modeOfShipment, cargoType]);
 
   const cargoTypeOptions = useMemo(() => {
     if (modeOfShipment === 'Air') {
@@ -134,12 +146,6 @@ function ExporterDashboardPage() {
     }
     return otherCargoTypes;
   }, [modeOfShipment]);
-
-  const showDimensions = useMemo(() => {
-    if (modeOfShipment !== 'Air') return false;
-    const validCargoTypes = ['General Cargo', 'HAZMAT / Dangerous', 'Perishable Goods'];
-    return validCargoTypes.includes(cargoType);
-  }, [modeOfShipment, cargoType]);
 
   useEffect(() => {
     // Reset cargo type if it's not in the current options

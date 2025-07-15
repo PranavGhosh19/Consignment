@@ -672,7 +672,7 @@ function ExporterDashboardPage() {
                   <TableCell className="hidden lg:table-cell">{product.departureDate ? format(product.departureDate.toDate(), "PPP") : 'N/A'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{product.deliveryDeadline ? format(product.deliveryDeadline.toDate(), "PPP") : 'N/A'}</TableCell>
                   <TableCell className="text-center">
-                    {product.status === 'draft' ? (
+                    {product.status === 'draft' || product.status === 'scheduled' ? (
                        <Button 
                         variant="outline" 
                         size="sm" 
@@ -687,10 +687,7 @@ function ExporterDashboardPage() {
                       </Button>
                     ) : (
                       <Badge variant={getStatusVariant(product.status)} className={cn("capitalize", { "animate-blink bg-green-500/80": product.status === 'live' })}>
-                        {product.status === 'scheduled' && product.goLiveDate ? 
-                          `Scheduled: ${format(product.goLiveDate.toDate(), 'PPP p')}` :
-                          product.status
-                        }
+                        {product.status}
                       </Badge>
                     )}
                   </TableCell>

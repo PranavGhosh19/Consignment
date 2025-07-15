@@ -67,7 +67,7 @@ export default function ShipmentDetailPage() {
   }, [user, shipmentId, router, toast]);
 
   useEffect(() => {
-    if (!shipmentId || shipment?.status === 'draft') {
+    if (!shipmentId || shipment?.status === 'draft' || shipment?.status === 'scheduled') {
         setBids([]);
         return;
     };
@@ -215,7 +215,7 @@ export default function ShipmentDetailPage() {
                     </CardContent>
                 </Card>
 
-                 {shipment.status !== 'draft' && shipment.status !== 'scheduled' && (
+                 {(shipment.status !== 'draft' && shipment.status !== 'scheduled') && (
                     <Card className="bg-white dark:bg-card">
                         <CardHeader>
                             <CardTitle>Bids Received</CardTitle>
@@ -269,7 +269,7 @@ export default function ShipmentDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-2xl font-bold font-headline text-accent-foreground capitalize">{statusInfo.text}</p>
-                        {shipment.status === 'draft' && (
+                        {(shipment.status === 'draft' || shipment.status === 'scheduled') && (
                             <Button className="w-full mt-4" onClick={handleGoLive} disabled={isSubmitting}>
                                 <Rocket className="mr-2 h-4 w-4" />
                                 {isSubmitting ? 'Going Live...' : 'Go Live'}

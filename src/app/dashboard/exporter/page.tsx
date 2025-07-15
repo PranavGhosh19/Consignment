@@ -125,6 +125,16 @@ function ExporterDashboardPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   
+  const cargoTypeOptions = useMemo(() => {
+    if (modeOfShipment === 'Air') {
+        return airCargoTypes;
+    }
+    if (modeOfShipment === 'Less than Container Load') {
+        return lclCargoTypes;
+    }
+    return otherCargoTypes;
+  }, [modeOfShipment]);
+
   const showDimensions = useMemo(() => {
     if (modeOfShipment === 'Air') {
       const validCargoTypes = ['General Cargo', 'HAZMAT / Dangerous', 'Perishable Goods'];
@@ -136,16 +146,6 @@ function ExporterDashboardPage() {
     }
     return false;
   }, [modeOfShipment, cargoType]);
-
-  const cargoTypeOptions = useMemo(() => {
-    if (modeOfShipment === 'Air') {
-        return airCargoTypes;
-    }
-    if (modeOfShipment === 'Less than Container Load') {
-        return lclCargoTypes;
-    }
-    return otherCargoTypes;
-  }, [modeOfShipment]);
 
   useEffect(() => {
     // Reset cargo type if it's not in the current options
@@ -687,7 +687,10 @@ function ExporterDashboardPage() {
                       </Button>
                     ) : (
                       <Badge variant={getStatusVariant(product.status)} className={cn("capitalize", { "animate-blink bg-green-500/80": product.status === 'live' })}>
-                        {product.status}
+                        {product.status === 'scheduled' && product.goLiveDate ? 
+                          `Scheduled: ${format(product.goLiveDate.toDate(), 'P')}` :
+                          product.status
+                        }
                       </Badge>
                     )}
                   </TableCell>

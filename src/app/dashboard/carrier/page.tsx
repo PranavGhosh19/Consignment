@@ -121,9 +121,30 @@ export default function CarrierDashboardPage() {
       case 'awarded':
         return 'success';
       case 'draft':
+      case 'scheduled':
         return 'secondary';
       default:
         return 'outline';
+    }
+  };
+
+  const renderStatusMessage = () => {
+    if (!selectedShipment) return null;
+
+    switch (selectedShipment.status) {
+        case 'draft':
+            return 'This shipment is not yet accepting bids.';
+        case 'scheduled':
+            if (selectedShipment.goLiveAt) {
+                return `Bidding for this shipment is set for ${format(selectedShipment.goLiveAt.toDate(), "PPp")}`;
+            }
+            return 'This shipment is scheduled to go live soon.';
+        case 'awarded':
+            return selectedShipment.winningCarrierId === user?.uid
+                ? 'Congratulations! You won this bid.'
+                : 'This shipment has been awarded to another carrier.';
+        default:
+            return 'Bidding for this shipment is closed.';
     }
   };
 
@@ -194,7 +215,7 @@ export default function CarrierDashboardPage() {
           </Table>
         </div>
       ) : (
-        <div className="border rounded-lg p-12 text-center bg-white dark:bg-card">
+        <div className="border rounded-lg p-12 text-center bg-card dark:bg-card">
           <h2 className="text-xl font-semibold mb-2">No shipments available right now</h2>
           <p className="text-muted-foreground">Please check back later for new opportunities.</p>
         </div>
@@ -252,16 +273,8 @@ export default function CarrierDashboardPage() {
                         <Card className="bg-secondary border-dashed">
                           <CardContent className="p-6 flex items-center justify-center gap-4">
                               <Info className="text-muted-foreground h-5 w-5" />
-                              <p className="text-muted-foreground">
-                                {
-                                  selectedShipment.status === 'draft' ? 'This shipment is not yet accepting bids.' :
-                                  selectedShipment.status === 'awarded' ?
-                                      (selectedShipment.winningCarrierId === user?.uid ?
-                                          'Congratulations! You won this bid.' :
-                                          'This shipment has been awarded to another carrier.'
-                                      ) :
-                                  'Bidding for this shipment is closed.'
-                                }
+                              <p className="text-muted-foreground text-center">
+                                {renderStatusMessage()}
                               </p>
                           </CardContent>
                         </Card>

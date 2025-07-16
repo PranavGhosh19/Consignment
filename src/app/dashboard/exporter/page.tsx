@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Send, Pencil } from "lucide-react";
+import { PlusCircle, Send, Pencil, Clock } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -288,7 +288,7 @@ function ExporterDashboardPage() {
     }
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft') => {
     if (!productName || !portOfLoading || !originZip || !portOfDelivery || !destinationZip || !departureDate || !deliveryDeadline) {
       toast({ title: "Error", description: "Please fill out all required fields.", variant: "destructive" });
       return;
@@ -330,7 +330,7 @@ function ExporterDashboardPage() {
           zipCode: destinationZip,
       },
       specialInstructions,
-      status: 'draft',
+      status: status,
     };
     
     try {
@@ -349,7 +349,8 @@ function ExporterDashboardPage() {
           exporterName: exporterName,
           createdAt: Timestamp.now(),
         });
-        toast({ title: "Success", description: "Shipment request saved as draft." });
+        const successMessage = status === 'draft' ? "Shipment request saved as draft." : "Shipment has been scheduled.";
+        toast({ title: "Success", description: successMessage });
       }
       resetForm();
       setOpen(false);
@@ -572,9 +573,13 @@ function ExporterDashboardPage() {
               </Card>
             </div>
             <DialogFooter>
-              <Button type="submit" onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
+              <Button variant="outline" onClick={() => handleSubmit('scheduled')} disabled={isSubmitting} className="w-full sm:w-auto">
+                  <Clock className="mr-2 h-4 w-4" />
+                  {isSubmitting ? 'Scheduling...' : 'Schedule'}
+              </Button>
+              <Button type="submit" onClick={() => handleSubmit('draft')} disabled={isSubmitting} className="w-full sm:w-auto">
                 {editingShipmentId ? <Pencil className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
-                {isSubmitting ? 'Saving...' : (editingShipmentId ? 'Save Changes' : 'Submit Request')}
+                {isSubmitting ? 'Saving...' : (editingShipmentId ? 'Save Changes' : 'Submit as Draft')}
               </Button>
             </DialogFooter>
           </DialogContent>

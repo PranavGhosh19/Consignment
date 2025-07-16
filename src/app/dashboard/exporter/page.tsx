@@ -17,18 +17,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Calendar as CalendarIcon, Send, Pencil } from "lucide-react";
+import { PlusCircle, Send, Pencil } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 
 const PageSkeleton = () => (
     <div className="container py-6 md:py-10">
@@ -513,52 +512,22 @@ function ExporterDashboardPage() {
                   <CardHeader><CardTitle>Scheduling</CardTitle></CardHeader>
                   <CardContent className="grid md:grid-cols-2 gap-6">
                     <div className="grid gap-2">
-                        <Label htmlFor="departure-date">Preferred Departure Date</Label>
-                        <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                            variant={"outline"}
-                            className={cn("w-full justify-start text-left font-normal", !departureDate && "text-muted-foreground")}
+                        <Label>Preferred Departure Date</Label>
+                        <DateTimePicker 
+                            date={departureDate}
+                            setDate={setDepartureDate}
                             disabled={isSubmitting}
-                            >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {departureDate ? format(departureDate, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={departureDate}
-                                onSelect={setDepartureDate}
-                                disabled={{ before: new Date() }}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                        </Popover>
+                            disabledDates={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                        />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="delivery-deadline">Delivery Deadline</Label>
-                        <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                            variant={"outline"}
-                            className={cn("w-full justify-start text-left font-normal", !deliveryDeadline && "text-muted-foreground")}
+                        <Label>Delivery Deadline</Label>
+                        <DateTimePicker 
+                            date={deliveryDeadline}
+                            setDate={setDeliveryDeadline}
                             disabled={isSubmitting || !departureDate}
-                            >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {deliveryDeadline ? format(deliveryDeadline, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={deliveryDeadline}
-                                onSelect={setDeliveryDeadline}
-                                disabled={departureDate ? { before: departureDate } : { before: new Date() }}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                        </Popover>
+                            disabledDates={(date) => departureDate ? date < departureDate : date < new Date(new Date().setHours(0,0,0,0))}
+                        />
                     </div>
                   </CardContent>
               </Card>
@@ -629,8 +598,8 @@ function ExporterDashboardPage() {
                 <TableRow key={product.id} onClick={() => router.push(`/dashboard/shipment/${product.id}`)} className="cursor-pointer">
                   <TableCell className="font-medium">{product.productName || 'N/A'}</TableCell>
                   <TableCell className="hidden md:table-cell">{product.destination?.portOfDelivery || 'N/A'}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{product.departureDate ? format(product.departureDate.toDate(), "PPP") : 'N/A'}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{product.deliveryDeadline ? format(product.deliveryDeadline.toDate(), "PPP") : 'N/A'}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{product.departureDate ? format(product.departureDate.toDate(), "PPp") : 'N/A'}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{product.deliveryDeadline ? format(product.deliveryDeadline.toDate(), "PPp") : 'N/A'}</TableCell>
                   <TableCell className="text-center">
                     {product.status === 'draft' || product.status === 'scheduled' ? (
                        <Button 

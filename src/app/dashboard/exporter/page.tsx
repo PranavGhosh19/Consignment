@@ -15,6 +15,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Send, Pencil, Clock } from "lucide-react";
@@ -117,6 +127,9 @@ function ExporterDashboardPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingGoLive, setIsSubmittingGoLive] = useState<string | null>(null);
+  
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [goLiveDate, setGoLiveDate] = useState<Date | undefined>();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -288,19 +301,31 @@ function ExporterDashboardPage() {
     }
   }
 
-  const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft') => {
+  const handleValidation = () => {
     if (!productName || !portOfLoading || !originZip || !portOfDelivery || !destinationZip || !departureDate || !deliveryDeadline) {
       toast({ title: "Error", description: "Please fill out all required fields.", variant: "destructive" });
-      return;
+      return false;
     }
     if (hsnCode && hsnCode.length < 4) {
       toast({ title: "Invalid HSN Code", description: "HSN Code must be at least 4 digits.", variant: "destructive" });
-      return;
+      return false;
     }
     if (!user) {
       toast({ title: "Error", description: "You must be logged in to create a shipment.", variant: "destructive" });
-      return;
+      return false;
     }
+    return true;
+  }
+  
+  const handleOpenScheduleDialog = () => {
+    if (handleValidation()) {
+        setIsScheduleDialogOpen(true);
+    }
+  }
+
+  const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft', goLiveTimestamp?: Timestamp | null) => {
+    if (!handleValidation()) return;
+
     setIsSubmitting(true);
     
     const shipmentPayload: any = {
@@ -331,6 +356,7 @@ function ExporterDashboardPage() {
       },
       specialInstructions,
       status: status,
+      ...(goLiveTimestamp && { goLiveAt: goLiveTimestamp })
     };
     
     try {
@@ -339,13 +365,13 @@ function ExporterDashboardPage() {
         await updateDoc(shipmentDocRef, shipmentPayload);
         toast({ title: "Success", description: "Shipment updated." });
       } else {
-        const userDocRef = doc(db, 'users', user.uid);
+        const userDocRef = doc(db, 'users', user!.uid);
         const userDoc = await getDoc(userDocRef);
         const exporterName = userDoc.exists() ? userDoc.data().name : 'Unknown Exporter';
         
         await addDoc(collection(db, 'shipments'), {
           ...shipmentPayload,
-          exporterId: user.uid,
+          exporterId: user!.uid,
           exporterName: exporterName,
           createdAt: Timestamp.now(),
         });
@@ -354,8 +380,10 @@ function ExporterDashboardPage() {
       }
       resetForm();
       setOpen(false);
+      setIsScheduleDialogOpen(false);
+      setGoLiveDate(undefined);
       router.push('/dashboard/exporter', { scroll: false });
-      await fetchProducts(user.uid);
+      await fetchProducts(user!.uid);
     } catch (error) {
       console.error("Error submitting document: ", error);
       toast({ title: "Error", description: "Failed to save shipment.", variant: "destructive" });
@@ -363,6 +391,16 @@ function ExporterDashboardPage() {
       setIsSubmitting(false);
     }
   };
+
+  const handleConfirmSchedule = () => {
+    if (goLiveDate) {
+        const goLiveTimestamp = Timestamp.fromDate(goLiveDate);
+        handleSubmit('scheduled', goLiveTimestamp);
+    } else {
+        toast({title: "Error", description: "Please select a date and time to go live.", variant: "destructive"})
+    }
+  }
+
 
   const handleGoLive = async (shipmentId: string) => {
     if (!user) return;
@@ -573,9 +611,9 @@ function ExporterDashboardPage() {
               </Card>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => handleSubmit('scheduled')} disabled={isSubmitting} className="w-full sm:w-auto">
+              <Button variant="outline" onClick={handleOpenScheduleDialog} disabled={isSubmitting} className="w-full sm:w-auto">
                   <Clock className="mr-2 h-4 w-4" />
-                  {isSubmitting ? 'Scheduling...' : 'Schedule'}
+                  Schedule
               </Button>
               <Button type="submit" onClick={() => handleSubmit('draft')} disabled={isSubmitting} className="w-full sm:w-auto">
                 {editingShipmentId ? <Pencil className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
@@ -585,6 +623,32 @@ function ExporterDashboardPage() {
           </DialogContent>
         </Dialog>
       </div>
+      
+      <AlertDialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Schedule Go-Live Time</AlertDialogTitle>
+            <AlertDialogDescription>
+                Select the exact date and time you want this shipment to go live for bidding.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+                <DateTimePicker
+                    date={goLiveDate}
+                    setDate={setGoLiveDate}
+                    disabledDates={(date) =>
+                        date < new Date(new Date().setHours(0, 0, 0, 0))
+                    }
+                />
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setGoLiveDate(undefined)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmSchedule} disabled={!goLiveDate || isSubmitting}>
+                    {isSubmitting ? 'Scheduling...' : 'Confirm Schedule'}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {products.length > 0 ? (
         <div className="border rounded-lg overflow-x-auto">
@@ -639,3 +703,5 @@ function ExporterDashboardPage() {
     </div>
   );
 }
+
+    

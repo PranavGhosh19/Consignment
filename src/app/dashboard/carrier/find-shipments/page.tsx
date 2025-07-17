@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, addDoc, Timestamp, setDoc, where, collectionGroup } from 'firebase/firestore';
+import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, addDoc, Timestamp, where, collectionGroup } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,12 +18,12 @@ import { Send, Info, Check } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { RegisterButton } from "@/components/RegisterButton";
 
 export default function FindShipmentsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [carrierName, setCarrierName] = useState<string>("");
   const [shipments, setShipments] = useState<DocumentData[]>([]);
-  const [registeredShipmentIds, setRegisteredShipmentIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState<DocumentData | null>(null);
@@ -51,21 +51,13 @@ export default function FindShipmentsPage() {
     return () => unsubscribe();
   }, [router]);
   
-  const loadInitialData = useCallback(async (uid: string) => {
+  const loadInitialData = useCallback(async () => {
     setLoading(true);
     try {
-        // Step 1: Fetch all shipments
         const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
         const shipmentsSnapshot = await getDocs(shipmentsQuery);
         const shipmentsList = shipmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setShipments(shipmentsList);
-        
-        // Step 2: Fetch carrier's registrations
-        const registrationsQuery = query(collectionGroup(db, 'register'), where('carrierId', '==', uid));
-        const registrationsSnapshot = await getDocs(registrationsQuery);
-        const registrationIds = new Set(registrationsSnapshot.docs.map(doc => doc.ref.parent.parent!.id));
-        setRegisteredShipmentIds(registrationIds);
-        
     } catch (error) {
         console.error("Error fetching initial data: ", error);
         toast({ title: "Error", description: "Could not fetch necessary data.", variant: "destructive" });
@@ -76,7 +68,7 @@ export default function FindShipmentsPage() {
 
   useEffect(() => {
     if (user) {
-        loadInitialData(user.uid);
+        loadInitialData();
     }
   }, [user, loadInitialData]);
 
@@ -120,29 +112,6 @@ export default function FindShipmentsPage() {
       toast({ title: "Error", description: "Failed to place your bid.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleRegisterInterest = async () => {
-    if (!user || !selectedShipment) {
-        toast({ title: "Error", description: "User or shipment not found.", variant: "destructive" });
-        return;
-    }
-    setIsSubmitting(true);
-    try {
-        const registrationRef = doc(db, "shipments", selectedShipment.id, "register", user.uid);
-        await setDoc(registrationRef, {
-            carrierId: user.uid,
-            registeredAt: Timestamp.now(),
-        });
-        toast({ title: "Success", description: "You have registered your interest for this shipment." });
-        setRegisteredShipmentIds(prev => new Set(prev).add(selectedShipment.id));
-        setIsBidDialogOpen(false);
-    } catch (error) {
-        console.error("Error registering interest: ", error);
-        toast({ title: "Error", description: "Failed to register your interest.", variant: "destructive" });
-    } finally {
-        setIsSubmitting(false);
     }
   };
 
@@ -193,7 +162,6 @@ export default function FindShipmentsPage() {
   }
 
   const hasDimensions = selectedShipment?.cargo?.dimensions?.length && selectedShipment?.cargo?.dimensions?.width && selectedShipment?.cargo?.dimensions?.height;
-  const isAlreadyRegistered = selectedShipment && registeredShipmentIds.has(selectedShipment.id);
 
   return (
     <div className="container py-6 md:py-10">
@@ -319,16 +287,7 @@ export default function FindShipmentsPage() {
               <DialogFooter>
                   <Button variant="outline" onClick={() => setIsBidDialogOpen(false)}>Cancel</Button>
                   {selectedShipment?.status === 'scheduled' && (
-                    isAlreadyRegistered ? (
-                        <Button variant="outline" disabled>
-                            <Check className="mr-2 h-4 w-4" />
-                            Registered
-                        </Button>
-                    ) : (
-                        <Button onClick={handleRegisterInterest} disabled={isSubmitting}>
-                            {isSubmitting ? 'Registering...' : 'I want to Bid'}
-                        </Button>
-                    )
+                    <RegisterButton shipmentId={selectedShipment.id} user={user} />
                   )}
                   {selectedShipment?.status === 'live' && (
                     <Button onClick={handlePlaceBid} disabled={isSubmitting}>

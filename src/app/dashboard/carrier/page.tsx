@@ -283,6 +283,9 @@ export default function CarrierDashboardPage() {
               )}
               <DialogFooter>
                   <Button variant="outline" onClick={() => setIsBidDialogOpen(false)}>Cancel</Button>
+                   {(selectedShipment?.status === 'draft' || selectedShipment?.status === 'scheduled') && (
+                      <Button>I want to Bid</Button>
+                  )}
                   {selectedShipment?.status === 'live' && (
                     <Button onClick={handlePlaceBid} disabled={isSubmitting}>
                         <Send className="mr-2 h-4 w-4" />

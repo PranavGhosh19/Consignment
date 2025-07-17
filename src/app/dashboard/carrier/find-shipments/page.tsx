@@ -178,7 +178,7 @@ export default function FindShipmentsPage() {
                 <TableHead className="hidden md:table-cell">Origin</TableHead>
                 <TableHead className="hidden md:table-cell">Destination</TableHead>
                 <TableHead className="hidden lg:table-cell text-right">Delivery Deadline</TableHead>
-                <TableHead className="hidden lg:table-cell text-right">Go Live At</TableHead>
+                <TableHead className="hidden lg:table-cell text-right">Bid On</TableHead>
                 <TableHead className="text-center">Status</TableHead>
               </TableRow>
             </TableHeader>

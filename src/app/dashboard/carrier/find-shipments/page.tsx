@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, addDoc, Timestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -111,6 +111,28 @@ export default function FindShipmentsPage() {
       toast({ title: "Error", description: "Failed to place your bid.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRegisterInterest = async () => {
+    if (!user || !selectedShipment) {
+        toast({ title: "Error", description: "User or shipment not found.", variant: "destructive" });
+        return;
+    }
+    setIsSubmitting(true);
+    try {
+        const registrationRef = doc(db, "shipments", selectedShipment.id, "register", user.uid);
+        await setDoc(registrationRef, {
+            carrierId: user.uid,
+            registeredAt: Timestamp.now(),
+        });
+        toast({ title: "Success", description: "You have registered your interest for this shipment." });
+        setIsBidDialogOpen(false);
+    } catch (error) {
+        console.error("Error registering interest: ", error);
+        toast({ title: "Error", description: "Failed to register your interest.", variant: "destructive" });
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
@@ -286,7 +308,9 @@ export default function FindShipmentsPage() {
               <DialogFooter>
                   <Button variant="outline" onClick={() => setIsBidDialogOpen(false)}>Cancel</Button>
                   {selectedShipment?.status === 'scheduled' && (
-                      <Button>I want to Bid</Button>
+                      <Button onClick={handleRegisterInterest} disabled={isSubmitting}>
+                        {isSubmitting ? 'Registering...' : 'I want to Bid'}
+                      </Button>
                   )}
                   {selectedShipment?.status === 'live' && (
                     <Button onClick={handlePlaceBid} disabled={isSubmitting}>
@@ -300,5 +324,3 @@ export default function FindShipmentsPage() {
     </div>
   );
 }
-
-    

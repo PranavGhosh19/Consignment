@@ -54,18 +54,16 @@ export default function FindShipmentsPage() {
   const loadInitialData = useCallback(async (uid: string) => {
     setLoading(true);
     try {
+        // Step 1: Fetch all shipments
         const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
-        const registrationsQuery = query(collectionGroup(db, 'register'), where('carrierId', '==', uid));
-
-        const [shipmentsSnapshot, registrationsSnapshot] = await Promise.all([
-            getDocs(shipmentsQuery),
-            getDocs(registrationsQuery)
-        ]);
-        
+        const shipmentsSnapshot = await getDocs(shipmentsQuery);
         const shipmentsList = shipmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const registrationIds = new Set(registrationsSnapshot.docs.map(doc => doc.ref.parent.parent!.id));
-
         setShipments(shipmentsList);
+        
+        // Step 2: Fetch carrier's registrations
+        const registrationsQuery = query(collectionGroup(db, 'register'), where('carrierId', '==', uid));
+        const registrationsSnapshot = await getDocs(registrationsQuery);
+        const registrationIds = new Set(registrationsSnapshot.docs.map(doc => doc.ref.parent.parent!.id));
         setRegisteredShipmentIds(registrationIds);
         
     } catch (error) {
@@ -79,8 +77,6 @@ export default function FindShipmentsPage() {
   useEffect(() => {
     if (user) {
         loadInitialData(user.uid);
-    } else {
-        setLoading(false);
     }
   }, [user, loadInitialData]);
 
@@ -346,5 +342,3 @@ export default function FindShipmentsPage() {
     </div>
   );
 }
-
-    

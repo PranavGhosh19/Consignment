@@ -30,10 +30,10 @@ export function BottomBar() {
   return (
     <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-20 bg-background border-t shadow-[0_-2px_4px_0_rgba(0,0,0,0.05)] p-2">
       <div className="flex h-full items-center justify-evenly gap-2">
-        <Button variant="ghost" asChild className="h-12 w-full rounded-full text-base">
+        <Button variant="ghost" asChild className="h-12 w-full rounded-full text-base transition-transform hover:scale-105">
           <Link href="/login">Log In</Link>
         </Button>
-        <Button asChild className="h-12 w-full rounded-full text-base">
+        <Button asChild className="h-12 w-full rounded-full text-base shadow-lg transition-transform hover:scale-105">
           <Link href="/signup">Sign Up</Link>
         </Button>
       </div>

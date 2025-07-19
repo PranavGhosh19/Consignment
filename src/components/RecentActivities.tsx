@@ -49,8 +49,6 @@ export function RecentActivities() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -118,48 +116,8 @@ export function RecentActivities() {
   }, [user]);
 
   const handleRowClick = (shipment: Shipment) => {
-    if (shipment.status === 'live') {
-      router.push(`/dashboard/carrier/shipment/${shipment.id}`);
-    } else {
-      setSelectedShipment(shipment);
-      setIsDialogOpen(true);
-    }
+    router.push(`/dashboard/carrier/shipment/${shipment.id}`);
   };
-  
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'live':
-      case 'awarded':
-        return 'success';
-      case 'draft':
-      case 'scheduled':
-        return 'secondary';
-      default:
-        return 'outline';
-    }
-  };
-
-  const renderStatusMessage = () => {
-    if (!selectedShipment) return null;
-
-    switch (selectedShipment.status) {
-        case 'draft':
-            return 'This shipment is not yet scheduled.';
-        case 'scheduled':
-            if (selectedShipment.goLiveAt) {
-                return `Bidding for this shipment is set for ${format(selectedShipment.goLiveAt.toDate(), "PPp")}`;
-            }
-            return 'This shipment is scheduled to go live soon.';
-        case 'awarded':
-            return selectedShipment.winningCarrierId === user?.uid
-                ? 'Congratulations! You won this bid.'
-                : 'This shipment has been awarded to another carrier.';
-        default:
-            return 'Bidding for this shipment is closed.';
-    }
-  };
-
-  const hasDimensions = selectedShipment?.cargo?.dimensions?.length && selectedShipment?.cargo?.dimensions?.width && selectedShipment?.cargo?.dimensions?.height;
 
   if (loading) {
     return (
@@ -198,7 +156,7 @@ export function RecentActivities() {
                             <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDelivery || 'N/A'}</TableCell>
                             <TableCell className="hidden lg:table-cell">{shipment.deliveryDeadline ? format(shipment.deliveryDeadline.toDate(), "PP") : 'N/A'}</TableCell>
                              <TableCell className="text-center">
-                                <Badge variant={getStatusVariant(shipment.status)}>{shipment.status}</Badge>
+                                <Badge variant="outline">Registered</Badge>
                             </TableCell>
                             <TableCell className="text-right">
                                 {shipment.goLiveAt ? (
@@ -212,52 +170,6 @@ export function RecentActivities() {
                 </TableBody>
             </Table>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-headline">Shipment Details</DialogTitle>
-                    <p className="text-muted-foreground">Review the shipment details.</p>
-                </DialogHeader>
-                {selectedShipment && (
-                    <div className="grid gap-6 py-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{selectedShipment.productName}</CardTitle>
-                                <CardDescription>From: {selectedShipment.exporterName}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-                                {selectedShipment.shipmentType && <div className="md:col-span-2"><span className="font-semibold">Shipment Type: </span>{selectedShipment.shipmentType}</div>}
-                                {selectedShipment.hsnCode && <div><span className="font-semibold">HSN Code: </span>{selectedShipment.hsnCode}</div>}
-                                {selectedShipment.modeOfShipment && <div><span className="font-semibold">Mode: </span>{selectedShipment.modeOfShipment}</div>}
-
-                                <div><span className="font-semibold">Origin Port: </span>{selectedShipment.origin?.portOfLoading}</div>
-                                <div><span className="font-semibold">Destination Port: </span>{selectedShipment.destination?.portOfDelivery}</div>
-                                {selectedShipment.origin?.zipCode && <div><span className="font-semibold">Origin Zip: </span>{selectedShipment.origin?.zipCode}</div>}
-                                {selectedShipment.destination?.zipCode && <div><span className="font-semibold">Destination Zip: </span>{selectedShipment.destination?.zipCode}</div>}
-
-                                <div><span className="font-semibold">Departure: </span>{selectedShipment.departureDate ? format(selectedShipment.departureDate.toDate(), "dd/MM/yyyy") : 'N/A'}</div>
-                                <div><span className="font-semibold">Deadline: </span>{selectedShipment.deliveryDeadline ? format(selectedShipment.deliveryDeadline.toDate(), "dd/MM/yyyy") : 'N/A'}</div>
-                                <div className="md:col-span-2"><span className="font-semibold">Cargo: </span>{selectedShipment.cargo?.type || 'General'} - {selectedShipment.cargo?.weight}kg</div>
-                                {selectedShipment.cargo?.packageType && <div className="md:col-span-2"><span className="font-semibold">Package: </span>{selectedShipment.cargo.packageType}</div>}
-                                {hasDimensions && <div className="md:col-span-2"><span className="font-semibold">Dimensions (LxWxH): </span>{selectedShipment.cargo.dimensions.length} x {selectedShipment.cargo.dimensions.width} x {selectedShipment.cargo.dimensions.height} {selectedShipment.cargo.dimensions.unit || ''}</div>}
-                                {selectedShipment.specialInstructions && <div className="md:col-span-2"><span className="font-semibold">Instructions: </span>{selectedShipment.specialInstructions}</div>}
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-secondary border-dashed">
-                            <CardContent className="p-6 flex items-center justify-center gap-4">
-                                <Info className="text-muted-foreground h-5 w-5" />
-                                <p className="text-muted-foreground text-center">
-                                    {renderStatusMessage()}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Close</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
     </>
   );
 }

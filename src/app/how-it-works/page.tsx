@@ -57,18 +57,18 @@ const clientSteps = [
     },
     {
         number: 2,
-        title: "Receive Exporter Offers",
-        description: "Our network of verified exporters will review your request and send you competitive offers for sourcing and supplying your goods."
+        title: "Request & Test Samples",
+        description: "Ensure quality by requesting samples from relevant exporters. Test the products to make sure they meet your standards before committing to a full order."
     },
     {
         number: 3,
-        title: "Request & Test Samples",
-        description: "Ensure quality by requesting samples from your chosen exporters. Test the products to make sure they meet your standards before committing to a full order."
+        title: "Receive Exporter Offers",
+        description: "Once you're satisfied with the samples, receive competitive offers from our network of verified exporters for sourcing and supplying your goods."
     },
     {
         number: 4,
         title: "Place Your Order",
-        description: "Once you're satisfied with the samples, place your full order. The exporter then handles the logistics through our platform, and you can track your shipment every step of the way."
+        description: "Place your full order with your chosen exporter. They then handle the logistics through our platform, and you can track your shipment every step of the way."
     }
 ];
 

@@ -285,8 +285,11 @@ export default function FindShipmentsPage() {
               )}
               <DialogFooter>
                   <Button variant="outline" onClick={() => setIsBidDialogOpen(false)}>Cancel</Button>
-                  {selectedShipment?.status === 'scheduled' && (
-                    <RegisterButton shipmentId={selectedShipment.id} user={user} />
+                  {selectedShipment?.status === 'scheduled' && user && (
+                    <RegisterButton shipmentId={selectedShipment.id} user={user} onRegisterSuccess={() => {
+                        // Optional: can add logic here to give user feedback
+                        // The button will automatically update its own state
+                    }} />
                   )}
                   {selectedShipment?.status === 'live' && (
                     <Button onClick={handlePlaceBid} disabled={isSubmittingBid}>

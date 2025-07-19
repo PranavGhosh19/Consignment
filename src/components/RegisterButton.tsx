@@ -13,9 +13,10 @@ import { Skeleton } from './ui/skeleton';
 interface RegisterButtonProps {
   shipmentId: string;
   user: User | null;
+  onRegisterSuccess: () => void;
 }
 
-export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user }) => {
+export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user, onRegisterSuccess }) => {
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +60,7 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
       });
       setIsRegistered(true);
       toast({ title: "Success", description: "You have registered your interest for this shipment." });
+      onRegisterSuccess();
     } catch (error) {
       console.error('Error registering:', error);
       toast({ title: "Error", description: "Failed to register your interest.", variant: "destructive" });

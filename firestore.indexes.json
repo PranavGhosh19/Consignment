@@ -1,3 +1,4 @@
+
 {
   "indexes": [
     {
@@ -15,7 +16,7 @@
       ]
     },
     {
-      "collectionGroup": "registrations",
+      "collectionGroup": "register",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         {

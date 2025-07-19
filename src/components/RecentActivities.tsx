@@ -9,10 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from './ui/badge';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { RegisterButton } from './RegisterButton';
 import type { User } from 'firebase/auth';
 
 const db = getFirestore(app);

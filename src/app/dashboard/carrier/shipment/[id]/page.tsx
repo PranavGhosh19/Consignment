@@ -248,7 +248,3 @@ export default function CarrierShipmentDetailPage() {
     </div>
   );
 }
-
-    
-
-    

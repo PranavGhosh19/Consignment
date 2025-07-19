@@ -31,8 +31,6 @@ const exporterNavLinks = [
 const carrierNavLinks = [
     { href: "/dashboard/carrier", label: "Dashboard" },
     { href: "/dashboard/carrier/find-shipments", label: "Find Shipments" },
-    { href: "/dashboard/carrier/bids", label: "My Bids" },
-    { href: "/dashboard/carrier/earnings", label: "Earnings" },
   ];
 
 export function NavLinks() {

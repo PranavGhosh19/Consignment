@@ -62,8 +62,13 @@ const clientSteps = [
     },
     {
         number: 3,
-        title: "Accept & We Handle The Rest",
-        description: "Compare offers and choose the exporter that best meets your needs. Once you accept, the exporter manages the logistics, and you can track the resulting shipment right here."
+        title: "Request & Test Samples",
+        description: "Ensure quality by requesting samples from your chosen exporters. Test the products to make sure they meet your standards before committing to a full order."
+    },
+    {
+        number: 4,
+        title: "Place Your Order",
+        description: "Once you're satisfied with the samples, place your full order. The exporter then handles the logistics through our platform, and you can track your shipment every step of the way."
     }
 ];
 
@@ -84,7 +89,7 @@ const Step = ({ number, title, description }: { number: number; title: string; d
 
 
 export default function HowItWorksPage() {
-    const [activeTab, setActiveTab] = useState("exporters");
+    const [activeTab, setActiveTab] = useState("clients");
 
     return (
         <main className="flex-1">

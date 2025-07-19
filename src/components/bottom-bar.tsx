@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 export function BottomBar() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -19,7 +21,9 @@ export function BottomBar() {
     return () => unsubscribe();
   }, []);
 
-  if (loading || user) {
+  const hideOnPaths = ["/login", "/signup"];
+
+  if (loading || user || hideOnPaths.includes(pathname)) {
     return null;
   }
 

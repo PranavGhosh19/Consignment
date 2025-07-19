@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, ArrowRight, Truck } from "lucide-react";
+import { User, ArrowRight, Truck, ShoppingCart } from "lucide-react";
 
 const exporterSteps = [
     {
@@ -49,6 +49,24 @@ const carrierSteps = [
     }
 ];
 
+const clientSteps = [
+    {
+        number: 1,
+        title: "Post Your Product Request",
+        description: "Detail the exact products you need, specifying quantity, quality, and origin. Our platform makes it easy to create a clear request for what you want to source."
+    },
+    {
+        number: 2,
+        title: "Receive Exporter Offers",
+        description: "Our network of verified exporters will review your request and send you competitive offers for sourcing and supplying your goods."
+    },
+    {
+        number: 3,
+        title: "Accept & We Handle The Rest",
+        description: "Compare offers and choose the exporter that best meets your needs. Once you accept, the exporter manages the logistics, and you can track the resulting shipment right here."
+    }
+];
+
 
 const Step = ({ number, title, description }: { number: number; title: string; description: string }) => (
     <Card className="p-6 bg-[#F1F5F9] dark:bg-secondary">
@@ -77,13 +95,19 @@ export default function HowItWorksPage() {
                             How It Works
                         </h1>
                         <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                            A streamlined process for both sides of the shipping equation.
+                            A streamlined process for every part of the supply chain.
                         </p>
                     </div>
 
                     <div className="mx-auto max-w-3xl pt-12">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 h-auto">
+                            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
+                                <TabsTrigger
+                                    value="clients"
+                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-base font-semibold transition-colors h-12 px-4 sm:px-6 bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-primary/90"
+                                >
+                                    <ShoppingCart className="mr-2 h-5 w-5" /> For Clients
+                                </TabsTrigger>
                                 <TabsTrigger 
                                     value="exporters" 
                                     className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-base font-semibold transition-colors h-12 px-4 sm:px-6 bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-primary/90"
@@ -97,6 +121,13 @@ export default function HowItWorksPage() {
                                     <Truck className="mr-2 h-5 w-5" /> For Carriers
                                 </TabsTrigger>
                             </TabsList>
+                             <TabsContent value="clients">
+                                <div className="space-y-6 pt-8">
+                                    {clientSteps.map(step => (
+                                        <Step key={step.number} {...step} />
+                                    ))}
+                                </div>
+                            </TabsContent>
                             <TabsContent value="exporters">
                                 <div className="space-y-6 pt-8">
                                     {exporterSteps.map(step => (

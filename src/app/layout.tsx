@@ -11,6 +11,7 @@ import { Menu } from "lucide-react";
 import { BottomBar } from "@/components/bottom-bar";
 import { Clock } from "@/components/clock";
 import { ThemeProvider } from "@/components/theme-provider";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "Shipping Battlefield",
@@ -111,6 +112,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen bg-background font-body antialiased">
+        <Script
+            id="razorpay-checkout-js"
+            src="https://checkout.razorpay.com/v1/checkout.js"
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

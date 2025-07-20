@@ -10,6 +10,12 @@ import type { User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 
+declare global {
+    interface Window {
+      Razorpay: any;
+    }
+}
+
 interface RegisterButtonProps {
   shipmentId: string;
   user: User | null;
@@ -50,20 +56,81 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
         toast({ title: "Error", description: "You must be logged in to register.", variant: "destructive" });
         return;
     };
-
     setIsSubmitting(true);
+    
+    // Step 1: Create Razorpay Order
     try {
-      const registerDocRef = doc(db, 'shipments', shipmentId, 'register', user.uid);
-      await setDoc(registerDocRef, {
-        carrierId: user.uid,
-        registeredAt: Timestamp.now(),
-      });
-      setIsRegistered(true);
-      toast({ title: "Success", description: "You have registered your interest for this shipment." });
-      onRegisterSuccess();
-    } catch (error) {
-      console.error('Error registering:', error);
-      toast({ title: "Error", description: "Failed to register your interest.", variant: "destructive" });
+        const response = await fetch('/api/razorpay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                amount: 550 * 100, // 550 INR in paise
+                currency: 'INR',
+                notes: {
+                    shipmentId: shipmentId,
+                    userId: user.uid,
+                    type: 'carrier_registration_fee'
+                }
+            }),
+        });
+        
+        const order = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(order.error || 'Failed to create payment order.');
+        }
+
+        // Step 2: Open Razorpay Checkout
+        const options = {
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+            amount: order.amount,
+            currency: order.currency,
+            name: "Shipment Battlefield",
+            description: "Shipment Bid Registration Fee",
+            order_id: order.id,
+            handler: async function (response: any) {
+                // Step 3: On successful payment, register the user
+                try {
+                    const registerDocRef = doc(db, 'shipments', shipmentId, 'register', user.uid);
+                    await setDoc(registerDocRef, {
+                        carrierId: user.uid,
+                        registeredAt: Timestamp.now(),
+                        paymentId: response.razorpay_payment_id,
+                        orderId: response.razorpay_order_id,
+                    });
+                    setIsRegistered(true);
+                    toast({ title: "Success", description: "You have registered your interest for this shipment." });
+                    onRegisterSuccess();
+                } catch (error) {
+                     console.error('Error saving registration:', error);
+                     toast({ title: "Registration Error", description: "Payment was successful, but failed to save your registration. Please contact support.", variant: "destructive" });
+                }
+            },
+            prefill: {
+                name: user.displayName || "Carrier User",
+                email: user.email || "",
+            },
+            notes: {
+                address: "Shipment Battlefield Corporate Office"
+            },
+            theme: {
+                "color": "#3399cc"
+            }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response: any){
+            toast({
+                title: "Payment Failed",
+                description: response.error.description || "Something went wrong.",
+                variant: "destructive"
+            });
+        });
+        rzp.open();
+
+    } catch (error: any) {
+        console.error('Error during payment process:', error);
+        toast({ title: "Error", description: error.message || "Failed to initiate payment.", variant: "destructive" });
     } finally {
         setIsSubmitting(false);
     }
@@ -82,7 +149,7 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
 
   return (
     <Button onClick={handleRegister} disabled={isSubmitting}>
-        {isSubmitting ? 'Registering...' : 'I want to Bid'}
+        {isSubmitting ? 'Processing...' : 'I want to Bid (₹550)'}
     </Button>
   );
 };

@@ -65,10 +65,10 @@ const exporterTerms = {
                 </li>
                  <li>
                     <span className="font-bold text-foreground">Payment Terms</span>
-                    <p>If using in-platform payments or escrow: Funds must be released in accordance with agreed delivery milestones; Exporters must not delay payments without valid reason.</p>
+                    <p>All payments for shipments must be made exclusively through the platform's integrated payment system. Any off-platform payments (e.g., cash, bank transfers) are a violation of these terms. Shipment Battlefield will not be responsible for any issues, disputes, or losses arising from such transactions.</p>
                 </li>
             </ol>
-            <p className="font-semibold text-foreground pt-2">By clicking "Accept Bid", you confirm that you understand and agree to these Terms of Bidding and will conduct business fairly on the ShipShape platform.</p>
+            <p className="font-semibold text-foreground pt-2">By clicking "Agree & Continue", you confirm that you understand and agree to these Terms of Bidding and will conduct business fairly on the ShipShape platform.</p>
         </div>
     )
 };
@@ -108,7 +108,7 @@ const carrierTerms = {
                     <p>You agree to maintain professionalism and trust within the community. Abusive behavior, fraud, or manipulation of the bidding process will lead to immediate expulsion from the platform.</p>
                 </li>
             </ol>
-            <p className="font-semibold text-foreground pt-2">By clicking "Place Bid", you acknowledge that you have read, understood, and agreed to these Terms of Bidding.</p>
+            <p className="font-semibold text-foreground pt-2">By clicking "Agree & Continue", you acknowledge that you have read, understood, and agreed to these Terms of Bidding.</p>
         </div>
     )
 };
@@ -272,5 +272,3 @@ export default function SelectTypePage() {
     </>
   );
 }
-
-    

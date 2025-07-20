@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, addDoc } from 'firebase/firestore';
+import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, addDoc, where, collectionGroup } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -51,12 +51,25 @@ export default function FindShipmentsPage() {
     return () => unsubscribe();
   }, [router]);
   
-  const loadInitialData = useCallback(async () => {
+  const loadInitialData = useCallback(async (currentUser: User) => {
     setLoading(true);
     try {
+        // Get IDs of shipments the carrier has already registered for
+        const registerQuery = query(collectionGroup(db, 'register'), where('carrierId', '==', currentUser.uid));
+        const registerSnap = await getDocs(registerQuery);
+        const registeredShipmentIds = new Set<string>();
+        registerSnap.forEach(doc => {
+            const parentPath = doc.ref.parent.parent?.id;
+            if (parentPath) registeredShipmentIds.add(parentPath);
+        });
+
         const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
         const shipmentsSnapshot = await getDocs(shipmentsQuery);
-        const shipmentsList = shipmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const shipmentsList = shipmentsSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(shipment => !registeredShipmentIds.has(shipment.id)); // Filter out registered shipments
+
         setShipments(shipmentsList);
     } catch (error) {
         console.error("Error fetching initial data: ", error);
@@ -68,7 +81,7 @@ export default function FindShipmentsPage() {
 
   useEffect(() => {
     if (user) {
-        loadInitialData();
+        loadInitialData(user);
     }
   }, [user, loadInitialData]);
 
@@ -289,9 +302,11 @@ export default function FindShipmentsPage() {
                     <RegisterButton 
                         shipmentId={selectedShipment.id} 
                         user={user} 
-                        onRegisterSuccess={(id) => {
-                            setShipments(prev => prev.filter(s => s.id !== id));
+                        onRegisterSuccess={(_id) => {
                             setIsBidDialogOpen(false);
+                            if (user) {
+                                loadInitialData(user);
+                            }
                         }} 
                     />
                   )}

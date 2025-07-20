@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User as UserIcon, LogOut, Settings, LifeBuoy, Menu } from "lucide-react";
+import { User as UserIcon, LogOut, Settings, LifeBuoy, Menu, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "./ui/skeleton";
@@ -31,7 +31,12 @@ const exporterNavLinks = [
 const carrierNavLinks = [
     { href: "/dashboard/carrier", label: "Dashboard" },
     { href: "/dashboard/carrier/find-shipments", label: "Find Shipments" },
-  ];
+];
+
+const employeeNavLinks = [
+    { href: "/dashboard/employee", label: "Employee Dashboard" },
+    { href: "/dashboard/manage-shipments", label: "Manage Shipments" },
+];
 
 export function NavLinks() {
   const [user, setUser] = useState<User | null>(null);
@@ -61,13 +66,22 @@ export function NavLinks() {
     return null;
   }
 
-  const links = userType === 'carrier' ? carrierNavLinks : exporterNavLinks;
+  const getLinks = () => {
+    switch (userType) {
+        case 'carrier': return carrierNavLinks;
+        case 'employee': return employeeNavLinks;
+        case 'exporter':
+        default: return exporterNavLinks;
+    }
+  }
+
+  const links = getLinks();
 
   return (
     <nav className="hidden sm:flex items-center gap-4 text-sm font-medium">
       {links.map((link) => {
         let isActive = false;
-        if (link.href === "/dashboard/exporter" || link.href === "/dashboard/carrier") {
+        if (link.href === "/dashboard/exporter" || link.href === "/dashboard/carrier" || link.href === "/dashboard/employee") {
           isActive = pathname === link.href;
         } else {
           isActive = pathname.startsWith(link.href);
@@ -154,8 +168,16 @@ export function MobileNavLinks() {
         </div>
       );
     }
-  
-    const links = userType === 'carrier' ? carrierNavLinks : exporterNavLinks;
+    
+    const getLinks = () => {
+        switch (userType) {
+            case 'carrier': return carrierNavLinks;
+            case 'employee': return employeeNavLinks;
+            case 'exporter':
+            default: return exporterNavLinks;
+        }
+    }
+    const links = getLinks();
   
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -175,7 +197,7 @@ export function MobileNavLinks() {
                 <div className="flex flex-col gap-3 py-4 text-lg font-medium">
                     {links.map((link) => {
                         let isActive = false;
-                        if (link.href === "/dashboard/carrier" || link.href === "/dashboard/exporter") {
+                        if (link.href === "/dashboard/carrier" || link.href === "/dashboard/exporter" || link.href === "/dashboard/employee") {
                             isActive = pathname === link.href;
                         } else {
                             isActive = pathname.startsWith(link.href);
@@ -197,6 +219,14 @@ export function MobileNavLinks() {
 
                 <div className="mt-auto flex flex-col gap-3 text-lg font-medium">
                     <Separator />
+                     {userType === 'employee' && (
+                        <button
+                            onClick={() => handleLinkClick('/dashboard/employee')}
+                            className="transition-colors hover:text-primary text-left text-muted-foreground flex items-center"
+                        >
+                            <Shield className="mr-2 h-5 w-5" /> Admin Panel
+                        </button>
+                    )}
                     <button
                         onClick={() => handleLinkClick('/settings')}
                         className="transition-colors hover:text-primary text-left text-muted-foreground flex items-center"
@@ -223,13 +253,24 @@ export function MobileNavLinks() {
 
 export function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        if (currentUser) {
+            setUser(currentUser);
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                setUserType(userDoc.data()?.userType || null);
+            }
+        } else {
+            setUser(null);
+            setUserType(null);
+        }
+        setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -255,7 +296,7 @@ export function AuthButton() {
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  {user.email ? user.email.charAt(0).toUpperCase() : <UserIcon />}
+                  {userType === 'employee' ? <Shield/> : (user.email ? user.email.charAt(0).toUpperCase() : <UserIcon />)}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -263,6 +304,12 @@ export function AuthButton() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
+             {userType === 'employee' && (
+                <DropdownMenuItem onClick={() => router.push('/dashboard/employee')}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>Admin Panel</span>
+                </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => router.push('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>

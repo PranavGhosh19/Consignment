@@ -23,6 +23,8 @@ export default function DashboardRedirectPage() {
             router.replace('/dashboard/exporter');
           } else if (userType === 'carrier') {
             router.replace('/dashboard/carrier');
+          } else if (userType === 'employee') {
+            router.replace('/dashboard/employee');
           } else {
             router.replace('/select-type');
           }

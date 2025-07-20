@@ -19,6 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
+const EMPLOYEE_DOMAIN = "@shipshape.com";
+
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -42,14 +44,22 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create a document for the user in Firestore
+      const isEmployee = email.toLowerCase().endsWith(EMPLOYEE_DOMAIN);
+      const userType = isEmployee ? 'employee' : null;
+
       await setDoc(doc(db, "users", user.uid), {
         name: name,
         email: email,
-        userType: null,
+        userType: userType,
       });
       
-      router.push("/select-type");
+      if (isEmployee) {
+        toast({ title: "Welcome!", description: "Employee account created successfully." });
+        router.push("/dashboard/employee");
+      } else {
+        router.push("/select-type");
+      }
+
     } catch (error: any) {
       toast({
         title: "Sign Up Failed",

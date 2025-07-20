@@ -5,10 +5,21 @@ import React, { useEffect, useState } from 'react';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Wallet } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 declare global {
     interface Window {
@@ -26,6 +37,7 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,7 +63,8 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
     checkRegistration();
   }, [shipmentId, user]);
 
-  const handleRegister = async () => {
+  const handlePayment = async () => {
+    setIsConfirmOpen(false);
     if (!user) {
         toast({ title: "Error", description: "You must be logged in to register.", variant: "destructive" });
         return;
@@ -163,7 +176,7 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
     }
   };
 
-  if (loading) return <Skeleton className="h-10 w-32" />;
+  if (loading) return <Skeleton className="h-10 w-44" />;
 
   if (isRegistered) {
       return (
@@ -175,8 +188,36 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
   }
 
   return (
-    <Button onClick={handleRegister} disabled={isSubmitting}>
-        {isSubmitting ? 'Processing...' : 'I want to Bid (₹550)'}
-    </Button>
+    <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogTrigger asChild>
+            <Button disabled={isSubmitting}>
+                {isSubmitting ? 'Processing...' : 'I want to Bid (₹550)'}
+            </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                    <Wallet className="h-6 w-6 text-primary" />
+                    Registration Fee Details
+                </AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                    <div className="space-y-4 pt-4 text-left text-foreground">
+                       <p>To ensure platform integrity, a fee is required to bid.</p>
+                       <ul className="list-disc list-inside space-y-2 text-sm bg-secondary p-4 rounded-lg">
+                           <li><span className="font-bold">₹50</span> is a one-time, non-refundable registration fee for this bid.</li>
+                           <li><span className="font-bold">₹500</span> is a refundable security deposit.</li>
+                       </ul>
+                       <p className="text-sm text-muted-foreground">
+                           The security deposit will be forfeited as a penalty if you win the bid but fail to provide the service or become unresponsive to the exporter. Otherwise, it will be refunded.
+                       </p>
+                    </div>
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handlePayment}>Proceed to Payment</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
   );
 };

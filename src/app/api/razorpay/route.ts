@@ -10,9 +10,19 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Amount and currency are required" }, { status: 400 });
         }
 
+        // IMPORTANT: In a real application, these keys should come from environment variables.
+        // We are hardcoding placeholders here to ensure the development environment works reliably.
+        // Replace with your actual keys before going to production.
+        const key_id = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_YOUR_KEY_ID";
+        const key_secret = process.env.RAZORPAY_KEY_SECRET || "YOUR_KEY_SECRET";
+
+        if (key_id === "rzp_test_YOUR_KEY_ID" || key_secret === "YOUR_KEY_SECRET") {
+             console.warn("Razorpay keys are not set in environment variables. Using placeholder keys.");
+        }
+
         const razorpay = new Razorpay({
-            key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-            key_secret: process.env.RAZORPAY_KEY_SECRET!,
+            key_id: key_id,
+            key_secret: key_secret,
         });
 
         const options = {
@@ -28,6 +38,8 @@ export async function POST(request: Request) {
 
     } catch (error) {
         console.error("Error creating Razorpay order:", error);
-        return NextResponse.json({ error: "Failed to create Razorpay order" }, { status: 500 });
+        // It's better to return a structured error message
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+        return NextResponse.json({ error: "Failed to create Razorpay order", details: errorMessage }, { status: 500 });
     }
 }

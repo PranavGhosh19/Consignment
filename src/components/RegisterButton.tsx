@@ -104,27 +104,34 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
             config: {
               display: {
                 blocks: {
-                  banks: {
-                    name: 'All payment methods',
+                  upi: {
+                    name: 'Pay with UPI',
                     instruments: [
-                      {
-                          method: 'upi'
-                      },
-                      {
-                          method: 'card'
-                      },
-                      {
-                          method: 'wallet'
-                      },
-                      {
-                          method: 'netbanking'
-                      }
+                      { method: 'upi' },
                     ],
                   },
+                  wallets: {
+                    name: 'Pay with Wallets',
+                    instruments: [
+                      { method: 'wallet' },
+                    ],
+                  },
+                  cards: {
+                    name: 'Pay with Cards',
+                    instruments: [
+                      { method: 'card' },
+                    ]
+                  },
+                  netbanking: {
+                    name: 'Pay with Netbanking',
+                    instruments: [
+                      { method: 'netbanking' },
+                    ],
+                  }
                 },
-                sequence: ['block.banks'],
+                sequence: ['block.upi', 'block.cards', 'block.wallets', 'block.netbanking'],
                 preferences: {
-                  show_default_blocks: true,
+                  show_default_blocks: false,
                 },
               },
             },
@@ -202,13 +209,13 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
                 </AlertDialogTitle>
                 <AlertDialogDescription asChild>
                     <div className="space-y-4 pt-4 text-left text-foreground">
-                       <p>To ensure platform integrity, a fee is required to bid.</p>
+                       <p>To maintain fairness and accountability on the platform, a registration fee is required to participate in this bid.</p>
                        <ul className="list-disc list-inside space-y-2 text-sm bg-secondary p-4 rounded-lg">
                            <li><span className="font-bold">₹50</span> is a one-time, non-refundable registration fee for this bid.</li>
                            <li><span className="font-bold">₹500</span> is a refundable security deposit.</li>
                        </ul>
                        <p className="text-sm text-muted-foreground">
-                           The security deposit will be forfeited as a penalty if you win the bid but fail to provide the service or become unresponsive to the exporter. Otherwise, it will be refunded.
+                            If you win the bid, your security deposit will be refunded after successful completion of the service. However, if you fail to deliver or become unresponsive, the deposit will be forfeited as a penalty.
                        </p>
                     </div>
                 </AlertDialogDescription>

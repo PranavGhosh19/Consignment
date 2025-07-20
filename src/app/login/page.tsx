@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+
+const EMPLOYEE_DOMAIN = "@shippingbattlefield.com";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,16 +50,30 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      // Check if user has selected a type
+      
+      const isEmployee = user.email && user.email.toLowerCase().endsWith(EMPLOYEE_DOMAIN);
+      
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
+      if (isEmployee) {
+        if (!userDoc.exists() || userDoc.data()?.userType !== 'employee') {
+            await setDoc(userDocRef, { 
+                name: user.displayName || email.split('@')[0], 
+                email: user.email, 
+                userType: 'employee' 
+            }, { merge: true });
+        }
+      }
+
       if (userDoc.exists() && userDoc.data()?.userType) {
         router.push("/dashboard");
-      } else {
+      } else if (!isEmployee) {
         router.push("/select-type");
+      } else {
+        router.push("/dashboard");
       }
+      
     } catch (error: any) {
       toast({
         title: "Login Failed",

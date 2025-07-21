@@ -126,7 +126,6 @@ function ExporterDashboardPage() {
   const [specialInstructions, setSpecialInstructions] = useState("");
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmittingGoLive, setIsSubmittingGoLive] = useState<string | null>(null);
   
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [goLiveDate, setGoLiveDate] = useState<Date | undefined>();
@@ -401,24 +400,6 @@ function ExporterDashboardPage() {
     }
   }
 
-
-  const handleGoLive = async (shipmentId: string) => {
-    if (!user) return;
-    setIsSubmittingGoLive(shipmentId);
-    try {
-        const shipmentDocRef = doc(db, "shipments", shipmentId);
-        await updateDoc(shipmentDocRef, { status: 'live' });
-        toast({ title: "Success!", description: "Your shipment is now live for bidding."});
-        await fetchProducts(user.uid);
-    } catch (error) {
-        console.error("Error going live: ", error);
-        toast({ title: "Error", description: "Could not make the shipment live.", variant: "destructive" });
-    } finally {
-        setIsSubmittingGoLive(null);
-    }
-  };
-
-
   if (loading || !user) {
     return <PageSkeleton />;
   }
@@ -667,27 +648,12 @@ function ExporterDashboardPage() {
                 <TableRow key={product.id} onClick={() => router.push(`/dashboard/shipment/${product.id}`)} className="cursor-pointer">
                   <TableCell className="font-medium">{product.productName || 'N/A'}</TableCell>
                   <TableCell className="hidden md:table-cell">{product.destination?.portOfDelivery || 'N/A'}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{product.departureDate ? format(product.departureDate.toDate(), "PPp") : 'N/A'}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{product.deliveryDeadline ? format(product.deliveryDeadline.toDate(), "PPp") : 'N/A'}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{product.departureDate ? format(product.departureDate.toDate(), "PP") : 'N/A'}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{product.deliveryDeadline ? format(product.deliveryDeadline.toDate(), "PP") : 'N/A'}</TableCell>
                   <TableCell className="text-center">
-                    {product.status === 'draft' || product.status === 'scheduled' ? (
-                       <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="hover:bg-green-500 hover:text-white"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleGoLive(product.id);
-                        }}
-                        disabled={isSubmittingGoLive === product.id}
-                      >
-                        {isSubmittingGoLive === product.id ? '...' : 'Go Live'}
-                      </Button>
-                    ) : (
-                      <Badge variant={getStatusVariant(product.status)} className={cn("capitalize", { "animate-blink bg-green-500/80": product.status === 'live' })}>
+                    <Badge variant={getStatusVariant(product.status)} className={cn("capitalize", { "animate-blink bg-green-500/80": product.status === 'live' })}>
                         {product.status}
-                      </Badge>
-                    )}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))}

@@ -156,7 +156,7 @@ export function RecentActivities() {
                             <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDelivery || 'N/A'}</TableCell>
                             <TableCell className="hidden lg:table-cell">{shipment.deliveryDeadline ? format(shipment.deliveryDeadline.toDate(), "PP") : 'N/A'}</TableCell>
                              <TableCell className="text-center">
-                                <Badge variant="outline">Registered</Badge>
+                                <Badge variant="secondary">Registered</Badge>
                             </TableCell>
                             <TableCell className="text-right">
                                 {shipment.goLiveAt ? (

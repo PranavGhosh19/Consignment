@@ -54,21 +54,10 @@ export default function FindShipmentsPage() {
   const loadInitialData = useCallback(async (currentUser: User) => {
     setLoading(true);
     try {
-        // Get IDs of shipments the carrier has already registered for
-        const registerQuery = query(collectionGroup(db, 'register'), where('carrierId', '==', currentUser.uid));
-        const registerSnap = await getDocs(registerQuery);
-        const registeredShipmentIds = new Set<string>();
-        registerSnap.forEach(doc => {
-            const parentPath = doc.ref.parent.parent?.id;
-            if (parentPath) registeredShipmentIds.add(parentPath);
-        });
-
         const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
         const shipmentsSnapshot = await getDocs(shipmentsQuery);
 
-        const shipmentsList = shipmentsSnapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(shipment => !registeredShipmentIds.has(shipment.id)); // Filter out registered shipments
+        const shipmentsList = shipmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         setShipments(shipmentsList);
     } catch (error) {
@@ -322,3 +311,5 @@ export default function FindShipmentsPage() {
     </div>
   );
 }
+
+    

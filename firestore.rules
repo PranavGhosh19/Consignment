@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -28,36 +29,44 @@ service cloud.firestore {
 
     // ───── Shipments Collection ─────
     match /shipments/{shipmentId} {
+      
+      // Exporters can create shipments for themselves
+      allow create: if request.auth.uid != null 
+                    && isExporter(request.auth.uid) 
+                    && request.resource.data.exporterId == request.auth.uid;
 
-      // Create
-      allow create: if isEmployee(request.auth.uid) || (
-        request.auth.uid != null &&
-        isExporter(request.auth.uid) &&
-        request.resource.data.exporterId == request.auth.uid
-      );
+      // Exporters and Employees can read; Carriers can read all shipments
+      allow read: if request.auth.uid != null && (
+                    isEmployee(request.auth.uid) ||
+                    (isExporter(request.auth.uid) && resource.data.exporterId == request.auth.uid) ||
+                    isCarrier(request.auth.uid)
+                  );
 
-      // Read (Get & List)
-      allow read: if isEmployee(request.auth.uid) || (
-        request.auth.uid != null && (
-          (isExporter(request.auth.uid) && resource.data.exporterId == request.auth.uid) ||
-          (isCarrier(request.auth.uid) &&
-            ['draft', 'scheduled', 'live', 'awarded'].contains(resource.data.status))
-        )
-      );
-
-      // Update
+      // Exporters and Employees can update
       allow update: if request.auth.uid != null && (
+        // Employee can always update
         isEmployee(request.auth.uid) ||
+
+        // Exporter with rules
         (
           isExporter(request.auth.uid) &&
           resource.data.exporterId == request.auth.uid &&
           (
-            ( // Allow edits on draft/scheduled shipments
+            // Edit during draft or scheduled (fields locked)
+            (
               (resource.data.status == 'draft' || resource.data.status == 'scheduled') &&
-              request.resource.data.exporterId == resource.data.exporterId && // Cannot change owner
-              request.resource.data.createdAt == resource.data.createdAt // Cannot change creation time
+              request.resource.data.exporterId == resource.data.exporterId &&
+              request.resource.data.createdAt == resource.data.createdAt
             ) ||
-            ( // Allow awarding a bid
+
+            // Move from draft/scheduled → live
+            (
+              (resource.data.status == 'draft' || resource.data.status == 'scheduled') &&
+              request.resource.data.status == 'live'
+            ) ||
+
+            // Move from live → awarded with winningBidId
+            (
               resource.data.status == 'live' &&
               request.resource.data.status == 'awarded' &&
               request.resource.data.winningBidId != null
@@ -65,50 +74,49 @@ service cloud.firestore {
           )
         )
       );
-
-      // Delete
-      allow delete: if isEmployee(request.auth.uid);
     }
 
     // ───── Bids Subcollection ─────
     match /shipments/{shipmentId}/bids/{bidId} {
+      allow read: if request.auth.uid != null && (
+        // Employees can read all
+        isEmployee(request.auth.uid) ||
 
-      // Read
-      allow read: if isEmployee(request.auth.uid) || (
-        request.auth.uid != null && (
-          (isExporter(request.auth.uid) &&
-            getShipment(shipmentId).data.exporterId == request.auth.uid) ||
-          (isCarrier(request.auth.uid) &&
-            getShipment(shipmentId).data.status == 'live')
-        )
+        // Exporters can read bids on their shipments
+        (isExporter(request.auth.uid) &&
+          getShipment(shipmentId).data.exporterId == request.auth.uid) ||
+
+        // Carriers can read if shipment is live
+        (isCarrier(request.auth.uid) &&
+          getShipment(shipmentId).data.status == 'live')
       );
 
-      // Create
-      allow create: if isEmployee(request.auth.uid) || (
-        request.auth.uid != null &&
+      allow create: if request.auth.uid != null &&
         isCarrier(request.auth.uid) &&
         request.resource.data.carrierId == request.auth.uid &&
-        getShipment(shipmentId).data.status == 'live'
-      );
+        getShipment(shipmentId).data.status == 'live';
     }
 
     // ───── Register Subcollection ─────
     match /shipments/{shipmentId}/register/{carrierId} {
-
-      // Read
-      allow read: if isEmployee(request.auth.uid) || (
-        request.auth.uid != null &&
-        isCarrier(request.auth.uid) &&
-        request.auth.uid == carrierId
+      allow read: if request.auth.uid != null && (
+        isEmployee(request.auth.uid) ||
+        (isCarrier(request.auth.uid) && request.auth.uid == carrierId)
       );
 
-      // Create
-      allow create: if isEmployee(request.auth.uid) || (
-        request.auth.uid != null &&
+      allow create: if request.auth.uid != null &&
         isCarrier(request.auth.uid) &&
         request.auth.uid == carrierId &&
-        getShipment(shipmentId).data.status == 'scheduled'
-      );
+        getShipment(shipmentId).data.status == 'scheduled';
+    }
+
+    // ───── CollectionGroup Query on Register ─────
+    match /{documentPath=**}/register/{docId} {
+      allow read: if request.auth.uid != null
+                        && isCarrier(request.auth.uid)
+                        && resource.data.carrierId == request.auth.uid;
     }
   }
 }
+
+    

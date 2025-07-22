@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -431,6 +432,9 @@ function ExporterDashboardPage() {
           <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl font-headline">{editingShipmentId ? 'Edit Shipment' : 'New Shipment'}</DialogTitle>
+              <DialogDescription>
+                Fill out the form below to create or update your shipment request.
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-4">
               <Card className="bg-secondary">

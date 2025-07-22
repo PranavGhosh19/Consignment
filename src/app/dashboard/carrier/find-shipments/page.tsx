@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Send, Info } from "lucide-react";
@@ -240,7 +240,7 @@ export default function FindShipmentsPage() {
           <DialogContent className="sm:max-w-2xl">
               <DialogHeader>
                   <DialogTitle className="text-2xl font-headline">Shipment Details</DialogTitle>
-                  <p className="text-muted-foreground">Review the shipment details and place your bid if available.</p>
+                  <DialogDescription>Review the shipment details and place your bid if available.</DialogDescription>
               </DialogHeader>
               {selectedShipment && (
                   <div className="grid gap-6 py-4">

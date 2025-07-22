@@ -30,11 +30,10 @@ service cloud.firestore {
     // ───── Shipments Collection ─────
     match /shipments/{shipmentId} {
 
-      // Exporters or Employees can create shipments
-      allow create: if request.auth.uid != null && (
-        isEmployee(request.auth.uid) ||
-        (isExporter(request.auth.uid) && request.resource.data.exporterId == request.auth.uid)
-      );
+      // Exporters can create shipments for themselves
+      allow create: if request.auth.uid != null
+                    && isExporter(request.auth.uid)
+                    && request.resource.data.exporterId == request.auth.uid;
 
       // Exporters (own), Carriers (all), Employees (all)
       allow read: if request.auth.uid != null && (

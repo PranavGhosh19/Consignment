@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -37,15 +36,16 @@ service cloud.firestore {
         request.resource.data.exporterId == request.auth.uid
       );
 
-      // Read
-      allow read: if isEmployee(request.auth.uid) || (
+      // Read (Get & List)
+      allow list: if isEmployee(request.auth.uid);
+      allow get: if isEmployee(request.auth.uid) || (
         request.auth.uid != null && (
           (isExporter(request.auth.uid) && resource.data.exporterId == request.auth.uid) ||
           (isCarrier(request.auth.uid) &&
             ['draft', 'scheduled', 'live', 'awarded'].contains(resource.data.status))
         )
       );
-
+      
       // Update
       allow update: if isEmployee(request.auth.uid) || (
         request.auth.uid != null &&

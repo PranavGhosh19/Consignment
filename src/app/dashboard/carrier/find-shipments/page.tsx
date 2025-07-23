@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, addDoc, where, collectionGroup } from 'firebase/firestore';
+import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, addDoc, where, collectionGroup, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -52,27 +52,31 @@ export default function FindShipmentsPage() {
   }, [router]);
   
   const loadInitialData = useCallback(async (currentUser: User) => {
-    setLoading(true);
-    try {
-        const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
-        const shipmentsSnapshot = await getDocs(shipmentsQuery);
-
-        const shipmentsList = shipmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        setShipments(shipmentsList);
-    } catch (error) {
-        console.error("Error fetching initial data: ", error);
-        toast({ title: "Error", description: "Could not fetch necessary data.", variant: "destructive" });
-    } finally {
-        setLoading(false);
-    }
-  }, [toast]);
+    // This function can be used for any one-time data loading if needed in the future.
+    // For now, the real-time listener handles fetching shipments.
+  }, []);
 
   useEffect(() => {
     if (user) {
-        loadInitialData(user);
+        setLoading(true);
+        const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
+        
+        const unsubscribe = onSnapshot(shipmentsQuery, (snapshot) => {
+            const shipmentsList = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(shipment => shipment.status !== 'live'); // Filter out live shipments
+
+            setShipments(shipmentsList);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching real-time shipments: ", error);
+            toast({ title: "Error", description: "Could not fetch shipments.", variant: "destructive" });
+            setLoading(false);
+        });
+
+        return () => unsubscribe(); // Cleanup the listener
     }
-  }, [user, loadInitialData]);
+  }, [user, toast]);
 
   const handleOpenBidDialog = (shipment: DocumentData) => {
     setSelectedShipment(shipment);
@@ -82,6 +86,7 @@ export default function FindShipmentsPage() {
 
   const handleRowClick = (shipment: DocumentData) => {
     if (shipment.status === 'live') {
+      // This case should not be reached with the new filter, but kept as a fallback.
       router.push(`/dashboard/carrier/shipment/${shipment.id}`);
     } else {
       handleOpenBidDialog(shipment);
@@ -93,6 +98,8 @@ export default function FindShipmentsPage() {
       toast({ title: "Error", description: "Please enter a bid amount.", variant: "destructive" });
       return;
     }
+    // This action is now less likely to be triggered from this page,
+    // as live shipments are not shown. It remains for robustness.
     if (selectedShipment.status !== 'live') {
       toast({ title: "Info", description: "This shipment is not currently accepting bids.", variant: "default" });
       return;
@@ -118,8 +125,6 @@ export default function FindShipmentsPage() {
 
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'live':
-        return 'success';
       case 'awarded':
         return 'success';
       case 'draft':
@@ -195,7 +200,7 @@ export default function FindShipmentsPage() {
                     }
                 } else {
                     statusBadge = (
-                        <Badge variant={getStatusVariant(shipment.status)} className={cn("capitalize", { "animate-blink bg-green-500/80": shipment.status === 'live' })}>
+                        <Badge variant={getStatusVariant(shipment.status)} className="capitalize">
                             {shipment.status}
                         </Badge>
                     );
@@ -311,5 +316,3 @@ export default function FindShipmentsPage() {
     </div>
   );
 }
-
-    

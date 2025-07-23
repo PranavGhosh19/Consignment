@@ -74,10 +74,7 @@ export default function ManageShipmentsPage() {
   };
 
   const handleRowClick = (shipmentId: string) => {
-    // For now, let's just log it. We can implement a detail view later.
-    console.log(`Navigating to shipment ${shipmentId}`);
-    // A potential future implementation:
-    // router.push(`/dashboard/admin/shipment/${shipmentId}`);
+    router.push(`/dashboard/shipment/${shipmentId}`);
   };
 
   if (loading) {

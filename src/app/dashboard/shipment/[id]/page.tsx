@@ -11,12 +11,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Rocket, Pencil, Clock } from "lucide-react";
+import { ArrowLeft, Check, Rocket, Pencil, Clock, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
 export default function ShipmentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
   const [shipment, setShipment] = useState<DocumentData | null>(null);
   const [bids, setBids] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,32 +29,40 @@ export default function ShipmentDetailPage() {
   const shipmentId = params.id as string;
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser) {
-        router.push("/login");
-      } else {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
         setUser(currentUser);
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setUserType(userDoc.data()?.userType || null);
+        } else {
+            router.push('/login');
+        }
+      } else {
+        router.push("/login");
       }
     });
     return () => unsubscribe();
   }, [router]);
 
   useEffect(() => {
-    if (!user || !shipmentId) return;
+    if (!user || !shipmentId || !userType) return;
 
     const shipmentDocRef = doc(db, "shipments", shipmentId);
     const unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
        if (docSnap.exists()) {
         const shipmentData = docSnap.data();
-        if (shipmentData.exporterId === user.uid) {
+        // Allow access if user is the exporter OR an employee
+        if (shipmentData.exporterId === user.uid || userType === 'employee') {
             setShipment({ id: docSnap.id, ...shipmentData });
         } else {
             toast({ title: "Error", description: "You are not authorized to view this page.", variant: "destructive" });
-            router.push("/dashboard/exporter");
+            router.push("/dashboard");
         }
       } else {
         toast({ title: "Error", description: "Shipment not found.", variant: "destructive" });
-        router.push("/dashboard/exporter");
+        router.push("/dashboard");
       }
       setLoading(false);
     }, (error) => {
@@ -64,7 +73,7 @@ export default function ShipmentDetailPage() {
 
     return () => unsubscribeShipment();
 
-  }, [user, shipmentId, router, toast]);
+  }, [user, userType, shipmentId, router, toast]);
 
   useEffect(() => {
     if (!shipmentId || shipment?.status === 'draft') {
@@ -122,7 +131,7 @@ export default function ShipmentDetailPage() {
   }
 
 
-  if (loading) {
+  if (loading || !shipment) {
     return (
       <div className="container py-6 md:py-10">
         <Skeleton className="h-8 w-32 mb-8" />
@@ -137,10 +146,6 @@ export default function ShipmentDetailPage() {
         </div>
       </div>
     );
-  }
-
-  if (!shipment) {
-    return null; // or a not found component
   }
 
   const getStatusInfo = () => {
@@ -165,18 +170,27 @@ export default function ShipmentDetailPage() {
   
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
 
+  const canEdit = userType === 'exporter' && (shipment.status === 'draft' || shipment.status === 'scheduled');
+  const canManage = userType === 'employee';
+
   return (
     <div className="container py-6 md:py-10">
         <div className="flex justify-between items-center mb-6">
-            <Button variant="ghost" onClick={() => router.push('/dashboard/exporter')}>
+            <Button variant="ghost" onClick={() => router.back()}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
+                Back
             </Button>
-            {(shipment.status === 'draft' || shipment.status === 'scheduled') && (
+            {canEdit && (
                 <Button variant="outline" onClick={() => router.push(`/dashboard/exporter?edit=${shipmentId}`)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit Shipment
                 </Button>
+            )}
+             {canManage && (
+                <Badge variant="outline" className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Employee View
+                </Badge>
             )}
         </div>
         <div className="grid lg:grid-cols-3 gap-8 items-start">
@@ -184,7 +198,7 @@ export default function ShipmentDetailPage() {
                 <Card className="bg-white dark:bg-card">
                     <CardHeader>
                         <CardTitle className="text-2xl sm:text-3xl font-headline">{shipment.productName}</CardTitle>
-                        <CardDescription>Shipment Details</CardDescription>
+                        <CardDescription>From: {shipment.exporterName}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 text-sm">
                         <div className="grid md:grid-cols-2 gap-4 border-b pb-6">
@@ -245,7 +259,9 @@ export default function ShipmentDetailPage() {
                                                     {shipment.status === 'awarded' ? (
                                                         shipment.winningBidId === bid.id && <Badge variant="success">Awarded</Badge>
                                                     ) : (
-                                                        <Button size="sm" onClick={() => handleAcceptBid(bid)} disabled={isSubmitting}>Accept Bid</Button>
+                                                        <Button size="sm" onClick={() => handleAcceptBid(bid)} disabled={isSubmitting || userType !== 'exporter'}>
+                                                            Accept Bid
+                                                        </Button>
                                                     )}
                                                 </TableCell>
                                             </TableRow>

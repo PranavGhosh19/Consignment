@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Permissions-Policy',
-            value: "payment 'self'",
+            value: "payment=self",
           },
         ],
       },

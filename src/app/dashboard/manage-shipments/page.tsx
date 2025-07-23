@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, query, DocumentData, orderBy, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -39,27 +39,25 @@ export default function ManageShipmentsPage() {
     return () => unsubscribe();
   }, [router]);
   
-  const fetchShipments = useCallback(async () => {
+  useEffect(() => {
+    if (!user) return;
+
     setLoading(true);
-    try {
-      const shipmentsCollectionRef = collection(db, 'shipments');
-      const q = query(shipmentsCollectionRef, orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
+    const shipmentsCollectionRef = collection(db, 'shipments');
+    const q = query(shipmentsCollectionRef, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const shipmentsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setShipments(shipmentsList);
-    } catch (error) {
-      console.error("Error fetching shipments: ", error);
-      toast({ title: "Error", description: "Could not fetch shipments.", variant: "destructive" });
-    } finally {
       setLoading(false);
-    }
-  }, [toast]);
+    }, (error) => {
+      console.error("Error fetching shipments in real-time: ", error);
+      toast({ title: "Error", description: "Could not fetch shipments.", variant: "destructive" });
+      setLoading(false);
+    });
 
-  useEffect(() => {
-    if (user) {
-      fetchShipments();
-    }
-  }, [user, fetchShipments]);
+    return () => unsubscribe();
+  }, [user, toast]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {

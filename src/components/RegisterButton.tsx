@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import Script from "next/script";
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -195,36 +196,42 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
   }
 
   return (
-    <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <AlertDialogTrigger asChild>
-            <Button disabled={isSubmitting}>
-                {isSubmitting ? 'Processing...' : 'I want to Bid (₹550)'}
-            </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                    <Wallet className="h-6 w-6 text-primary" />
-                    Registration Fee Details
-                </AlertDialogTitle>
-                <AlertDialogDescription asChild>
-                    <div className="space-y-4 pt-4 text-left text-foreground">
-                       <p>To maintain fairness and accountability on the platform, a registration fee is required to participate in this bid.</p>
-                       <ul className="list-disc list-inside space-y-2 text-sm bg-secondary p-4 rounded-lg">
-                           <li><span className="font-bold">₹50</span> is a one-time, non-refundable registration fee for this bid.</li>
-                           <li><span className="font-bold">₹500</span> is a refundable security deposit.</li>
-                       </ul>
-                       <p className="text-sm text-muted-foreground">
-                            If you win the bid, your security deposit will be refunded after successful completion of the service. However, if you fail to deliver or become unresponsive, the deposit will be forfeited as a penalty.
-                       </p>
-                    </div>
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handlePayment}>Proceed to Payment</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
+    <>
+        <Script
+            id="razorpay-checkout-js"
+            src="https://checkout.razorpay.com/v1/checkout.js"
+        />
+        <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+            <AlertDialogTrigger asChild>
+                <Button disabled={isSubmitting}>
+                    {isSubmitting ? 'Processing...' : 'I want to Bid (₹550)'}
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                        <Wallet className="h-6 w-6 text-primary" />
+                        Registration Fee Details
+                    </AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                        <div className="space-y-4 pt-4 text-left text-foreground">
+                        <p>To maintain fairness and accountability on the platform, a registration fee is required to participate in this bid.</p>
+                        <ul className="list-disc list-inside space-y-2 text-sm bg-secondary p-4 rounded-lg">
+                            <li><span className="font-bold">₹50</span> is a one-time, non-refundable registration fee for this bid.</li>
+                            <li><span className="font-bold">₹500</span> is a refundable security deposit.</li>
+                        </ul>
+                        <p className="text-sm text-muted-foreground">
+                                If you win the bid, your security deposit will be refunded after successful completion of the service. However, if you fail to deliver or become unresponsive, the deposit will be forfeited as a penalty.
+                        </p>
+                        </div>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handlePayment}>Proceed to Payment</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    </>
   );
 };

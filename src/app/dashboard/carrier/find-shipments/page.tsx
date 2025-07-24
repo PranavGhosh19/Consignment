@@ -24,6 +24,7 @@ export default function FindShipmentsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [carrierName, setCarrierName] = useState<string>("");
   const [shipments, setShipments] = useState<DocumentData[]>([]);
+  const [registeredShipmentIds, setRegisteredShipmentIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState<DocumentData | null>(null);
@@ -51,32 +52,59 @@ export default function FindShipmentsPage() {
     return () => unsubscribe();
   }, [router]);
   
-  const loadInitialData = useCallback(async (currentUser: User) => {
-    // This function can be used for any one-time data loading if needed in the future.
-    // For now, the real-time listener handles fetching shipments.
+  const fetchRegisteredShipments = useCallback(async (currentUser: User) => {
+    const registerQuery = query(
+      collectionGroup(db, 'register'),
+      where('carrierId', '==', currentUser.uid)
+    );
+    const registerSnap = await getDocs(registerQuery);
+    const ids = new Set<string>();
+    registerSnap.forEach((doc) => {
+      const parentPath = doc.ref.parent.parent?.id;
+      if (parentPath) ids.add(parentPath);
+    });
+    setRegisteredShipmentIds(ids);
+    return ids;
   }, []);
+
 
   useEffect(() => {
     if (user) {
         setLoading(true);
-        const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
         
-        const unsubscribe = onSnapshot(shipmentsQuery, (snapshot) => {
-            const shipmentsList = snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter(shipment => shipment.status !== 'live'); // Filter out live shipments
+        let initialRegisteredIds: Set<string>;
 
-            setShipments(shipmentsList);
-            setLoading(false);
-        }, (error) => {
-            console.error("Error fetching real-time shipments: ", error);
-            toast({ title: "Error", description: "Could not fetch shipments.", variant: "destructive" });
-            setLoading(false);
-        });
+        const setupListeners = async () => {
+            initialRegisteredIds = await fetchRegisteredShipments(user);
 
-        return () => unsubscribe(); // Cleanup the listener
+            const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
+            
+            const unsubscribe = onSnapshot(shipmentsQuery, (snapshot) => {
+                const shipmentsList = snapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(shipment => 
+                        shipment.status !== 'live' && !initialRegisteredIds.has(shipment.id)
+                    );
+
+                setShipments(shipmentsList);
+                setLoading(false);
+            }, (error) => {
+                console.error("Error fetching real-time shipments: ", error);
+                toast({ title: "Error", description: "Could not fetch shipments.", variant: "destructive" });
+                setLoading(false);
+            });
+            
+            return unsubscribe;
+        };
+        
+        const unsubscribePromise = setupListeners();
+
+        return () => {
+            unsubscribePromise.then(unsubscribe => unsubscribe && unsubscribe());
+        };
     }
-  }, [user, toast]);
+  }, [user, toast, fetchRegisteredShipments]);
+
 
   const handleOpenBidDialog = (shipment: DocumentData) => {
     setSelectedShipment(shipment);
@@ -86,7 +114,6 @@ export default function FindShipmentsPage() {
 
   const handleRowClick = (shipment: DocumentData) => {
     if (shipment.status === 'live') {
-      // This case should not be reached with the new filter, but kept as a fallback.
       router.push(`/dashboard/carrier/shipment/${shipment.id}`);
     } else {
       handleOpenBidDialog(shipment);
@@ -98,8 +125,7 @@ export default function FindShipmentsPage() {
       toast({ title: "Error", description: "Please enter a bid amount.", variant: "destructive" });
       return;
     }
-    // This action is now less likely to be triggered from this page,
-    // as live shipments are not shown. It remains for robustness.
+
     if (selectedShipment.status !== 'live') {
       toast({ title: "Info", description: "This shipment is not currently accepting bids.", variant: "default" });
       return;
@@ -154,6 +180,12 @@ export default function FindShipmentsPage() {
             return 'Bidding for this shipment is closed.';
     }
   };
+
+  const onRegisterSuccess = (shipmentId: string) => {
+    setRegisteredShipmentIds(prev => new Set(prev).add(shipmentId));
+    setShipments(prev => prev.filter(s => s.id !== shipmentId));
+    setIsBidDialogOpen(false);
+  }
 
 
   if (loading) {
@@ -296,12 +328,7 @@ export default function FindShipmentsPage() {
                     <RegisterButton 
                         shipmentId={selectedShipment.id} 
                         user={user} 
-                        onRegisterSuccess={(_id) => {
-                            setIsBidDialogOpen(false);
-                            if (user) {
-                                loadInitialData(user);
-                            }
-                        }} 
+                        onRegisterSuccess={onRegisterSuccess} 
                     />
                   )}
                   {selectedShipment?.status === 'live' && (

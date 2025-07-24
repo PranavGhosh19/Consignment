@@ -137,7 +137,7 @@ export default function UserManagementPage() {
     return (
         <div className="container py-6 md:py-10">
             <Skeleton className="h-10 w-64 mb-4" />
-            <Skeleton className="h-12 w-96 mb-8" />
+            <Skeleton className="h-12 w-full mb-8" />
             <Skeleton className="h-96 w-full" />
         </div>
     )
@@ -151,7 +151,7 @@ export default function UserManagementPage() {
       <p className="text-muted-foreground mb-8">Oversee all exporter and carrier accounts on the platform.</p>
 
       <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-6 sm:justify-between">
             <div className="relative w-full sm:max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 

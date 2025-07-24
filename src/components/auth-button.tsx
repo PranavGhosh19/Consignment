@@ -220,22 +220,6 @@ export function MobileNavLinks() {
 
                 <div className="mt-auto flex flex-col gap-3 text-lg font-medium">
                     <Separator />
-                     {userType === 'employee' && (
-                        <>
-                            <button
-                                onClick={() => handleLinkClick('/dashboard/manage-shipments')}
-                                className="transition-colors hover:text-primary text-left text-muted-foreground flex items-center"
-                            >
-                                <Shield className="mr-2 h-5 w-5" /> Manage Shipments
-                            </button>
-                             <button
-                                onClick={() => handleLinkClick('/dashboard/user-management')}
-                                className="transition-colors hover:text-primary text-left text-muted-foreground flex items-center"
-                            >
-                                <Users className="mr-2 h-5 w-5" /> User Management
-                            </button>
-                        </>
-                    )}
                     <button
                         onClick={() => handleLinkClick('/settings')}
                         className="transition-colors hover:text-primary text-left text-muted-foreground flex items-center"
@@ -313,18 +297,6 @@ export function AuthButton() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-             {userType === 'employee' && (
-                <>
-                    <DropdownMenuItem onClick={() => router.push('/dashboard/manage-shipments')}>
-                        <Shield className="mr-2 h-4 w-4" />
-                        <span>Manage Shipments</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push('/dashboard/user-management')}>
-                        <Users className="mr-2 h-4 w-4" />
-                        <span>User Management</span>
-                    </DropdownMenuItem>
-                </>
-            )}
             <DropdownMenuItem onClick={() => router.push('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>

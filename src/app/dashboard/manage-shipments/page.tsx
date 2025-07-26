@@ -14,10 +14,11 @@ import { format, isSameDay } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Calendar as CalendarIcon, Search, X } from "lucide-react";
+import { Calendar as CalendarIcon, Search, X, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function ManageShipmentsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,6 +26,7 @@ export default function ManageShipmentsPage() {
   const [loading, setLoading] = useState(true);
   
   // Filter states
+  const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>();
@@ -126,64 +128,73 @@ export default function ManageShipmentsPage() {
     <div className="container py-6 md:py-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold font-headline">Manage All Shipments</h1>
+        <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
+          <Filter className="mr-2 h-4 w-4" />
+          {showFilters ? 'Hide Filters' : 'Apply Filter'}
+        </Button>
       </div>
-       <div className="mb-8 p-4 border rounded-lg bg-card grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            <div className="relative">
-                <label className="text-sm font-medium text-muted-foreground">Search Product/Exporter</label>
-                <Search className="absolute left-3 top-1/2 mt-2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                />
+
+       <Collapsible open={showFilters} className="mb-8">
+        <CollapsibleContent>
+            <div className="p-4 border rounded-lg bg-card grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div className="relative">
+                    <label className="text-sm font-medium text-muted-foreground">Search Product/Exporter</label>
+                    <Search className="absolute left-3 top-1/2 mt-2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                            <SelectItem value="live">Live</SelectItem>
+                            <SelectItem value="awarded">Awarded</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground">Creation Date</label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                            variant={"outline"}
+                            className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !dateFilter && "text-muted-foreground"
+                            )}
+                            >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateFilter ? format(dateFilter, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={dateFilter}
+                                onSelect={setDateFilter}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+                <div>
+                    <Button variant="ghost" onClick={clearFilters} className="w-full">
+                        <X className="mr-2 h-4 w-4" /> Clear Filters
+                    </Button>
+                </div>
             </div>
-            <div>
-                <label className="text-sm font-medium text-muted-foreground">Status</label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="scheduled">Scheduled</SelectItem>
-                        <SelectItem value="live">Live</SelectItem>
-                        <SelectItem value="awarded">Awarded</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <div>
-                 <label className="text-sm font-medium text-muted-foreground">Creation Date</label>
-                 <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                        variant={"outline"}
-                        className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !dateFilter && "text-muted-foreground"
-                        )}
-                        >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateFilter ? format(dateFilter, "PPP") : <span>Pick a date</span>}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={dateFilter}
-                            onSelect={setDateFilter}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
-            </div>
-            <div>
-                <Button variant="ghost" onClick={clearFilters} className="w-full">
-                    <X className="mr-2 h-4 w-4" /> Clear Filters
-                </Button>
-            </div>
-        </div>
+        </CollapsibleContent>
+       </Collapsible>
 
       {filteredShipments.length > 0 ? (
         <div className="border rounded-lg overflow-x-auto">

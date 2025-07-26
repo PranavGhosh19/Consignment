@@ -171,9 +171,12 @@ export default function ShipmentDetailPage() {
   
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
 
-  const canEdit = userType === 'exporter' && (shipment.status === 'draft' || shipment.status === 'scheduled');
+  const isOwner = user?.uid === shipment.exporterId;
+  const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canManage = userType === 'employee';
   const canGoLive = canManage && (shipment.status === 'draft' || shipment.status === 'scheduled');
+  const canAcceptBid = isOwner && shipment.status === 'live';
+
 
   return (
     <div className="container py-6 md:py-10">
@@ -264,9 +267,9 @@ export default function ShipmentDetailPage() {
                                                         <Button 
                                                             size="sm" 
                                                             onClick={() => handleAcceptBid(bid)} 
-                                                            disabled={isSubmitting}
+                                                            disabled={isSubmitting || !canAcceptBid}
                                                             className={cn({
-                                                              'hover:bg-green-600 hover:text-white': canManage
+                                                                'hover:bg-green-600 hover:text-white': canAcceptBid
                                                             })}
                                                         >
                                                             Accept Bid

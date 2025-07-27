@@ -31,7 +31,7 @@ export default function CarrierShipmentDetailPage() {
   const shipmentId = params.id as string;
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         const userDocRef = doc(db, 'users', currentUser.uid);
         const userDoc = await getDoc(userDocRef);
@@ -45,14 +45,16 @@ export default function CarrierShipmentDetailPage() {
         router.push('/login');
       }
     });
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, [router]);
 
   useEffect(() => {
     if (!user || !shipmentId) return;
+    
+    let unsubscribeShipment: () => void = () => {};
 
     const shipmentDocRef = doc(db, "shipments", shipmentId);
-    const unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
+    unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
        if (docSnap.exists()) {
         const shipmentData = docSnap.data();
         if (shipmentData.status !== 'live') {
@@ -71,16 +73,18 @@ export default function CarrierShipmentDetailPage() {
         setLoading(false);
     });
 
-    return () => unsubscribeShipment();
-
+    return () => {
+        unsubscribeShipment();
+    };
   }, [user, shipmentId, router, toast]);
 
   useEffect(() => {
     if (!shipmentId) return;
 
+    let unsubscribeBids: () => void = () => {};
     const bidsQuery = query(collection(db, "shipments", shipmentId, "bids"), orderBy("bidAmount", "asc"));
     
-    const unsubscribeBids = onSnapshot(bidsQuery, (querySnapshot) => {
+    unsubscribeBids = onSnapshot(bidsQuery, (querySnapshot) => {
       const bidsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setBids(bidsData);
     }, (error) => {
@@ -88,7 +92,9 @@ export default function CarrierShipmentDetailPage() {
         toast({ title: "Error", description: "Failed to fetch bids.", variant: "destructive" });
     });
 
-    return () => unsubscribeBids();
+    return () => {
+        unsubscribeBids();
+    };
   }, [shipmentId, toast]);
   
   const lowestBidData = useMemo(() => {

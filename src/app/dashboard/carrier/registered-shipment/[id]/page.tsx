@@ -24,7 +24,7 @@ export default function RegisteredShipmentDetailPage() {
   const shipmentId = params.id as string;
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         const userDocRef = doc(db, 'users', currentUser.uid);
         const userDoc = await getDoc(userDocRef);
@@ -37,14 +37,16 @@ export default function RegisteredShipmentDetailPage() {
         router.push('/login');
       }
     });
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, [router]);
 
   useEffect(() => {
     if (!user || !shipmentId) return;
+    
+    let unsubscribeShipment: () => void = () => {};
 
     const shipmentDocRef = doc(db, "shipments", shipmentId);
-    const unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
+    unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
        if (docSnap.exists()) {
         const shipmentData = docSnap.data();
         if (shipmentData.status === 'live') {
@@ -63,7 +65,9 @@ export default function RegisteredShipmentDetailPage() {
         setLoading(false);
     });
 
-    return () => unsubscribeShipment();
+    return () => {
+        unsubscribeShipment();
+    };
 
   }, [user, shipmentId, router, toast]);
 

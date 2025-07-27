@@ -161,8 +161,8 @@ export default function FindShipmentsPage() {
             return 'This shipment is scheduled to go live soon.';
         case 'awarded':
             return selectedShipment.winningCarrierId === user?.uid
-                ? 'Congratulations! You won this bid.'
-                : 'This shipment has been awarded to another carrier.';
+                ? 'You are Awarded'
+                : 'Other Carrier has been Awarded';
         default:
             return 'Bidding for this shipment is closed.';
     }
@@ -210,15 +210,15 @@ export default function FindShipmentsPage() {
             </TableHeader>
             <TableBody>
               {shipments.map((shipment) => {
-                let statusBadge;
+                let statusContent;
                 if (shipment.status === 'awarded') {
                     if (shipment.winningCarrierId === user?.uid) {
-                        statusBadge = <Badge variant="success">Awarded</Badge>;
+                        statusContent = <Badge variant="success">You are Awarded</Badge>;
                     } else {
-                        statusBadge = <Badge variant="outline">Closed</Badge>;
+                        statusContent = <Badge variant="outline">Other Carrier has been Awarded</Badge>;
                     }
                 } else {
-                    statusBadge = (
+                    statusContent = (
                         <Badge variant={getStatusVariant(shipment.status)} className="capitalize">
                             {shipment.status}
                         </Badge>
@@ -234,7 +234,7 @@ export default function FindShipmentsPage() {
                     <TableCell className="hidden lg:table-cell text-right">{shipment.deliveryDeadline ? format(shipment.deliveryDeadline.toDate(), "dd/MM/yyyy") : 'N/A'}</TableCell>
                     <TableCell className="hidden lg:table-cell text-right">{shipment.goLiveAt ? format(shipment.goLiveAt.toDate(), "dd/MM/yyyy p") : 'N/A'}</TableCell>
                     <TableCell className="text-center">
-                        {statusBadge}
+                        {statusContent}
                     </TableCell>
                     </TableRow>
                 );

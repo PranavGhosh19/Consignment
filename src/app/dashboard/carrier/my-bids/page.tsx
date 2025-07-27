@@ -120,9 +120,9 @@ export default function MyBidsPage() {
     
     if (shipment.status === 'awarded') {
         if (shipment.winningBidId === bid.id) {
-            return { text: 'Won', variant: 'success' };
+            return { text: 'You are Awarded', variant: 'success' };
         } else {
-            return { text: 'Lost', variant: 'destructive' };
+            return { text: 'Other Carrier has been Awarded', variant: 'destructive' };
         }
     }
 
@@ -139,9 +139,9 @@ export default function MyBidsPage() {
     if (currentTab === 'all') return bidsWithShipments;
     return bidsWithShipments.filter(item => {
         const status = getBidStatus(item).text.toLowerCase();
-        if (currentTab === 'live' && status === 'live') return true;
-        if (currentTab === 'won' && status === 'won') return true;
-        if (currentTab === 'lost' && (status === 'lost' || (item.shipment.status === 'awarded' && status !== 'won'))) return true;
+        if (currentTab === 'live' && status.includes('live')) return true;
+        if (currentTab === 'won' && status.includes('awarded') && item.shipment.winningBidId === item.bid.id) return true;
+        if (currentTab === 'lost' && (status.includes('awarded') && item.shipment.winningBidId !== item.bid.id)) return true;
         return false;
     });
   }, [bidsWithShipments, currentTab]);
@@ -185,7 +185,7 @@ export default function MyBidsPage() {
                             <TableCell className="hidden md:table-cell">{format(item.bid.createdAt.toDate(), "dd/MM/yyyy p")}</TableCell>
                             <TableCell className="hidden md:table-cell">{item.shipment.destination?.portOfDelivery || 'N/A'}</TableCell>
                             <TableCell className="text-center">
-                                <Badge variant={status.variant} className={cn("capitalize", { "animate-blink bg-green-500/80": status.text === 'Live' })}>
+                                <Badge variant={status.variant} className={cn({ "animate-blink bg-green-500/80": status.text === 'Live' })}>
                                     {status.text}
                                 </Badge>
                             </TableCell>

@@ -98,7 +98,10 @@ export default function RegisteredShipmentDetailPage() {
             }
             return { text: "Registered", description: "This shipment is scheduled to go live soon." };
         case 'awarded':
-            return { text: "Awarded", description: `This shipment has been awarded to a carrier.` };
+             if (shipment.winningCarrierId === user?.uid) {
+                return { text: "You are Awarded", description: `Congratulations! You have won the bid for this shipment.` };
+             }
+            return { text: "Other Carrier has been Awarded", description: `This shipment has been awarded to another carrier.` };
         default:
             return { text: "Pending", description: "This shipment is not yet available for bidding." };
     }

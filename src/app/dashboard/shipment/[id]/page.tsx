@@ -189,7 +189,7 @@ export default function ShipmentDetailPage() {
   const isOwner = user?.uid === shipment.exporterId;
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canManage = userType === 'employee';
-  const canGoLive = canManage && (shipment.status === 'draft' || shipment.status === 'scheduled');
+  const canGoLive = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canAcceptBid = isOwner && shipment.status === 'live';
 
 

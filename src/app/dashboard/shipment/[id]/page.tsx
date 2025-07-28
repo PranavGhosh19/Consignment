@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Rocket, Pencil, Clock, Shield, Users } from "lucide-react";
+import { ArrowLeft, Check, Pencil, Clock, Shield, Users } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -109,22 +109,6 @@ export default function ShipmentDetailPage() {
     return () => unsubscribeRegister();
   }, [shipmentId]);
 
-
-  const handleGoLive = async () => {
-    if (!shipmentId) return;
-    setIsSubmitting(true);
-    try {
-        const shipmentDocRef = doc(db, "shipments", shipmentId);
-        await updateDoc(shipmentDocRef, { status: 'live' });
-        toast({ title: "Success!", description: "Your shipment is now live for bidding."});
-    } catch (error) {
-        console.error("Error going live: ", error);
-        toast({ title: "Error", description: "Could not make the shipment live.", variant: "destructive" });
-    } finally {
-        setIsSubmitting(false);
-    }
-  }
-
   const handleAcceptBid = async (bid: DocumentData) => {
     if (!shipmentId) return;
     setIsSubmitting(true);
@@ -189,7 +173,6 @@ export default function ShipmentDetailPage() {
   const isOwner = user?.uid === shipment.exporterId;
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canManage = userType === 'employee';
-  const canGoLive = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canAcceptBid = isOwner && shipment.status === 'live';
 
 
@@ -320,14 +303,6 @@ export default function ShipmentDetailPage() {
                     <CardContent>
                         <p className="text-2xl font-bold font-headline text-accent-foreground capitalize">{statusInfo.text}</p>
                     </CardContent>
-                    {canGoLive && (
-                        <CardContent>
-                             <Button onClick={handleGoLive} disabled={isSubmitting} className="w-full">
-                                <Rocket className="mr-2 h-4 w-4" />
-                                {isSubmitting ? 'Sending Live...' : 'Go Live'}
-                            </Button>
-                        </CardContent>
-                    )}
                 </Card>
 
                 {(shipment.status === 'draft' || shipment.status === 'scheduled') && (
@@ -351,5 +326,3 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
-
-    

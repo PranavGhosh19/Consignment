@@ -12,11 +12,11 @@ import Link from "next/link";
 import { Skeleton } from '@/components/ui/skeleton';
 
 const insurancePartners = [
-    { name: "SecureShip Insurance", logo: "https://placehold.co/150x60.png", hint: "insurance company" },
-    { name: "Global Cargo Protect", logo: "https://placehold.co/150x60.png", hint: "logistics protect" },
-    { name: "Marine Assure", logo: "https://placehold.co/150x60.png", hint: "shipping marine" },
-    { name: "Freight Guardian", logo: "https://placehold.co/150x60.png", hint: "cargo freight" },
-    { name: "TransitSure", logo: "https://placehold.co/150x60.png", hint: "transport transit" },
+    { name: "Bajaj Allianz", logo: "https://placehold.co/150x60.png", hint: "Bajaj Allianz logo" },
+    { name: "HDFC ERGO", logo: "https://placehold.co/150x60.png", hint: "HDFC ERGO logo" },
+    { name: "ICICI Lombard", logo: "https://placehold.co/150x60.png", hint: "ICICI Lombard logo" },
+    { name: "Tata AIG", logo: "https://placehold.co/150x60.png", hint: "Tata AIG logo" },
+    { name: "Reliance General Insurance", logo: "https://placehold.co/150x60.png", hint: "Reliance Insurance logo" },
 ];
 
 export default function Home() {

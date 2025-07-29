@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -24,7 +25,6 @@ import { Separator } from "./ui/separator";
 
 const exporterNavLinks = [
   { href: "/dashboard/exporter", label: "My Shipments" },
-  { href: "/dashboard/analytics", label: "Analytics" },
 ];
 
 const carrierNavLinks = [

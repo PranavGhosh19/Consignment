@@ -4,12 +4,13 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart, Users, Ship, Anchor, Building } from "lucide-react";
+import { BarChart, Users, Ship, Anchor, Building, FileDown } from "lucide-react";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import * as XLSX from 'xlsx';
 
 type AnalyticsView = "exporters" | "carriers" | "shipments";
 
@@ -82,6 +83,38 @@ const AnalyticsContent = ({ view }: { view: AnalyticsView }) => {
         }
     }, [view, toast]);
 
+    const handleDownload = () => {
+        const data = view === 'exporters' ? exporters : carriers;
+        if (data.length === 0) {
+            toast({ title: "No Data", description: "There is no data to download." });
+            return;
+        }
+
+        const formattedData = data.map(user => ({
+            "Legal Name": user.companyDetails?.legalName || 'N/A',
+            "Trade Name": user.companyDetails?.tradeName || 'N/A',
+            "Address": user.companyDetails?.address || 'N/A',
+            "GSTIN": user.gstin || 'N/A',
+            "Email": user.email || 'N/A',
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(formattedData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, view.charAt(0).toUpperCase() + view.slice(1));
+        
+        // Set column widths
+        worksheet['!cols'] = [
+            { wch: 30 }, // Legal Name
+            { wch: 25 }, // Trade Name
+            { wch: 50 }, // Address
+            { wch: 20 }, // GSTIN
+            { wch: 30 }, // Email
+        ];
+
+        XLSX.writeFile(workbook, `${view}_data.xlsx`);
+        toast({ title: "Success", description: `${view} data has been downloaded.` });
+    };
+
     const renderUserTable = (users: DocumentData[], type: 'exporter' | 'carrier') => (
         <>
             {loading ? (
@@ -152,12 +185,22 @@ const AnalyticsContent = ({ view }: { view: AnalyticsView }) => {
     };
 
     const currentContent = contentMap[view];
+    const canDownload = (view === 'exporters' && exporters.length > 0) || (view === 'carriers' && carriers.length > 0);
+
 
     return (
         <Card className="h-full">
-            <CardHeader>
-                <CardTitle>{currentContent.title}</CardTitle>
-                <CardDescription>{currentContent.description}</CardDescription>
+            <CardHeader className="flex flex-row justify-between items-start">
+                <div>
+                    <CardTitle>{currentContent.title}</CardTitle>
+                    <CardDescription>{currentContent.description}</CardDescription>
+                </div>
+                {(view === 'exporters' || view === 'carriers') && (
+                    <Button variant="outline" size="sm" onClick={handleDownload} disabled={!canDownload || loading}>
+                        <FileDown className="mr-2 h-4 w-4" />
+                        Download
+                    </Button>
+                )}
             </CardHeader>
             <CardContent>
                  {currentContent.content}

@@ -2,11 +2,14 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, DragEvent } from "react";
+import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart, Users, Ship, Anchor, Building, FileDown, Eye, GripVertical } from "lucide-react";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -316,7 +319,45 @@ const AnalyticsContent = ({ view }: { view: AnalyticsView }) => {
 
 
 export default function AnalyticsPage() {
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
     const [activeView, setActiveView] = useState<AnalyticsView>("exporters");
+    const router = useRouter();
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                const userDocRef = doc(db, 'users', currentUser.uid);
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists() && userDoc.data()?.userType === 'employee') {
+                    setUser(currentUser);
+                    setLoading(false);
+                } else {
+                    router.push('/dashboard');
+                }
+            } else {
+                router.push('/login');
+            }
+        });
+        return () => unsubscribe();
+    }, [router]);
+
+    if (loading) {
+        return (
+            <div className="container py-6 md:py-10">
+                <Skeleton className="h-8 w-48 mb-8" />
+                <div className="grid md:grid-cols-4 gap-8 items-start">
+                    <div className="md:col-span-1">
+                        <Skeleton className="h-32 w-full" />
+                    </div>
+                    <div className="md:col-span-3">
+                        <Skeleton className="h-96 w-full" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="container py-6 md:py-10">

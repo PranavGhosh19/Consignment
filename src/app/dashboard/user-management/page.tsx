@@ -21,7 +21,7 @@ export default function UserManagementPage() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentTab, setCurrentTab] = useState("all");
+  const [currentTab, setCurrentTab] = useState("exporter");
   const [searchTerm, setSearchTerm] = useState("");
   
   const router = useRouter();
@@ -68,7 +68,7 @@ export default function UserManagementPage() {
   const filteredUsers = useMemo(() => {
     let filtered = users;
 
-    if (currentTab !== 'all') {
+    if (currentTab) {
       filtered = filtered.filter(user => user.userType === currentTab);
     }
 
@@ -148,14 +148,13 @@ export default function UserManagementPage() {
                 />
             </div>
             <TabsList className="w-full sm:w-auto">
-                <TabsTrigger value="all">All Users</TabsTrigger>
                 <TabsTrigger value="exporter">Exporters</TabsTrigger>
                 <TabsTrigger value="carrier">Carriers</TabsTrigger>
             </TabsList>
         </div>
-        <TabsContent value="all">{renderUserTable(filteredUsers)}</TabsContent>
-        <TabsContent value="exporter">{renderUserTable(filteredUsers)}</TabsContent>
-        <TabsContent value="carrier">{renderUserTable(filteredUsers)}</TabsContent>
+        <TabsContent value={currentTab}>
+            {renderUserTable(filteredUsers)}
+        </TabsContent>
       </Tabs>
     </div>
   );

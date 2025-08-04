@@ -96,21 +96,6 @@ export default function EmployeeDashboardPage() {
             </CardContent>
         </Card>
       </div>
-
-       <div className="mt-12">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Internal Tools</CardTitle>
-                    <CardDescription>This area is reserved for internal administrative tools and features.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                   <div className="border rounded-lg p-12 text-center bg-card-foreground/5 dark:bg-card-foreground/5">
-                        <h2 className="text-xl font-semibold mb-2">Feature Under Development</h2>
-                        <p className="text-muted-foreground">More employee-specific functionalities are coming soon.</p>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
     </div>
   );
 }

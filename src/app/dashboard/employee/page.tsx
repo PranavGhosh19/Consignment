@@ -72,30 +72,6 @@ export default function EmployeeDashboardPage() {
         <h1 className="text-2xl sm:text-3xl font-bold font-headline">Employee Dashboard</h1>
         <p className="text-muted-foreground">Welcome, {employeeName}</p>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <DashboardCard 
-            title="Manage Shipments"
-            description="View and manage all active and past shipments."
-            href="/dashboard/manage-shipments"
-            icon={Truck}
-        />
-        <DashboardCard
-            title="User Management"
-            description="Oversee exporter and carrier accounts."
-            href="/dashboard/user-management"
-            icon={Users}
-        />
-         <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-medium">Platform Analytics</CardTitle>
-                <Anchor className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground">Access global platform metrics and reports.</p>
-            </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

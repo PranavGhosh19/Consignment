@@ -30,6 +30,7 @@ export default function ManageShipmentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>();
+  const [goLiveDateFilter, setGoLiveDateFilter] = useState<Date | undefined>();
 
   const router = useRouter();
   const { toast } = useToast();
@@ -89,10 +90,14 @@ export default function ManageShipmentsPage() {
         const dateMatch = dateFilter 
             ? (shipment.createdAt && isSameDay(shipment.createdAt.toDate(), dateFilter))
             : true;
+        
+        const goLiveDateMatch = goLiveDateFilter
+            ? (shipment.goLiveAt && isSameDay(shipment.goLiveAt.toDate(), goLiveDateFilter))
+            : true;
 
-        return searchTermMatch && statusMatch && dateMatch;
+        return searchTermMatch && statusMatch && dateMatch && goLiveDateMatch;
     });
-  }, [shipments, searchTerm, statusFilter, dateFilter]);
+  }, [shipments, searchTerm, statusFilter, dateFilter, goLiveDateFilter]);
 
 
   const getStatusVariant = (status: string) => {
@@ -117,6 +122,7 @@ export default function ManageShipmentsPage() {
     setSearchTerm("");
     setStatusFilter("all");
     setDateFilter(undefined);
+    setGoLiveDateFilter(undefined);
   }
 
   if (loading) {
@@ -142,8 +148,8 @@ export default function ManageShipmentsPage() {
 
        <Collapsible open={showFilters} className="mb-8">
         <CollapsibleContent>
-            <div className="p-4 border rounded-lg bg-card grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                <div className="relative">
+            <div className="p-4 border rounded-lg bg-card grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-end">
+                <div className="relative xl:col-span-1">
                     <label className="text-sm font-medium text-muted-foreground">Search Product/Exporter</label>
                     <Search className="absolute left-3 top-1/2 mt-2 h-4 w-4 text-muted-foreground" />
                     <Input 
@@ -153,7 +159,7 @@ export default function ManageShipmentsPage() {
                         className="pl-10"
                     />
                 </div>
-                <div>
+                <div className="xl:col-span-1">
                     <label className="text-sm font-medium text-muted-foreground">Status</label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger>
@@ -168,7 +174,7 @@ export default function ManageShipmentsPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                <div>
+                <div className="xl:col-span-1">
                     <label className="text-sm font-medium text-muted-foreground">Creation Date</label>
                     <Popover>
                         <PopoverTrigger asChild>
@@ -193,7 +199,32 @@ export default function ManageShipmentsPage() {
                         </PopoverContent>
                     </Popover>
                 </div>
-                <div>
+                <div className="xl:col-span-1">
+                    <label className="text-sm font-medium text-muted-foreground">On Live Date</label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                            variant={"outline"}
+                            className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !goLiveDateFilter && "text-muted-foreground"
+                            )}
+                            >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {goLiveDateFilter ? format(goLiveDateFilter, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={goLiveDateFilter}
+                                onSelect={setGoLiveDateFilter}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+                <div className="xl:col-span-1">
                     <Button variant="ghost" onClick={clearFilters} className="w-full">
                         <X className="mr-2 h-4 w-4" /> Clear Filters
                     </Button>
@@ -242,7 +273,3 @@ export default function ManageShipmentsPage() {
     </div>
   );
 }
-
-    
-
-    

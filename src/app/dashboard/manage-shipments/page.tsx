@@ -20,17 +20,20 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
-const StatCard = ({ title, value, icon: Icon, onClick }: { title: string, value: number, icon: React.ElementType, onClick?: () => void }) => (
-    <Card onClick={onClick} className={cn(onClick && "cursor-pointer hover:bg-secondary")}>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            <Icon className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-            <div className="text-2xl font-bold">{value}</div>
-        </CardContent>
-    </Card>
+const StatCard = ({ title, value, icon: Icon, href }: { title: string, value: number, icon: React.ElementType, href: string }) => (
+    <Link href={href}>
+        <Card className="cursor-pointer hover:bg-secondary">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{value}</div>
+            </CardContent>
+        </Card>
+    </Link>
 );
 
 export default function ManageShipmentsPage() {
@@ -163,9 +166,9 @@ export default function ManageShipmentsPage() {
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-            <StatCard title="Live for Today" value={stats.liveToday} icon={RadioTower} />
-            <StatCard title="Live Tomorrow" value={stats.liveTomorrow} icon={Sunrise} />
-            <StatCard title="Awarded" value={stats.awarded} icon={Award} onClick={() => setStatusFilter('awarded')} />
+            <StatCard title="Live for Today" value={stats.liveToday} icon={RadioTower} href="/dashboard/shipments/live-today" />
+            <StatCard title="Live Tomorrow" value={stats.liveTomorrow} icon={Sunrise} href="/dashboard/shipments/live-tomorrow" />
+            <StatCard title="Awarded" value={stats.awarded} icon={Award} href="/dashboard/shipments/awarded" />
        </div>
 
       <div className="flex justify-end mb-4">
@@ -302,4 +305,3 @@ export default function ManageShipmentsPage() {
     </div>
   );
 }
-

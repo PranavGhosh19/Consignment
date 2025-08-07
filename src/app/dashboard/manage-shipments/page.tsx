@@ -163,6 +163,10 @@ export default function ManageShipmentsPage() {
     <div className="container py-6 md:py-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold font-headline">Manage All Shipments</h1>
+        <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
+          <Filter className="mr-2 h-4 w-4" />
+          {showFilters ? 'Hide Filters' : 'Apply Filter'}
+        </Button>
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
@@ -170,13 +174,6 @@ export default function ManageShipmentsPage() {
             <StatCard title="Live Tomorrow" value={stats.liveTomorrow} icon={Sunrise} href="/dashboard/shipments/live-tomorrow" />
             <StatCard title="Awarded" value={stats.awarded} icon={Award} href="/dashboard/shipments/awarded" />
        </div>
-
-      <div className="flex justify-end mb-4">
-        <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-          <Filter className="mr-2 h-4 w-4" />
-          {showFilters ? 'Hide Filters' : 'Apply Filter'}
-        </Button>
-      </div>
 
        <Collapsible open={showFilters} className="mb-8">
         <CollapsibleContent>

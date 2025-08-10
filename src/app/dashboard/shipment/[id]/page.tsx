@@ -414,7 +414,7 @@ export default function ShipmentDetailPage() {
                     </CardContent>
                 </Card>
 
-                {(shipment.status === 'draft' || shipment.status === 'scheduled') && (
+                {shipment.status === 'scheduled' && (
                     <Card className="bg-white dark:bg-card">
                         <CardHeader>
                             <CardTitle>Interest</CardTitle>

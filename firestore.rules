@@ -34,7 +34,7 @@ service cloud.firestore {
                     && isExporter(request.auth.uid)
                     && request.resource.data.exporterId == request.auth.uid;
 
-      allow list: if request.auth.uid != null;
+      allow list: if request.auth.uid != null && isEmployee(request.auth.uid);
       
       allow get: if request.auth.uid != null && (
         isEmployee(request.auth.uid) ||

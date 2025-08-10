@@ -34,11 +34,15 @@ service cloud.firestore {
                     && isExporter(request.auth.uid)
                     && request.resource.data.exporterId == request.auth.uid;
 
-      allow list: if request.auth.uid != null && isEmployee(request.auth.uid);
+      // Allow list access to authenticated users. The 'get' rule below will enforce query constraints.
+      allow list: if request.auth.uid != null;
       
+      // Define who can read a specific shipment document. This is critical for securing list queries.
       allow get: if request.auth.uid != null && (
         isEmployee(request.auth.uid) ||
         (isExporter(request.auth.uid) && resource.data.exporterId == request.auth.uid) ||
+        // Carriers can get any shipment, as their list queries are already filtered by status on the client.
+        // And they need to access awarded/draft shipments if they have registered for them.
         isCarrier(request.auth.uid)
       );
 

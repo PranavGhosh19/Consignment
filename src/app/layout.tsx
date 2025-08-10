@@ -12,6 +12,21 @@ import { BottomBar } from "@/components/bottom-bar";
 import { Clock } from "@/components/clock";
 import { ThemeProvider } from "@/components/theme-provider";
 import Script from "next/script";
+import { Poppins, PT_Sans } from 'next/font/google';
+
+const fontPoppins = Poppins({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-poppins',
+  weight: ['400', '500', '600', '700']
+});
+
+const fontPtSans = PT_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-pt-sans',
+  weight: ['400', '700']
+});
 
 export const metadata: Metadata = {
   title: "Shipping Battlefield",
@@ -105,11 +120,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${fontPoppins.variable} ${fontPtSans.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
          <Script
             id="razorpay-checkout-js"
             src="https://checkout.razorpay.com/v1/checkout.js"

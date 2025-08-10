@@ -4,17 +4,28 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, Timestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, Timestamp, updateDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil } from "lucide-react";
+import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 type RegisteredCarrier = {
@@ -31,6 +42,8 @@ export default function ShipmentDetailPage() {
   const [registeredCarriers, setRegisteredCarriers] = useState<RegisteredCarrier[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
 
   const router = useRouter();
   const params = useParams();
@@ -177,6 +190,23 @@ export default function ShipmentDetailPage() {
     }
   }
 
+  const handleDeleteShipment = async () => {
+    if (!shipmentId) return;
+    setIsSubmitting(true);
+    try {
+      const shipmentDocRef = doc(db, "shipments", shipmentId);
+      await deleteDoc(shipmentDocRef);
+      toast({ title: "Success", description: "Shipment has been deleted." });
+      router.push('/dashboard/exporter');
+    } catch (error) {
+      console.error("Error deleting shipment: ", error);
+      toast({ title: "Error", description: "Could not delete the shipment.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+      setIsDeleteDialogOpen(false);
+    }
+  }
+
 
   if (loading || !shipment) {
     return (
@@ -220,6 +250,7 @@ export default function ShipmentDetailPage() {
   const isOwner = user?.uid === shipment.exporterId;
   const canManage = userType === 'employee';
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
+  const canDelete = isOwner && shipment.status === 'draft';
   const canAcceptBid = (isOwner || canManage) && shipment.status === 'live';
   const canGoLive = canManage && shipment.status === 'scheduled';
 
@@ -231,6 +262,30 @@ export default function ShipmentDetailPage() {
                 Back
             </Button>
             <div className="flex items-center gap-2">
+              {canDelete && (
+                <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete this
+                        shipment and remove its data from our servers.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteShipment} disabled={isSubmitting}>
+                        {isSubmitting ? "Deleting..." : "Yes, delete it"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
               {canEdit && (
                   <Button variant="outline" onClick={() => router.push(`/dashboard/exporter?edit=${shipmentId}`)}>
                       <Pencil className="mr-2 h-4 w-4" />
@@ -415,5 +470,3 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
-
-    

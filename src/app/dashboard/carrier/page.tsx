@@ -78,11 +78,6 @@ export default function CarrierDashboardPage() {
     <div className="container py-6 md:py-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold font-headline">Welcome, {carrierName}</h1>
-        <Button asChild>
-            <Link href="/dashboard/carrier/find-shipments">
-                Find Shipments <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-        </Button>
       </div>
 
        <div className="mt-12">

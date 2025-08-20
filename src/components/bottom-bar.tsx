@@ -27,7 +27,7 @@ const CarrierBottomNav = () => {
     const pathname = usePathname();
     const carrierLinks = [
         { href: "/dashboard/carrier", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/dashboard/carrier/find-shipments", label: "Find", icon: Truck },
+        { href: "/dashboard/carrier/find-shipments", label: "Find Shipments", icon: Truck },
         { href: "/dashboard/carrier/my-bids", label: "My Bids", icon: Gavel },
     ];
     return (

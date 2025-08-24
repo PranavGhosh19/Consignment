@@ -16,10 +16,10 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Moon, Sun, Monitor, User as UserIcon, Lock, Palette, Landmark } from "lucide-react";
+import { Moon, Sun, Monitor, User as UserIcon, Lock, Palette, Landmark, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type SettingsView = "profile" | "password" | "preferences" | "bank";
+type SettingsView = "profile" | "password" | "preferences" | "bank" | "regulatory";
 
 const PageSkeleton = () => (
     <div className="container max-w-5xl py-6 md:py-10">
@@ -42,6 +42,7 @@ const SidebarNav = ({ activeView, setView }: { activeView: SettingsView, setView
         { id: "password", label: "Password", icon: Lock },
         { id: "preferences", label: "User Preferences", icon: Palette },
         { id: "bank", label: "Bank Account Details", icon: Landmark },
+        { id: "regulatory", label: "Regulatory Details", icon: FileText },
     ] as const;
 
     return (
@@ -304,10 +305,22 @@ export default function SettingsPage() {
                             </CardContent>
                         </Card>
                     )}
+                    {activeView === 'regulatory' && (
+                        <Card className="bg-white dark:bg-card">
+                            <CardHeader>
+                                <CardTitle>Regulatory Details</CardTitle>
+                                <CardDescription>Manage your regulatory documents and compliance information.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-lg">
+                                    <FileText className="h-10 w-10 text-muted-foreground mb-4" />
+                                    <p className="text-muted-foreground">Regulatory details management is coming soon.</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
-
-    

@@ -116,7 +116,7 @@ export default function ManageShipmentsPage() {
   }, [shipments, searchTerm, statusFilter, dateFilter, goLiveDateFilter]);
 
   const stats = useMemo(() => {
-    const liveToday = shipments.filter(s => s.goLiveAt && isToday(s.goLiveAt.toDate())).length;
+    const liveToday = shipments.filter(s => s.goLiveAt && isToday(s.goLiveAt.toDate()) && s.status !== 'awarded').length;
     const liveTomorrow = shipments.filter(s => s.goLiveAt && isTomorrow(s.goLiveAt.toDate())).length;
     const awarded = shipments.filter(s => s.status === 'awarded').length;
     return { liveToday, liveTomorrow, awarded };

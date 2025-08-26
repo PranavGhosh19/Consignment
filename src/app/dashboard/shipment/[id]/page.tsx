@@ -116,7 +116,6 @@ export default function ShipmentDetailPage() {
   
   useEffect(() => {
     if (!shipmentId || userType !== 'employee') {
-        // Only fetch detailed carrier list for employees
         const registerQuery = query(collection(db, "shipments", shipmentId, "register"));
         const unsubscribeRegister = onSnapshot(registerQuery, (querySnapshot) => {
              setRegisteredCarriers(querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as RegisteredCarrier)));

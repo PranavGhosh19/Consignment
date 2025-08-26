@@ -56,7 +56,7 @@ export default function ShipmentDocumentsPage() {
             setShipment({ id: docSnap.id, ...shipmentData });
         } else {
             toast({ title: "Unauthorized", description: "You don't have permission to view these documents.", variant: "destructive" });
-            router.push(`/dashboard/shipment/${shipmentId}`);
+            router.push(`/dashboard`);
         }
       } else {
         toast({ title: "Error", description: "Shipment not found.", variant: "destructive" });

@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, Timestamp, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, Timestamp, updateDoc, deleteDoc } from "firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -207,6 +207,8 @@ export default function ShipmentDetailPage() {
   const handleBackNavigation = () => {
     if (userType === 'exporter') {
       router.push('/dashboard/exporter');
+    } else if (userType === 'employee') {
+      router.push('/dashboard/manage-shipments');
     } else {
       router.back();
     }

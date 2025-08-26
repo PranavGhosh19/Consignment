@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, DocumentData } from "firebase/firestore";
+import { doc, getDoc, DocumentData } from "firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -93,7 +93,7 @@ export default function ShipmentDocumentsPage() {
         <div className="flex justify-between items-center mb-6">
              <Button variant="ghost" onClick={handleBackNavigation}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
+                Back to Shipment
             </Button>
         </div>
         <Card>
@@ -114,7 +114,5 @@ export default function ShipmentDocumentsPage() {
     </div>
   );
 }
-
-    
 
     

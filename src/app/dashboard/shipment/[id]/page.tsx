@@ -204,6 +204,14 @@ export default function ShipmentDetailPage() {
     }
   }
 
+  const handleBackNavigation = () => {
+    if (userType === 'exporter') {
+      router.push('/dashboard/exporter');
+    } else {
+      router.back();
+    }
+  };
+
 
   if (loading || !shipment) {
     return (
@@ -257,7 +265,7 @@ export default function ShipmentDetailPage() {
   return (
     <div className="container py-6 md:py-10">
         <div className="flex justify-between items-center mb-6">
-            <Button variant="ghost" onClick={() => router.back()}>
+            <Button variant="ghost" onClick={handleBackNavigation}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
             </Button>
@@ -476,3 +484,5 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
+
+    

@@ -71,6 +71,14 @@ export default function ShipmentDocumentsPage() {
 
   }, [user, userType, shipmentId, router, toast]);
 
+  const handleBackNavigation = () => {
+    if (userType === 'carrier') {
+        router.push(`/dashboard/carrier/registered-shipment/${shipmentId}`);
+    } else {
+        router.push(`/dashboard/shipment/${shipmentId}`);
+    }
+  }
+
   if (loading || !shipment) {
     return (
       <div className="container py-6 md:py-10">
@@ -83,9 +91,9 @@ export default function ShipmentDocumentsPage() {
   return (
     <div className="container py-6 md:py-10">
         <div className="flex justify-between items-center mb-6">
-             <Button variant="ghost" onClick={() => router.push(`/dashboard/shipment/${shipmentId}`)}>
+             <Button variant="ghost" onClick={handleBackNavigation}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Shipment
+                Back
             </Button>
         </div>
         <Card>

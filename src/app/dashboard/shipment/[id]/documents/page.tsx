@@ -29,8 +29,6 @@ export default function ShipmentDocumentsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
   const [shipment, setShipment] = useState<DocumentData | null>(null);
-  const [exporter, setExporter] = useState<DocumentData | null>(null);
-  const [vendor, setVendor] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -72,23 +70,6 @@ export default function ShipmentDocumentsPage() {
                 if (shipmentData.status === 'awarded' && (isOwner || isWinningCarrier || isEmployee)) {
                     setShipment({ id: docSnap.id, ...shipmentData });
 
-                    // Fetch exporter details
-                    if (shipmentData.exporterId) {
-                        const exporterDocRef = doc(db, "users", shipmentData.exporterId);
-                        const exporterDoc = await getDoc(exporterDocRef);
-                        if (exporterDoc.exists()) {
-                            setExporter(exporterDoc.data());
-                        }
-                    }
-
-                    // Fetch vendor (winning carrier) details - still needed for other info
-                    if (shipmentData.winningCarrierId) {
-                        const vendorDocRef = doc(db, "users", shipmentData.winningCarrierId);
-                        const vendorDoc = await getDoc(vendorDocRef);
-                        if (vendorDoc.exists()) {
-                            setVendor(vendorDoc.data());
-                        }
-                    }
                 } else {
                     toast({ title: "Unauthorized", description: "You don't have permission to view these documents.", variant: "destructive" });
                     router.push(`/dashboard`);
@@ -161,7 +142,7 @@ export default function ShipmentDocumentsPage() {
                 <CardContent className="space-y-4 text-sm">
                     <div className="flex items-center gap-3">
                         <Building2 className="h-5 w-5 text-muted-foreground" />
-                        <span>{exporter?.companyDetails?.legalName || "Exporter Company Name"}</span>
+                        <span>{shipment?.exporterName || "Exporter Company Name"}</span>
                     </div>
                 </CardContent>
             </Card>

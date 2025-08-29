@@ -368,7 +368,7 @@ function ExporterDashboardPage() {
       } else {
         const userDocRef = doc(db, 'users', user!.uid);
         const userDoc = await getDoc(userDocRef);
-        const exporterName = userDoc.exists() ? userDoc.data().name : 'Unknown Exporter';
+        const exporterName = userDoc.exists() ? userDoc.data().companyDetails.legalName : 'Unknown Exporter';
         
         await addDoc(collection(db, 'shipments'), {
           ...shipmentPayload,

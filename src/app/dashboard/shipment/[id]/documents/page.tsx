@@ -99,10 +99,7 @@ export default function ShipmentDocumentsPage() {
                         const vendorDocRef = doc(db, "users", shipmentData.winningCarrierId);
                         const vendorDoc = await getDoc(vendorDocRef);
                         if (vendorDoc.exists()) {
-                            const vendorData = vendorDoc.data();
-                            setVendor(vendorData);
-                            setVendorPocFullName(vendorData.pocFullName || '');
-                            setVendorPocPhoneNumber(vendorData.pocPhoneNumber || '');
+                            setVendor(vendorDoc.data());
                         }
                     }
 
@@ -145,14 +142,13 @@ export default function ShipmentDocumentsPage() {
   };
   
   const handleVendorSave = async () => {
+      // Placeholder: Implement save logic here
       if (!vendor || !shipment?.winningCarrierId) return;
       setIsSavingVendor(true);
       try {
-          const vendorDocRef = doc(db, "users", shipment.winningCarrierId);
-          await updateDoc(vendorDocRef, {
-              pocFullName: vendorPocFullName,
-              pocPhoneNumber: vendorPocPhoneNumber
-          });
+          // This will be implemented in a future step.
+          console.log("Saving vendor POC details:", { vendorPocFullName, vendorPocPhoneNumber });
+          await new Promise(res => setTimeout(res, 1000)); // Simulate async operation
           toast({ title: "Success", description: "Vendor's contact details have been updated." });
       } catch (error) {
           console.error("Error saving vendor POC details:", error);

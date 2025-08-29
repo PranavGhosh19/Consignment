@@ -10,10 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Upload, FileText, Anchor, Truck, Building2, User as UserIcon, Phone, Save } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Anchor, Truck, Building2, User as UserIcon, Phone, Save, PlusCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 
 const InfoCardSkeleton = () => (
     <Card>
@@ -81,7 +84,7 @@ export default function ShipmentDocumentsPage() {
 
                 if (shipmentData.status === 'awarded' && (isOwner || isWinningCarrier || isEmployee)) {
                     setShipment({ id: docSnap.id, ...shipmentData });
-                    // Pre-fill POC info if it exists on the shipment doc
+                    // Pre-fill POC info from the shipment doc itself
                     setExporterPocFullName(shipmentData.exporterPocFullName || '');
                     setExporterPocPhoneNumber(shipmentData.exporterPocPhoneNumber || '');
                     setVendorPocFullName(shipmentData.vendorPocFullName || '');
@@ -106,52 +109,43 @@ export default function ShipmentDocumentsPage() {
 
   }, [user, userType, shipmentId, router, toast]);
 
-  const handleExporterSave = async () => {
+  const handlePocUpdate = async (type: 'exporter' | 'vendor') => {
     if (!shipment) return;
-    setIsSavingExporter(true);
-    try {
-        const shipmentDocRef = doc(db, "shipments", shipment.id);
-        await updateDoc(shipmentDocRef, {
+
+    let dataToUpdate = {};
+    let successMessage = "";
+
+    if (type === 'exporter') {
+        setIsSavingExporter(true);
+        dataToUpdate = {
             exporterPocFullName: exporterPocFullName,
             exporterPocPhoneNumber: exporterPocPhoneNumber
-        });
-        toast({ title: "Success", description: "Exporter's contact details have been updated." });
-    } catch (error) {
-        console.error("Error saving exporter POC details:", error);
-        toast({ title: "Error", description: "Failed to save contact details.", variant: "destructive" });
-    } finally {
-        setIsSavingExporter(false);
-    }
-  };
-  
-  const handleVendorSave = async () => {
-      if (!shipment) return;
-      setIsSavingVendor(true);
-      try {
-          const shipmentDocRef = doc(db, "shipments", shipment.id);
-          await updateDoc(shipmentDocRef, {
+        };
+        successMessage = "Exporter's contact details have been updated.";
+    } else {
+        setIsSavingVendor(true);
+        dataToUpdate = {
             vendorPocFullName: vendorPocFullName,
             vendorPocPhoneNumber: vendorPocPhoneNumber
-          });
-          toast({ title: "Success", description: "Vendor's contact details have been updated." });
-      } catch (error) {
-          console.error("Error saving vendor POC details:", error);
-          toast({ title: "Error", description: "Failed to save contact details.", variant: "destructive" });
-      } finally {
-          setIsSavingVendor(false);
-      }
+        };
+        successMessage = "Vendor's contact details have been updated.";
+    }
+    
+    try {
+        const shipmentDocRef = doc(db, "shipments", shipment.id);
+        await updateDoc(shipmentDocRef, dataToUpdate);
+        toast({ title: "Success", description: successMessage });
+    } catch (error) {
+        console.error(`Error saving ${type} POC details:`, error);
+        toast({ title: "Error", description: "Failed to save contact details.", variant: "destructive" });
+    } finally {
+        if (type === 'exporter') setIsSavingExporter(false);
+        else setIsSavingVendor(false);
+    }
   };
 
   const handleBackNavigation = () => {
-    if (userType === 'exporter') {
-        router.push(`/dashboard/shipment/${shipmentId}`);
-    } else if (userType === 'employee') {
-        router.push(`/dashboard/shipment/${shipmentId}`);
-    } else if (userType === 'carrier') {
-        router.push(`/dashboard/carrier/registered-shipment/${shipmentId}`);
-    } else {
-        router.push('/dashboard');
-    }
+    router.push(`/dashboard/shipment/${shipmentId}`);
   }
 
   if (loading || !shipment) {
@@ -162,6 +156,7 @@ export default function ShipmentDocumentsPage() {
             <InfoCardSkeleton />
             <InfoCardSkeleton />
         </div>
+        <Skeleton className="h-64 w-full mt-8" />
       </div>
     );
   }
@@ -223,7 +218,7 @@ export default function ShipmentDocumentsPage() {
                         </div>
                         {canEditExporterInfo && (
                             <div className="flex justify-end">
-                                <Button size="sm" onClick={handleExporterSave} disabled={isSavingExporter}>
+                                <Button size="sm" onClick={() => handlePocUpdate('exporter')} disabled={isSavingExporter}>
                                     <Save className="mr-2 h-4 w-4"/>
                                     {isSavingExporter ? "Saving..." : "Save"}
                                 </Button>
@@ -265,7 +260,7 @@ export default function ShipmentDocumentsPage() {
                         </div>
                         {canEditVendorInfo && (
                             <div className="flex justify-end">
-                                <Button size="sm" onClick={handleVendorSave} disabled={isSavingVendor}>
+                                <Button size="sm" onClick={() => handlePocUpdate('vendor')} disabled={isSavingVendor}>
                                     <Save className="mr-2 h-4 w-4"/>
                                     {isSavingVendor ? "Saving..." : "Save"}
                                 </Button>
@@ -278,14 +273,66 @@ export default function ShipmentDocumentsPage() {
 
         <Separator className="my-8" />
         
-        <div>
-            <h2 className="text-xl font-bold mb-4">Shipment Documents</h2>
-             <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg text-center p-4">
-                <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Document Management Coming Soon</h3>
-                <p className="text-muted-foreground max-w-md">This area will allow you to upload, download, and manage critical shipping documents like the Bill of Lading, Commercial Invoice, and Packing Lists.</p>
-            </div>
-        </div>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Shipment Documents</CardTitle>
+                    <CardDescription>Manage all documents related to this shipment.</CardDescription>
+                </div>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Upload Document
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Upload New Document</DialogTitle>
+                            <DialogDescription>
+                                Select a file from your local machine and give it a name.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="doc-name">Name of the Document</Label>
+                                <Input id="doc-name" placeholder="e.g., Bill of Lading" />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="doc-file">Upload Document</Label>
+                                <Input id="doc-file" type="file" />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="submit">Upload</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Document Name</TableHead>
+                                <TableHead className="hidden md:table-cell">Uploaded By</TableHead>
+                                <TableHead className="hidden md:table-cell">Date</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">
+                                    No documents have been uploaded yet.
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
     </div>
   );
 }
+
+    

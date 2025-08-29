@@ -10,13 +10,29 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Upload, FileText, Download } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Anchor, Truck, Building2, Mail, Phone, User as UserIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+
+const InfoCardSkeleton = () => (
+    <Card>
+        <CardHeader>
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-3/4" />
+        </CardContent>
+    </Card>
+)
 
 export default function ShipmentDocumentsPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [userType, setUserType] =useState<string | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
   const [shipment, setShipment] = useState<DocumentData | null>(null);
+  const [exporterInfo, setExporterInfo] = useState<DocumentData | null>(null);
+  const [carrierInfo, setCarrierInfo] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -43,47 +59,71 @@ export default function ShipmentDocumentsPage() {
   useEffect(() => {
     if (!user || !userType || !shipmentId) return;
 
-    const shipmentDocRef = doc(db, "shipments", shipmentId);
-    getDoc(shipmentDocRef).then(docSnap => {
-       if (docSnap.exists()) {
-        const shipmentData = docSnap.data();
-        
-        const isOwner = shipmentData.exporterId === user.uid;
-        const isWinningCarrier = shipmentData.winningCarrierId === user.uid;
-        const isEmployee = userType === 'employee';
+    const fetchShipmentAndPartyDetails = async () => {
+        try {
+            const shipmentDocRef = doc(db, "shipments", shipmentId);
+            const docSnap = await getDoc(shipmentDocRef);
 
-        if (shipmentData.status === 'awarded' && (isOwner || isWinningCarrier || isEmployee)) {
-            setShipment({ id: docSnap.id, ...shipmentData });
-        } else {
-            toast({ title: "Unauthorized", description: "You don't have permission to view these documents.", variant: "destructive" });
-            router.push(`/dashboard`);
+            if (docSnap.exists()) {
+                const shipmentData = docSnap.data();
+                
+                const isOwner = shipmentData.exporterId === user.uid;
+                const isWinningCarrier = shipmentData.winningCarrierId === user.uid;
+                const isEmployee = userType === 'employee';
+
+                if (shipmentData.status === 'awarded' && (isOwner || isWinningCarrier || isEmployee)) {
+                    setShipment({ id: docSnap.id, ...shipmentData });
+
+                    // Fetch exporter and carrier details
+                    const exporterDocRef = doc(db, 'users', shipmentData.exporterId);
+                    const carrierDocRef = doc(db, 'users', shipmentData.winningCarrierId);
+
+                    const [exporterDoc, carrierDoc] = await Promise.all([
+                        getDoc(exporterDocRef),
+                        getDoc(carrierDocRef)
+                    ]);
+
+                    if (exporterDoc.exists()) setExporterInfo(exporterDoc.data());
+                    if (carrierDoc.exists()) setCarrierInfo(carrierDoc.data());
+
+                } else {
+                    toast({ title: "Unauthorized", description: "You don't have permission to view these documents.", variant: "destructive" });
+                    router.push(`/dashboard`);
+                }
+            } else {
+                toast({ title: "Error", description: "Shipment not found.", variant: "destructive" });
+                router.push("/dashboard");
+            }
+        } catch (error) {
+            console.error("Error fetching data: ", error);
+            toast({ title: "Error", description: "Failed to fetch shipment and party details.", variant: "destructive" });
+        } finally {
+            setLoading(false);
         }
-      } else {
-        toast({ title: "Error", description: "Shipment not found.", variant: "destructive" });
-        router.push("/dashboard");
-      }
-      setLoading(false);
-    }).catch(error => {
-        console.error("Error fetching shipment: ", error);
-        toast({ title: "Error", description: "Failed to fetch shipment details.", variant: "destructive" });
-        setLoading(false);
-    });
+    }
+    
+    fetchShipmentAndPartyDetails();
 
   }, [user, userType, shipmentId, router, toast]);
 
   const handleBackNavigation = () => {
-    if (userType === 'carrier') {
+    if (userType === 'exporter' || userType === 'employee') {
+        router.push(`/dashboard/shipment/${shipmentId}`);
+    } else if (userType === 'carrier') {
         router.push(`/dashboard/carrier/registered-shipment/${shipmentId}`);
     } else {
-        router.push(`/dashboard/shipment/${shipmentId}`);
+        router.push('/dashboard');
     }
   }
 
   if (loading || !shipment) {
     return (
       <div className="container py-6 md:py-10">
-        <Skeleton className="h-8 w-32 mb-8" />
-        <Skeleton className="h-96 w-full" />
+        <Skeleton className="h-8 w-48 mb-8" />
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+            <InfoCardSkeleton />
+            <InfoCardSkeleton />
+        </div>
       </div>
     );
   }
@@ -96,23 +136,77 @@ export default function ShipmentDocumentsPage() {
                 Back to Shipment
             </Button>
         </div>
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl font-headline">
-                   <FileText className="h-6 w-6 text-primary"/> Document Center
-                </CardTitle>
-                <CardDescription>Manage and access all documents related to shipment: {shipment.productName}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg text-center p-4">
-                    <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">Document Management Coming Soon</h3>
-                    <p className="text-muted-foreground max-w-md">This area will allow you to upload, download, and manage critical shipping documents like the Bill of Lading, Commercial Invoice, and Packing Lists.</p>
-                </div>
-            </CardContent>
-        </Card>
+        
+        <div className="mb-8">
+            <Card className="border-none shadow-none">
+                <CardHeader className="px-0">
+                    <CardTitle className="flex items-center gap-3 text-2xl font-headline">
+                       <FileText className="h-6 w-6 text-primary"/> Document Center
+                    </CardTitle>
+                    <CardDescription>Contact information and documents for shipment: {shipment.productName}</CardDescription>
+                </CardHeader>
+            </Card>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3"><Anchor className="text-primary"/>Exporter Info</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                   {exporterInfo ? (
+                        <>
+                            <div className="flex items-center gap-3">
+                                <Building2 className="h-5 w-5 text-muted-foreground" />
+                                <span>{exporterInfo.companyDetails?.legalName || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <UserIcon className="h-5 w-5 text-muted-foreground" />
+                                <span>{exporterInfo.name || 'N/A'}</span>
+                            </div>
+                             <div className="flex items-center gap-3">
+                                <Mail className="h-5 w-5 text-muted-foreground" />
+                                <span>{exporterInfo.email || 'N/A'}</span>
+                            </div>
+                        </>
+                   ) : <InfoCardSkeleton />}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3"><Truck className="text-primary"/>Vendor Info</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                   {carrierInfo ? (
+                        <>
+                            <div className="flex items-center gap-3">
+                                <Building2 className="h-5 w-5 text-muted-foreground" />
+                                <span>{carrierInfo.companyDetails?.legalName || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <UserIcon className="h-5 w-5 text-muted-foreground" />
+                                <span>{carrierInfo.name || 'N/A'}</span>
+                            </div>
+                             <div className="flex items-center gap-3">
+                                <Mail className="h-5 w-5 text-muted-foreground" />
+                                <span>{carrierInfo.email || 'N/A'}</span>
+                            </div>
+                        </>
+                   ) : <InfoCardSkeleton />}
+                </CardContent>
+            </Card>
+        </div>
+
+        <Separator className="my-8" />
+        
+        <div>
+            <h2 className="text-xl font-bold mb-4">Shipment Documents</h2>
+             <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg text-center p-4">
+                <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Document Management Coming Soon</h3>
+                <p className="text-muted-foreground max-w-md">This area will allow you to upload, download, and manage critical shipping documents like the Bill of Lading, Commercial Invoice, and Packing Lists.</p>
+            </div>
+        </div>
     </div>
   );
 }
-
-    

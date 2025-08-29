@@ -17,10 +17,8 @@ const InfoCardSkeleton = () => (
     <Card>
         <CardHeader>
             <Skeleton className="h-6 w-32 mb-2" />
-            <Skeleton className="h-4 w-48" />
         </CardHeader>
         <CardContent className="space-y-4">
-            <Skeleton className="h-5 w-full" />
             <Skeleton className="h-5 w-full" />
             <Skeleton className="h-5 w-3/4" />
         </CardContent>
@@ -112,7 +110,9 @@ export default function ShipmentDocumentsPage() {
   }, [user, userType, shipmentId, router, toast]);
 
   const handleBackNavigation = () => {
-    if (userType === 'exporter' || userType === 'employee') {
+    if (userType === 'exporter') {
+        router.push(`/dashboard/shipment/${shipmentId}`);
+    } else if (userType === 'employee') {
         router.push(`/dashboard/shipment/${shipmentId}`);
     } else if (userType === 'carrier') {
         router.push(`/dashboard/carrier/registered-shipment/${shipmentId}`);
@@ -163,14 +163,6 @@ export default function ShipmentDocumentsPage() {
                         <Building2 className="h-5 w-5 text-muted-foreground" />
                         <span>{exporter?.companyDetails?.legalName || "Exporter Company Name"}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <UserIcon className="h-5 w-5 text-muted-foreground" />
-                        <span>Exporter POC Name</span>
-                    </div>
-                     <div className="flex items-center gap-3">
-                        <Mail className="h-5 w-5 text-muted-foreground" />
-                        <span>exporter@example.com</span>
-                    </div>
                 </CardContent>
             </Card>
             <Card>
@@ -181,14 +173,6 @@ export default function ShipmentDocumentsPage() {
                     <div className="flex items-center gap-3">
                         <Building2 className="h-5 w-5 text-muted-foreground" />
                         <span>{vendor?.companyDetails?.legalName || "Vendor Company Name"}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <UserIcon className="h-5 w-5 text-muted-foreground" />
-                        <span>Vendor POC Name</span>
-                    </div>
-                     <div className="flex items-center gap-3">
-                        <Mail className="h-5 w-5 text-muted-foreground" />
-                        <span>vendor@example.com</span>
                     </div>
                 </CardContent>
             </Card>

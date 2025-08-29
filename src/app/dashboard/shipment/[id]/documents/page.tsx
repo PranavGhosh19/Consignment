@@ -32,13 +32,18 @@ export default function ShipmentDocumentsPage() {
   const [userType, setUserType] = useState<string | null>(null);
   const [shipment, setShipment] = useState<DocumentData | null>(null);
   const [exporter, setExporter] = useState<DocumentData | null>(null);
+  const [vendor, setVendor] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // POC Input State
-  const [pocFullName, setPocFullName] = useState("");
-  const [pocPhoneNumber, setPocPhoneNumber] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  // Exporter POC Input State
+  const [exporterPocFullName, setExporterPocFullName] = useState("");
+  const [exporterPocPhoneNumber, setExporterPocPhoneNumber] = useState("");
+  const [isSavingExporter, setIsSavingExporter] = useState(false);
 
+  // Vendor POC Input State
+  const [vendorPocFullName, setVendorPocFullName] = useState("");
+  const [vendorPocPhoneNumber, setVendorPocPhoneNumber] = useState("");
+  const [isSavingVendor, setIsSavingVendor] = useState(false);
 
   const router = useRouter();
   const params = useParams();
@@ -85,9 +90,22 @@ export default function ShipmentDocumentsPage() {
                     if (exporterDoc.exists()) {
                         const exporterData = exporterDoc.data();
                         setExporter(exporterData);
-                        setPocFullName(exporterData.pocFullName || '');
-                        setPocPhoneNumber(exporterData.pocPhoneNumber || '');
+                        setExporterPocFullName(exporterData.pocFullName || '');
+                        setExporterPocPhoneNumber(exporterData.pocPhoneNumber || '');
                     }
+                    
+                    // Fetch vendor (winning carrier) details
+                    if (shipmentData.winningCarrierId) {
+                        const vendorDocRef = doc(db, "users", shipmentData.winningCarrierId);
+                        const vendorDoc = await getDoc(vendorDocRef);
+                        if (vendorDoc.exists()) {
+                            const vendorData = vendorDoc.data();
+                            setVendor(vendorData);
+                            setVendorPocFullName(vendorData.pocFullName || '');
+                            setVendorPocPhoneNumber(vendorData.pocPhoneNumber || '');
+                        }
+                    }
+
                 } else {
                     toast({ title: "Unauthorized", description: "You don't have permission to view these documents.", variant: "destructive" });
                     router.push(`/dashboard`);
@@ -108,22 +126,40 @@ export default function ShipmentDocumentsPage() {
 
   }, [user, userType, shipmentId, router, toast]);
 
-  const handleSave = async () => {
+  const handleExporterSave = async () => {
     if (!exporter || !shipment) return;
-    setIsSaving(true);
+    setIsSavingExporter(true);
     try {
         const exporterDocRef = doc(db, "users", shipment.exporterId);
         await updateDoc(exporterDocRef, {
-            pocFullName,
-            pocPhoneNumber
+            pocFullName: exporterPocFullName,
+            pocPhoneNumber: exporterPocPhoneNumber
         });
         toast({ title: "Success", description: "Exporter's contact details have been updated." });
     } catch (error) {
-        console.error("Error saving POC details:", error);
+        console.error("Error saving exporter POC details:", error);
         toast({ title: "Error", description: "Failed to save contact details.", variant: "destructive" });
     } finally {
-        setIsSaving(false);
+        setIsSavingExporter(false);
     }
+  };
+  
+  const handleVendorSave = async () => {
+      if (!vendor || !shipment?.winningCarrierId) return;
+      setIsSavingVendor(true);
+      try {
+          const vendorDocRef = doc(db, "users", shipment.winningCarrierId);
+          await updateDoc(vendorDocRef, {
+              pocFullName: vendorPocFullName,
+              pocPhoneNumber: vendorPocPhoneNumber
+          });
+          toast({ title: "Success", description: "Vendor's contact details have been updated." });
+      } catch (error) {
+          console.error("Error saving vendor POC details:", error);
+          toast({ title: "Error", description: "Failed to save contact details.", variant: "destructive" });
+      } finally {
+          setIsSavingVendor(false);
+      }
   };
 
   const handleBackNavigation = () => {
@@ -151,6 +187,7 @@ export default function ShipmentDocumentsPage() {
   }
   
   const canEditExporterInfo = user && (user.uid === shipment.exporterId || userType === 'employee');
+  const canEditVendorInfo = user && (user.uid === shipment.winningCarrierId || userType === 'employee');
 
   return (
     <div className="container py-6 md:py-10">
@@ -188,27 +225,27 @@ export default function ShipmentDocumentsPage() {
                            <Label htmlFor="poc-name" className="flex items-center gap-2"><UserIcon className="h-4 w-4 text-muted-foreground"/> POC Full Name</Label>
                            <Input 
                                 id="poc-name" 
-                                value={pocFullName} 
-                                onChange={(e) => setPocFullName(e.target.value)} 
+                                value={exporterPocFullName} 
+                                onChange={(e) => setExporterPocFullName(e.target.value)} 
                                 placeholder="Enter full name"
-                                disabled={!canEditExporterInfo || isSaving}
+                                disabled={!canEditExporterInfo || isSavingExporter}
                            />
                         </div>
                          <div className="space-y-2">
                            <Label htmlFor="poc-phone" className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground"/> POC Number</Label>
                            <Input 
                                 id="poc-phone" 
-                                value={pocPhoneNumber} 
-                                onChange={(e) => setPocPhoneNumber(e.target.value)} 
+                                value={exporterPocPhoneNumber} 
+                                onChange={(e) => setExporterPocPhoneNumber(e.target.value)} 
                                 placeholder="Enter phone number"
-                                disabled={!canEditExporterInfo || isSaving}
+                                disabled={!canEditExporterInfo || isSavingExporter}
                            />
                         </div>
                         {canEditExporterInfo && (
                             <div className="flex justify-end">
-                                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                                <Button size="sm" onClick={handleExporterSave} disabled={isSavingExporter}>
                                     <Save className="mr-2 h-4 w-4"/>
-                                    {isSaving ? "Saving..." : "Save"}
+                                    {isSavingExporter ? "Saving..." : "Save"}
                                 </Button>
                             </div>
                         )}
@@ -223,6 +260,37 @@ export default function ShipmentDocumentsPage() {
                     <div className="flex items-center gap-3 font-semibold">
                         <Building2 className="h-5 w-5 text-muted-foreground" />
                         <span>{shipment?.winningCarrierLegalName || "Vendor Company Name"}</span>
+                    </div>
+                    <Separator />
+                    <div className="space-y-4">
+                         <div className="space-y-2">
+                           <Label htmlFor="vendor-poc-name" className="flex items-center gap-2"><UserIcon className="h-4 w-4 text-muted-foreground"/> POC Full Name</Label>
+                           <Input 
+                                id="vendor-poc-name" 
+                                value={vendorPocFullName} 
+                                onChange={(e) => setVendorPocFullName(e.target.value)} 
+                                placeholder="Enter full name"
+                                disabled={!canEditVendorInfo || isSavingVendor}
+                           />
+                        </div>
+                         <div className="space-y-2">
+                           <Label htmlFor="vendor-poc-phone" className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground"/> POC Number</Label>
+                           <Input 
+                                id="vendor-poc-phone" 
+                                value={vendorPocPhoneNumber} 
+                                onChange={(e) => setVendorPocPhoneNumber(e.target.value)} 
+                                placeholder="Enter phone number"
+                                disabled={!canEditVendorInfo || isSavingVendor}
+                           />
+                        </div>
+                        {canEditVendorInfo && (
+                            <div className="flex justify-end">
+                                <Button size="sm" onClick={handleVendorSave} disabled={isSavingVendor}>
+                                    <Save className="mr-2 h-4 w-4"/>
+                                    {isSavingVendor ? "Saving..." : "Save"}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>

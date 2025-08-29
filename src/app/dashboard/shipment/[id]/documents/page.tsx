@@ -4,14 +4,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, DocumentData } from "firebase/firestore";
+import { doc, getDoc, DocumentData, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Upload, FileText, Anchor, Truck, Building2, Mail, Phone, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Anchor, Truck, Building2, User as UserIcon, Phone, Save } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 const InfoCardSkeleton = () => (
     <Card>
@@ -31,6 +33,12 @@ export default function ShipmentDocumentsPage() {
   const [shipment, setShipment] = useState<DocumentData | null>(null);
   const [exporter, setExporter] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // POC Input State
+  const [pocFullName, setPocFullName] = useState("");
+  const [pocPhoneNumber, setPocPhoneNumber] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
 
   const router = useRouter();
   const params = useParams();
@@ -75,7 +83,10 @@ export default function ShipmentDocumentsPage() {
                     const exporterDocRef = doc(db, "users", shipmentData.exporterId);
                     const exporterDoc = await getDoc(exporterDocRef);
                     if (exporterDoc.exists()) {
-                        setExporter(exporterDoc.data());
+                        const exporterData = exporterDoc.data();
+                        setExporter(exporterData);
+                        setPocFullName(exporterData.pocFullName || '');
+                        setPocPhoneNumber(exporterData.pocPhoneNumber || '');
                     }
                 } else {
                     toast({ title: "Unauthorized", description: "You don't have permission to view these documents.", variant: "destructive" });
@@ -96,6 +107,24 @@ export default function ShipmentDocumentsPage() {
     fetchShipmentAndPartyDetails();
 
   }, [user, userType, shipmentId, router, toast]);
+
+  const handleSave = async () => {
+    if (!exporter || !shipment) return;
+    setIsSaving(true);
+    try {
+        const exporterDocRef = doc(db, "users", shipment.exporterId);
+        await updateDoc(exporterDocRef, {
+            pocFullName,
+            pocPhoneNumber
+        });
+        toast({ title: "Success", description: "Exporter's contact details have been updated." });
+    } catch (error) {
+        console.error("Error saving POC details:", error);
+        toast({ title: "Error", description: "Failed to save contact details.", variant: "destructive" });
+    } finally {
+        setIsSaving(false);
+    }
+  };
 
   const handleBackNavigation = () => {
     if (userType === 'exporter') {
@@ -120,6 +149,8 @@ export default function ShipmentDocumentsPage() {
       </div>
     );
   }
+  
+  const canEditExporterInfo = user && (user.uid === shipment.exporterId || userType === 'employee');
 
   return (
     <div className="container py-6 md:py-10">
@@ -147,9 +178,40 @@ export default function ShipmentDocumentsPage() {
                     <CardTitle className="flex items-center gap-3"><Anchor className="text-primary"/>Exporter Info</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 font-semibold">
                         <Building2 className="h-5 w-5 text-muted-foreground" />
                         <span>{exporter?.companyDetails?.legalName || "Exporter Company Name"}</span>
+                    </div>
+                    <Separator />
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                           <Label htmlFor="poc-name" className="flex items-center gap-2"><UserIcon className="h-4 w-4 text-muted-foreground"/> POC Full Name</Label>
+                           <Input 
+                                id="poc-name" 
+                                value={pocFullName} 
+                                onChange={(e) => setPocFullName(e.target.value)} 
+                                placeholder="Enter full name"
+                                disabled={!canEditExporterInfo || isSaving}
+                           />
+                        </div>
+                         <div className="space-y-2">
+                           <Label htmlFor="poc-phone" className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground"/> POC Number</Label>
+                           <Input 
+                                id="poc-phone" 
+                                value={pocPhoneNumber} 
+                                onChange={(e) => setPocPhoneNumber(e.target.value)} 
+                                placeholder="Enter phone number"
+                                disabled={!canEditExporterInfo || isSaving}
+                           />
+                        </div>
+                        {canEditExporterInfo && (
+                            <div className="flex justify-end">
+                                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                                    <Save className="mr-2 h-4 w-4"/>
+                                    {isSaving ? "Saving..." : "Save"}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -158,7 +220,7 @@ export default function ShipmentDocumentsPage() {
                     <CardTitle className="flex items-center gap-3"><Truck className="text-primary"/>Vendor Info</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 font-semibold">
                         <Building2 className="h-5 w-5 text-muted-foreground" />
                         <span>{shipment?.winningCarrierLegalName || "Vendor Company Name"}</span>
                     </div>

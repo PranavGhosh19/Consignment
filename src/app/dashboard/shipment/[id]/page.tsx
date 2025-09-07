@@ -313,12 +313,6 @@ export default function ShipmentDetailPage() {
                       Edit Shipment
                   </Button>
               )}
-               {canViewDocuments && (
-                 <Button onClick={() => router.push(`/dashboard/shipment/${shipmentId}/documents`)}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    View Documents
-                 </Button>
-               )}
               {isEmployee && !canEdit && (
                   <Badge variant="outline" className="flex items-center gap-2">
                       <Shield className="h-4 w-4" />
@@ -438,6 +432,12 @@ export default function ShipmentDetailPage() {
                                 <Rocket className="mr-2 h-4 w-4" /> Go Live
                             </Button>
                         )}
+                        {canViewDocuments && (
+                            <Button onClick={() => router.push(`/dashboard/shipment/${shipmentId}/documents`)} className="w-full mt-4">
+                               <FileText className="mr-2 h-4 w-4" />
+                               View Documents
+                            </Button>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -497,5 +497,3 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
-
-    

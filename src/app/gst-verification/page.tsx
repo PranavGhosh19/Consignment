@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExporterVerificationForm } from "@/components/exporter-verification-form";
 
 const TEST_GSTIN = "29AAFCS1234H1Z5";
 
@@ -30,28 +31,47 @@ const verifiedData = {
   address: "123, BATTLEFIELD STREET, LOGISTICS CITY, STATE, 560100",
 };
 
+const PageSkeleton = () => (
+     <div className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
+        <Skeleton className="h-[450px] w-full max-w-lg" />
+    </div>
+)
+
 export default function GstVerificationPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [gstin, setGstin] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          if (data.isGstVerified) {
+            router.push('/dashboard');
+          } else {
+            setUserType(data.userType);
+            setLoading(false);
+          }
+        } else {
+           setLoading(false);
+        }
       } else {
         router.push("/login");
       }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, [router]);
 
-  const handleVerification = async () => {
+  const handleCarrierVerification = async () => {
     if (!gstin) {
       toast({ title: "Error", description: "Please enter a GSTIN.", variant: "destructive" });
       return;
@@ -69,7 +89,7 @@ export default function GstVerificationPage() {
     setIsVerifying(false);
   };
   
-  const handleContinue = async () => {
+  const handleCarrierContinue = async () => {
       if (!user) return;
       try {
         const userDocRef = doc(db, "users", user.uid);
@@ -84,12 +104,12 @@ export default function GstVerificationPage() {
       }
   }
 
-  if (loading) {
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
-            <Skeleton className="h-[450px] w-full max-w-lg" />
-        </div>
-    );
+  if (loading || !user) {
+    return <PageSkeleton />;
+  }
+
+  if (userType === 'exporter') {
+    return <ExporterVerificationForm user={user} />
   }
 
   return (
@@ -148,11 +168,11 @@ export default function GstVerificationPage() {
         </CardContent>
         <CardFooter>
             {isVerified ? (
-                 <Button onClick={handleContinue} className="w-full h-12 text-lg">
+                 <Button onClick={handleCarrierContinue} className="w-full h-12 text-lg">
                     Continue to Dashboard
                  </Button>
             ) : (
-                <Button onClick={handleVerification} disabled={isVerifying} className="w-full h-12 text-lg">
+                <Button onClick={handleCarrierVerification} disabled={isVerifying} className="w-full h-12 text-lg">
                     {isVerifying ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verifying...</> : 'Verify & Continue'}
                 </Button>
             )}

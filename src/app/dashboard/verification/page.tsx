@@ -22,6 +22,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
   Dialog,
@@ -150,7 +151,7 @@ export default function VerificationPage() {
                                             <Badge variant={pUser.userType === 'exporter' ? 'default' : 'secondary'} className="capitalize">{pUser.userType}</Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Dialog onOpenChange={(open) => !open && setSelectedUser(null)}>
+                                            <Dialog>
                                                 <DialogTrigger asChild>
                                                     <Button variant="outline" size="sm" onClick={() => setSelectedUser(pUser)}>
                                                         <Eye className="mr-2 h-4 w-4" /> View Details
@@ -237,3 +238,5 @@ export default function VerificationPage() {
     </div>
   );
 }
+
+    

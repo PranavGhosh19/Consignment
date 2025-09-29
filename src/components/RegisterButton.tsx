@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -77,7 +78,9 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
     try {
         const response = await fetch('/api/razorpay', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json' 
+            },
             body: JSON.stringify({ 
                 amount: 550 * 100, // 550 INR in paise
                 currency: 'INR',
@@ -97,7 +100,7 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
 
         // Step 2: Open Razorpay Checkout
         const options = {
-            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_YOUR_KEY_ID",
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
             amount: order.amount,
             currency: order.currency,
             name: "Shipment Battlefield",

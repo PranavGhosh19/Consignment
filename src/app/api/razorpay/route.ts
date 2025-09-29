@@ -2,12 +2,22 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+    return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(request: Request) {
     try {
         const { amount, currency, notes } = await request.json();
         
         if (!amount || !currency) {
-            return NextResponse.json({ error: "Amount and currency are required" }, { status: 400 });
+            return NextResponse.json({ error: "Amount and currency are required" }, { status: 400, headers: corsHeaders });
         }
 
         // IMPORTANT: In a real application, these keys should come from environment variables.
@@ -34,12 +44,12 @@ export async function POST(request: Request) {
 
         const order = await razorpay.orders.create(options);
 
-        return NextResponse.json(order, { status: 200 });
+        return NextResponse.json(order, { status: 200, headers: corsHeaders });
 
     } catch (error) {
         console.error("Error creating Razorpay order:", error);
         // It's better to return a structured error message
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-        return NextResponse.json({ error: "Failed to create Razorpay order", details: errorMessage }, { status: 500 });
+        return NextResponse.json({ error: "Failed to create Razorpay order", details: errorMessage }, { status: 500, headers: corsHeaders });
     }
 }

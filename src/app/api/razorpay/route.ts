@@ -1,14 +1,7 @@
 
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
-
-// Initialize genkit to access secrets
-genkit({
-  plugins: [googleAI()],
-});
-
+import { ai } from "@/ai/genkit"; // Use the global AI instance
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -28,9 +21,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Amount and currency are required" }, { status: 400, headers: corsHeaders });
         }
 
-        // Correctly access secrets using genkit's config()
-        const key_id = genkit.config.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_YOUR_KEY_ID";
-        const key_secret = genkit.config.RAZORPAY_KEY_SECRET || "YOUR_KEY_SECRET";
+        // Correctly access secrets using the global `ai` object
+        const key_id = ai.config.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_YOUR_KEY_ID";
+        const key_secret = ai.config.RAZORPAY_KEY_SECRET || "YOUR_KEY_SECRET";
 
         if (key_id === "rzp_test_YOUR_KEY_ID" || key_secret === "YOUR_KEY_SECRET") {
              console.warn("Razorpay keys are not set in environment variables. Using placeholder keys.");

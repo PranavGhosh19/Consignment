@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -31,8 +32,9 @@ service cloud.firestore {
 
     // ───── Users Collection ─────
     match /users/{userId} {
-      // Allow read if user is self or employee
-      allow read: if request.auth.uid == userId || isEmployee(request.auth.uid);
+      // Allow any authenticated user to read user documents.
+      // This is required to check the user's role upon login.
+      allow read: if request.auth.uid != null;
 
       // Allow user to create their own document
       allow create: if request.auth.uid == userId 
@@ -75,7 +77,7 @@ service cloud.firestore {
                     && isExporter(request.auth.uid)
                     && request.resource.data.exporterId == request.auth.uid;
 
-      allow list: if request.auth.uid != null;
+      allow list: if request.auth.uid != null && isEmployee(request.auth.uid);
 
       allow get: if request.auth.uid != null && (
         isEmployee(request.auth.uid) ||

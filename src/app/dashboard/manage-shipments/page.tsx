@@ -69,6 +69,7 @@ export default function ManageShipmentsPage() {
   }, [router]);
   
   const fetchShipments = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     try {
         const shipmentsCollectionRef = collection(db, 'shipments');
@@ -82,7 +83,7 @@ export default function ManageShipmentsPage() {
     } finally {
         setLoading(false);
     }
-  }, [toast]);
+  }, [toast, user]);
 
   useEffect(() => {
     if (user) {
@@ -298,3 +299,5 @@ export default function ManageShipmentsPage() {
     </div>
   );
 }
+
+    

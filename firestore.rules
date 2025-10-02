@@ -13,8 +13,10 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(userId)).data.userType == 'carrier';
     }
 
+    // Employees are recognized only by company email domain
     function isEmployee(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.userType == 'employee';
+      // This is a placeholder domain. Replace with your actual employee email domain.
+      return request.auth.token.email.matches('.*@shippingbattlefield\\.com$');
     }
 
     function getShipment(shipmentId) {
@@ -32,13 +34,14 @@ service cloud.firestore {
 
     // ───── Users Collection ─────
     match /users/{userId} {
-      // Allow any authenticated user to read user documents.
-      // This is required to check the user's role upon login.
+      // Any authenticated user can read from the users collection.
+      // This is needed for the app to check userType on login.
+      // The collection should not contain sensitive data.
       allow read: if request.auth.uid != null;
 
       // Allow user to create their own document
-      allow create: if request.auth.uid == userId 
-                    && request.resource.data.email == request.auth.token.email;
+      allow create: if request.auth.uid == userId &&
+                     request.resource.data.email == request.auth.token.email;
 
       // Allow updates with constraints
       allow update: if request.auth.uid != null && (
@@ -51,11 +54,9 @@ service cloud.firestore {
           (
             resource.data.verificationStatus == 'unsubmitted' &&
             request.resource.data.verificationStatus == 'pending' &&
-            // Ensure the uploaded path matches storage convention
             request.resource.data.companyDetails.incorporationCertificatePath.matches(
               'verification-documents/' + userId + '/.*'
             ) &&
-            // Ensure required fields are present
             request.resource.data.companyDetails.keys().hasAll([
               'legalName', 'gstin', 'pan', 'iecCode', 'adCode',
               'incorporationCertificateUrl', 'incorporationCertificatePath'
@@ -73,9 +74,9 @@ service cloud.firestore {
 
     // ───── Shipments Collection ─────
     match /shipments/{shipmentId} {
-      allow create: if request.auth.uid != null
-                    && isExporter(request.auth.uid)
-                    && request.resource.data.exporterId == request.auth.uid;
+      allow create: if request.auth.uid != null &&
+                     isExporter(request.auth.uid) &&
+                     request.resource.data.exporterId == request.auth.uid;
 
       allow list: if request.auth.uid != null && isEmployee(request.auth.uid);
 
@@ -172,15 +173,15 @@ service cloud.firestore {
 
     // ───── CollectionGroup Queries ─────
     match /{documentPath=**}/register/{docId} {
-      allow read: if request.auth.uid != null
-                  && isCarrier(request.auth.uid)
-                  && resource.data.carrierId == request.auth.uid;
+      allow read: if request.auth.uid != null &&
+                   isCarrier(request.auth.uid) &&
+                   resource.data.carrierId == request.auth.uid;
     }
 
     match /{documentPath=**}/bids/{bidId} {
-      allow read: if request.auth.uid != null
-                  && isCarrier(request.auth.uid)
-                  && resource.data.carrierId == request.auth.uid;
+      allow read: if request.auth.uid != null &&
+                   isCarrier(request.auth.uid) &&
+                   resource.data.carrierId == request.auth.uid;
     }
   }
 }

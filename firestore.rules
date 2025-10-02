@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -14,9 +13,8 @@ service cloud.firestore {
     }
 
     // Employees are recognized only by company email domain
-    function isEmployee(userId) {
-      // This is a placeholder domain. Replace with your actual employee email domain.
-      return request.auth.token.email.matches('.*@shippingbattlefield\\.com$');
+    function isEmployee() {
+      return request.auth.token.email_verified && request.auth.token.email.matches('.*@shippingbattlefield\\.com$');
     }
 
     function getShipment(shipmentId) {
@@ -26,7 +24,7 @@ service cloud.firestore {
     function isShipmentAwardedParty(shipmentId, userId) {
       let shipment = getShipment(shipmentId).data;
       return shipment.status == 'awarded' && (
-        isEmployee(userId) ||
+        isEmployee() ||
         shipment.exporterId == userId ||
         shipment.winningCarrierId == userId
       );
@@ -34,9 +32,7 @@ service cloud.firestore {
 
     // ───── Users Collection ─────
     match /users/{userId} {
-      // Any authenticated user can read from the users collection.
-      // This is needed for the app to check userType on login.
-      // The collection should not contain sensitive data.
+      // Any authenticated user can read user profiles. isEmployee() can read all.
       allow read: if request.auth.uid != null;
 
       // Allow user to create their own document
@@ -45,8 +41,8 @@ service cloud.firestore {
 
       // Allow updates with constraints
       allow update: if request.auth.uid != null && (
-        // Employees can update anyone
-        isEmployee(request.auth.uid) ||
+        // Employees can update anyone's verification status
+        (isEmployee() && request.resource.data.keys().hasAny(['verificationStatus'])) ||
 
         // Users can only update themselves
         (request.auth.uid == userId && (
@@ -78,17 +74,17 @@ service cloud.firestore {
                      isExporter(request.auth.uid) &&
                      request.resource.data.exporterId == request.auth.uid;
 
-      allow list: if request.auth.uid != null && isEmployee(request.auth.uid);
+      allow list: if request.auth.uid != null && isEmployee();
 
       allow get: if request.auth.uid != null && (
-        isEmployee(request.auth.uid) ||
+        isEmployee() ||
         (isExporter(request.auth.uid) && resource.data.exporterId == request.auth.uid) ||
         isCarrier(request.auth.uid)
       );
 
       allow update: if request.auth.uid != null && (
         // Employees can always update
-        isEmployee(request.auth.uid) ||
+        isEmployee() ||
 
         // Exporters with constraints
         (isExporter(request.auth.uid) &&
@@ -134,7 +130,7 @@ service cloud.firestore {
         allow create: if isShipmentAwardedParty(shipmentId, request.auth.uid) &&
                       request.resource.data.uploaderId == request.auth.uid;
 
-        allow delete: if isEmployee(request.auth.uid) ||
+        allow delete: if isEmployee() ||
                       (isShipmentAwardedParty(shipmentId, request.auth.uid) &&
                        resource.data.uploaderId == request.auth.uid);
       }
@@ -143,7 +139,7 @@ service cloud.firestore {
     // ───── Bids Subcollection ─────
     match /shipments/{shipmentId}/bids/{bidId} {
       allow read: if request.auth.uid != null && (
-        isEmployee(request.auth.uid) ||
+        isEmployee() ||
         (isExporter(request.auth.uid) &&
          getShipment(shipmentId).data.exporterId == request.auth.uid) ||
         (isCarrier(request.auth.uid) &&
@@ -159,7 +155,7 @@ service cloud.firestore {
     // ───── Register Subcollection ─────
     match /shipments/{shipmentId}/register/{carrierId} {
       allow read: if request.auth.uid != null && (
-        isEmployee(request.auth.uid) ||
+        isEmployee() ||
         (isExporter(request.auth.uid) &&
          getShipment(shipmentId).data.exporterId == request.auth.uid) ||
         (isCarrier(request.auth.uid) && request.auth.uid == carrierId)

@@ -49,21 +49,21 @@ export default function EmployeeLoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
 
-      if (userDoc.exists() && userDoc.data()?.userType === 'employee') {
-        router.push("/dashboard");
+      // The security rules now handle auth based on email domain,
+      // so we just need to redirect to the dashboard.
+      // The dashboard redirect page will handle routing to the correct employee page.
+      if (user.email?.endsWith('@shippingbattlefield.com')) {
+          router.push("/dashboard");
       } else {
-        await auth.signOut();
-        toast({
-          title: "Access Denied",
-          description: "This login is for employees only.",
-          variant: "destructive",
-        });
+          await auth.signOut();
+          toast({
+            title: "Access Denied",
+            description: "This login is for employees only.",
+            variant: "destructive",
+          });
       }
-      
+
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -94,7 +94,7 @@ export default function EmployeeLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="you@shippingbattlefield.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

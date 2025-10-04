@@ -66,13 +66,14 @@ export default function MyBidsPage() {
             orderBy('createdAt', 'desc')
         );
         const bidsSnapshot = await getDocs(bidsQuery);
-        const bids = bidsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), shipmentId: doc.ref.parent.parent!.id }));
-
-        if (bids.length === 0) {
+        
+        if (bidsSnapshot.empty) {
             setBidsWithShipments([]);
             setLoading(false);
             return;
         }
+
+        const bids = bidsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), shipmentId: doc.ref.parent.parent!.id }));
 
         // Step 2: Get unique shipment IDs
         const shipmentIds = [...new Set(bids.map(bid => bid.shipmentId))];

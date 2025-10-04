@@ -4,8 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +19,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 
+const EMPLOYEE_DOMAIN = "@shippingbattlefield.com";
+
 export default function EmployeeLoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -29,14 +30,8 @@ export default function EmployeeLoginPage() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Check if the logged-in user is an employee before redirecting
-        const userDocRef = doc(db, 'users', user.uid);
-        getDoc(userDocRef).then(userDoc => {
-          if(userDoc.exists() && userDoc.data()?.userType === 'employee') {
-            router.push('/dashboard/employee');
-          }
-        });
+      if (user && user.email?.endsWith(EMPLOYEE_DOMAIN)) {
+        router.push('/dashboard/employee');
       }
     });
     return () => unsubscribe();
@@ -51,25 +46,21 @@ export default function EmployeeLoginPage() {
       });
       return;
     }
+     if (!email.toLowerCase().endsWith(EMPLOYEE_DOMAIN)) {
+      toast({
+        title: "Access Denied",
+        description: "This login is for employees only.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists() && userDoc.data()?.userType === 'employee') {
-          router.push("/dashboard/employee");
-      } else {
-          await auth.signOut();
-          toast({
-            title: "Access Denied",
-            description: "This login is for employees only.",
-            variant: "destructive",
-          });
-      }
-
+      await signInWithEmailAndPassword(auth, email, password);
+      // The useEffect will handle the redirect upon successful login.
+      router.push("/dashboard/employee");
+      
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -82,15 +73,15 @@ export default function EmployeeLoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center py-12 px-4 bg-secondary min-h-[calc(100vh-152px)]">
+    <div className="flex items-center justify-center py-12 px-4 bg-primary/10 min-h-[calc(100vh-152px)]">
       <Card className="mx-auto w-full max-w-md">
         <CardHeader className="text-center space-y-2">
-           <div className="flex justify-center">
+            <div className="flex justify-center">
                 <Shield className="h-10 w-10 text-primary"/>
             </div>
           <CardTitle className="text-3xl font-bold font-headline">Employee Login</CardTitle>
           <CardDescription>
-            Enter your credentials to access the admin dashboard.
+            Enter your credentials to access the employee dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -106,11 +97,19 @@ export default function EmployeeLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                className="bg-background"
+                className="bg-secondary"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center">
+                <Label htmlFor="password">Password</Label>
+                 <Link
+                  href="#"
+                  className="ml-auto inline-block text-sm underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -119,7 +118,7 @@ export default function EmployeeLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                className="bg-background"
+                className="bg-secondary"
               />
             </div>
             <Button onClick={handleLogin} disabled={loading} className="w-full h-12 mt-2 text-lg">

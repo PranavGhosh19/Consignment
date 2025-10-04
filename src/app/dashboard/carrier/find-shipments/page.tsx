@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Send, Info } from "lucide-react";
+import { Send, Info, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function FindShipmentsPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [carrierName, setCarrierName] = useState<string>("");
+  const [userData, setUserData] = useState<DocumentData | null>(null);
   const [shipments, setShipments] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
@@ -42,7 +42,7 @@ export default function FindShipmentsPage() {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists() && userDoc.data()?.userType === 'carrier') {
            setUser(currentUser);
-           setCarrierName(userDoc.data()?.name || 'Anonymous Carrier');
+           setUserData(userDoc.data());
         } else {
             router.push('/dashboard');
         }
@@ -55,7 +55,7 @@ export default function FindShipmentsPage() {
 
   useEffect(() => {
     let unsubscribeSnapshots: () => void = () => {};
-    if (user) {
+    if (user && userData?.verificationStatus === 'approved') {
         setLoading(true);
         const shipmentsQuery = query(collection(db, 'shipments'), orderBy('createdAt', 'desc'));
 
@@ -71,11 +71,13 @@ export default function FindShipmentsPage() {
             toast({ title: "Error", description: "Could not fetch shipments.", variant: "destructive" });
             setLoading(false);
         });
+    } else {
+        setLoading(false);
     }
      return () => {
         unsubscribeSnapshots();
     };
-  }, [user, toast]);
+  }, [user, userData, toast]);
 
   const filteredShipments = useMemo(() => {
     if (currentTab === 'all') return shipments;
@@ -111,7 +113,7 @@ export default function FindShipmentsPage() {
     try {
       await addDoc(collection(db, "shipments", selectedShipment.id, "bids"), {
         carrierId: user.uid,
-        carrierName: carrierName,
+        carrierName: userData?.name || 'Anonymous Carrier',
         bidAmount: parseFloat(bidAmount),
         createdAt: new Date(),
       });
@@ -221,6 +223,26 @@ export default function FindShipmentsPage() {
                 <Skeleton className="h-10 w-48" />
             </div>
             <Skeleton className="h-96 w-full" />
+        </div>
+    )
+  }
+
+  const isApproved = userData?.verificationStatus === 'approved';
+
+  if (!isApproved) {
+    return (
+        <div className="container py-6 md:py-10">
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold font-headline">Find Shipments</h1>
+            </div>
+             <Card className="bg-yellow-50 border-yellow-400">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3"><ShieldAlert className="text-yellow-600"/>Verification Required</CardTitle>
+                    <CardDescription>
+                        Your account must be verified and approved by our team before you can view and bid on shipments. Please check your dashboard for your verification status.
+                    </CardDescription>
+                </CardHeader>
+            </Card>
         </div>
     )
   }

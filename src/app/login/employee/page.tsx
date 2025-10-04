@@ -1,10 +1,10 @@
 
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
+import Link from "next/link";
 
 const EMPLOYEE_DOMAIN = "@shippingbattlefield.com";
 
@@ -30,9 +31,9 @@ export default function EmployeeLoginPage() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && user.email?.endsWith(EMPLOYEE_DOMAIN)) {
-        router.push('/dashboard/employee');
-      }
+        if (user) {
+            router.push('/dashboard');
+        }
     });
     return () => unsubscribe();
   }, [router]);
@@ -57,9 +58,21 @@ export default function EmployeeLoginPage() {
 
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // The useEffect will handle the redirect upon successful login.
-      router.push("/dashboard/employee");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists() || userDoc.data()?.userType !== 'employee') {
+          await setDoc(userDocRef, { 
+              name: user.displayName || email.split('@')[0], 
+              email: user.email, 
+              userType: 'employee' 
+          }, { merge: true });
+      }
+      
+      router.push("/dashboard");
       
     } catch (error: any) {
       toast({

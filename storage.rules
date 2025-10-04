@@ -4,37 +4,46 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // ───── Helper Functions ─────
-    // Check if the user is an employee based on their email domain from the auth token.
-    function isEmployee() {
-      return request.auth.token.email_verified && request.auth.token.email.matches('.*@shippingbattlefield\\.com$');
-    }
-
     // ───── Verification Documents ─────
-    // These are documents uploaded by users during the onboarding/verification process.
+    // Documents uploaded by users during onboarding/verification.
     match /verification-documents/{userId}/{allPaths=**} {
-      
-      // READ: Allow the owner of the document OR an employee to read.
-      allow read: if request.auth != null && 
-                  (request.auth.uid == userId || isEmployee());
-      
-      // WRITE: Only allow the owner to write/upload to their own folder.
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Helper: check if the current user is an employee by their email domain
+      function isEmployee() {
+        return request.auth != null && request.auth.token.email.matches('.*@shippingbattlefield\\.com$');
+      }
+
+      // Helper: check if the current user is the document owner (exporter or carrier)
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // READ: Owner or employee can read
+      allow read: if isOwner() || isEmployee();
+
+      // WRITE: Only the owner (exporter or carrier) can upload their own verification docs
+      allow write: if isOwner();
     }
 
     // ───── Shipment-Specific Documents ─────
     // These are documents uploaded after a shipment has been awarded.
     match /shipments/{shipmentId}/{allPaths=**} {
-      
-      // Helper function to check if the user is a party to the awarded shipment.
+
+      // Helper: check if the user is an employee by their email domain
+      function isEmployee() {
+        return request.auth != null && request.auth.token.email.matches('.*@shippingbattlefield\\.com$');
+      }
+
+      // Helper: check if the user is a valid awarded party
       function isAwardedParty() {
-          let shipment = get(/databases/(default)/documents/shipments/$(shipmentId)).data;
-          return shipment.status == 'awarded' && 
-                 (shipment.exporterId == request.auth.uid || shipment.winningCarrierId == request.auth.uid);
+        let shipment = get(/databases/(default)/documents/shipments/$(shipmentId)).data;
+        return request.auth != null && shipment.status == 'awarded' &&
+               (shipment.exporterId == request.auth.uid ||
+                shipment.winningCarrierId == request.auth.uid);
       }
 
       // READ/WRITE: Allow if the user is an employee OR a party to the awarded shipment.
-      allow read, write: if request.auth != null && (isEmployee() || isAwardedParty());
+      allow read, write: if isEmployee() || isAwardedParty();
     }
 
     // ───── Default Deny Rule ─────

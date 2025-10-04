@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 interface VerificationFormProps {
     user: User;
@@ -49,12 +50,15 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
     const [iecCode, setIecCode] = useState("");
     const [adCode, setAdCode] = useState("");
     const [incorporationCertificate, setIncorporationCertificate] = useState<File | null>(null);
+    const [licenseNumber, setLicenseNumber] = useState("");
+    const [companyType, setCompanyType] = useState("");
     
     // UI state
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const isExporter = userType === 'exporter';
+    const isCarrier = userType === 'carrier';
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -64,17 +68,22 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
 
     const handleSubmit = async () => {
         setIsConfirmOpen(false);
-        if (!companyName || !gst || !pan || !incorporationCertificate || (isExporter && (!iecCode || !adCode))) {
-            toast({ title: "Missing Fields", description: "Please fill out all required fields and upload the incorporation certificate.", variant: "destructive" });
-            return;
+        if (isExporter && (!companyName || !gst || !pan || !iecCode || !adCode || !incorporationCertificate)) {
+             toast({ title: "Missing Fields", description: "Please fill out all required fields for exporters.", variant: "destructive" });
+             return;
         }
+        if (isCarrier && (!companyName || !gst || !pan || !licenseNumber || !companyType || !incorporationCertificate)) {
+             toast({ title: "Missing Fields", description: "Please fill out all required fields for carriers.", variant: "destructive" });
+             return;
+        }
+
         setIsSubmitting(true);
 
         try {
             // 1. Upload file to Firebase Storage
             const filePath = `verification-documents/${user.uid}/incorporation-certificate-${Date.now()}`;
             const fileRef = ref(storage, filePath);
-            const uploadResult = await uploadBytes(fileRef, incorporationCertificate);
+            const uploadResult = await uploadBytes(fileRef, incorporationCertificate!);
             const downloadUrl = await getDownloadURL(uploadResult.ref);
             
             // 2. Prepare Firestore data
@@ -92,6 +101,13 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
                     tan,
                     iecCode,
                     adCode,
+                }
+            }
+            if (isCarrier) {
+                companyDetails = {
+                    ...companyDetails,
+                    licenseNumber,
+                    companyType,
                 }
             }
             
@@ -154,6 +170,26 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
                                     <div className="grid gap-2">
                                         <Label htmlFor="ad">AD Code</Label>
                                         <Input id="ad" value={adCode} onChange={e => setAdCode(e.target.value)} disabled={isSubmitting} />
+                                    </div>
+                                </>
+                            )}
+                            {isCarrier && (
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="license-number">License Number</Label>
+                                        <Input id="license-number" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} disabled={isSubmitting} />
+                                    </div>
+                                     <div className="grid gap-2">
+                                        <Label htmlFor="company-type">Company Type</Label>
+                                        <Select value={companyType} onValueChange={setCompanyType} disabled={isSubmitting}>
+                                            <SelectTrigger id="company-type">
+                                                <SelectValue placeholder="Select type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="individual">Individual</SelectItem>
+                                                <SelectItem value="company">Company</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </>
                             )}

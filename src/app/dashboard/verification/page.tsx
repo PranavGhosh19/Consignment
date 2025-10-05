@@ -40,7 +40,6 @@ export default function VerificationPage() {
   const [pendingUsers, setPendingUsers] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<DocumentData | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   const router = useRouter();
   const { toast } = useToast();
@@ -105,8 +104,15 @@ export default function VerificationPage() {
   }
 
   const handleOpenPreview = (user: DocumentData) => {
-    setSelectedUser(user);
-    setIsPreviewOpen(true);
+    if (user?.companyDetails?.incorporationCertificateUrl) {
+      window.open(user.companyDetails.incorporationCertificateUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      toast({
+        title: "No Document",
+        description: "There is no document available to preview for this user.",
+        variant: "destructive"
+      });
+    }
   }
 
 
@@ -192,7 +198,7 @@ export default function VerificationPage() {
                                                                 )}
                                                             </dl>
                                                             {selectedUser.companyDetails.incorporationCertificateUrl && (
-                                                                <Button variant="secondary" onClick={() => handleOpenPreview(pUser)} className="w-full">
+                                                                <Button variant="secondary" onClick={() => handleOpenPreview(selectedUser)} className="w-full">
                                                                     <FileText className="mr-2 h-4 w-4" />
                                                                     Preview Document
                                                                 </Button>
@@ -259,27 +265,8 @@ export default function VerificationPage() {
             </div>
         )}
     </div>
-    <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-4xl h-[90vh]">
-            <DialogHeader>
-                <DialogTitle>Document Preview</DialogTitle>
-                <DialogDescription>Viewing document for {selectedUser?.companyDetails?.legalName}</DialogDescription>
-            </DialogHeader>
-            <div className="h-full w-full rounded-lg overflow-hidden border">
-                {selectedUser?.companyDetails?.incorporationCertificateUrl ? (
-                    <iframe 
-                        src={selectedUser.companyDetails.incorporationCertificateUrl} 
-                        className="h-full w-full"
-                        title="Document Preview"
-                    />
-                ) : (
-                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                        No document to preview.
-                    </div>
-                )}
-            </div>
-        </DialogContent>
-    </Dialog>
     </>
   );
 }
+
+    

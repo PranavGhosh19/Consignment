@@ -7,7 +7,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, onSnapshot, DocumentData, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, Check, X, Eye } from "lucide-react";
+import { ShieldCheck, Check, X, Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,6 +33,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import Link from "next/link";
 
 export default function VerificationPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -165,15 +166,32 @@ export default function VerificationPage() {
                                                         </DialogDescription>
                                                     </DialogHeader>
                                                     {selectedUser?.companyDetails ? (
-                                                        <div className="py-4 space-y-2">
+                                                        <div className="py-4 space-y-4">
                                                             <dl className="space-y-2">
                                                                 <InfoRow label="Legal Name" value={selectedUser.companyDetails.legalName} />
                                                                 <InfoRow label="GST" value={selectedUser.companyDetails.gstin} />
                                                                 <InfoRow label="PAN" value={selectedUser.companyDetails.pan} />
-                                                                <InfoRow label="TAN" value={selectedUser.companyDetails.tan} />
-                                                                <InfoRow label="IEC Code" value={selectedUser.companyDetails.iecCode} />
-                                                                <InfoRow label="AD Code" value={selectedUser.companyDetails.adCode} />
+                                                                {selectedUser.userType === 'exporter' ? (
+                                                                    <>
+                                                                        <InfoRow label="TAN" value={selectedUser.companyDetails.tan} />
+                                                                        <InfoRow label="IEC Code" value={selectedUser.companyDetails.iecCode} />
+                                                                        <InfoRow label="AD Code" value={selectedUser.companyDetails.adCode} />
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <InfoRow label="License Number" value={selectedUser.companyDetails.licenseNumber} />
+                                                                        <InfoRow label="Company Type" value={selectedUser.companyDetails.companyType} />
+                                                                    </>
+                                                                )}
                                                             </dl>
+                                                            {selectedUser.companyDetails.incorporationCertificateUrl && (
+                                                                <Button variant="secondary" asChild className="w-full">
+                                                                    <Link href={selectedUser.companyDetails.incorporationCertificateUrl} target="_blank" rel="noopener noreferrer">
+                                                                        <FileText className="mr-2 h-4 w-4" />
+                                                                        Preview Document
+                                                                    </Link>
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     ) : <p className="py-4 text-muted-foreground">No company details submitted.</p>}
                                                     <DialogFooter>
@@ -238,5 +256,3 @@ export default function VerificationPage() {
     </div>
   );
 }
-
-    

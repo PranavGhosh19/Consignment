@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -90,11 +89,12 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
             }),
         });
         
-        const order = await response.json();
-        
         if (!response.ok) {
-            throw new Error(order.details || order.error || 'Failed to create payment order.');
+            const errorData = await response.json();
+            throw new Error(errorData.details || errorData.error || 'Failed to create payment order.');
         }
+
+        const order = await response.json();
 
         // Step 2: Open Razorpay Checkout
         const options = {

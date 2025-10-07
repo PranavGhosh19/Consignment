@@ -51,7 +51,7 @@ service cloud.firestore {
 
       let validPath =
         requestData.companyDetails.incorporationCertificatePath.matches(
-          'verification-documents/' + userId + '/.*'
+          'verification-documents/' + userType + '/' + userId + '/.*'
         );
 
       return hasAllKeys && validPath;

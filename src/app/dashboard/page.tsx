@@ -26,10 +26,12 @@ export default function DashboardRedirectPage() {
           } else if (userType === 'employee') {
             router.replace('/dashboard/employee');
           } else {
-            router.replace('/select-type');
+            // Fallback for unknown userType
+            router.replace('/login');
           }
         } else {
-          router.replace('/select-type');
+          // If user exists in auth but not in DB or has no type, send to login
+          router.replace('/login');
         }
       } else {
         router.replace('/login');

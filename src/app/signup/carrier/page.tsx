@@ -47,7 +47,7 @@ export default function CarrierSignupPage() {
         name: name,
         email: email,
         userType: 'carrier',
-        isGstVerified: false,
+        verificationStatus: 'unsubmitted',
       });
       
       router.push("/gst-verification");

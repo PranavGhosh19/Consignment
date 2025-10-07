@@ -13,78 +13,92 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(userId)).data.userType == 'carrier';
     }
 
-    // Employees are recognized only by company email domain
     function isEmployee(userId) {
-      return request.auth.token.email.matches('.*@shippingbattlefield\\.com$');
+      return get(/databases/$(database)/documents/users/$(userId)).data.userType == 'employee';
     }
 
     function getShipment(shipmentId) {
       return get(/databases/$(database)/documents/shipments/$(shipmentId));
     }
 
-    function isShipmentAwardedParty(shipmentId, userId) {
-      let shipment = getShipment(shipmentId).data;
-      return shipment.status == 'awarded' && (
-        isEmployee(userId) ||
-        shipment.exporterId == userId ||
-        shipment.winningCarrierId == userId
-      );
-    }
-    
+    // ───── Verification Logic (for Exporter & Carrier) ─────
     function isValidVerificationSubmission(requestData, resourceData, userId) {
-      let commonFields = ['legalName', 'gstin', 'pan', 'incorporationCertificateUrl', 'incorporationCertificatePath'];
-      let exporterFields = ['iecCode', 'adCode'];
-      
-      let requiredKeys = resourceData.userType == 'exporter' 
-          ? commonFields.concat(exporterFields) 
-          : commonFields;
+      // Common fields required for all business verifications
+      let baseFields = [
+        'legalName',
+        'gstin',
+        'pan',
+        'incorporationCertificateUrl',
+        'incorporationCertificatePath'
+      ];
 
-      return requestData.companyDetails.keys().hasAll(requiredKeys) &&
-             requestData.companyDetails.incorporationCertificatePath.matches(
-                'verification-documents/' + userId + '/.*'
-             );
+      // Exporter-specific additional fields
+      let exporterExtra = ['iecCode', 'adCode'];
+
+      // Carrier-specific additional fields
+      let carrierExtra = ['licenseNumber', 'companyType'];
+
+      // Determine userType from Firestore or the incoming request
+      let userType =
+        resourceData.userType != null
+          ? resourceData.userType
+          : (requestData.userType != null ? requestData.userType : null);
+
+      // Determine required keys based on userType
+      let requiredKeys =
+        userType == 'exporter'
+          ? baseFields.concat(exporterExtra)
+          : userType == 'carrier'
+            ? baseFields.concat(carrierExtra)
+            : baseFields;
+
+      // Ensure the request data has all required keys
+      let hasAllKeys =
+        requestData.companyDetails is map &&
+        requestData.companyDetails.keys().hasAll(requiredKeys);
+
+      // Ensure uploaded document path is under verification-documents/{userId}/...
+      let validPath =
+        requestData.companyDetails.incorporationCertificatePath.matches(
+          'verification-documents/' + userId + '/.*'
+        );
+
+      return hasAllKeys && validPath;
     }
-
 
     // ───── Users Collection ─────
     match /users/{userId} {
-      // QUICK UNBLOCKER: allow all authenticated users to read any user doc
-      allow read: if request.auth.uid != null;
+      allow read, update: if request.auth.uid == userId || isEmployee(request.auth.uid);
+      allow create: if request.auth.uid == userId 
+                    && request.resource.data.email == request.auth.token.email;
+    }
 
-      // Allow user to create their own document
+    // ───── Verification Collection ─────
+    match /verification/{userId} {
+      // READ: Owner or Employee can read
+      allow read: if request.auth.uid == userId || isEmployee(request.auth.uid);
+
+      // CREATE: Only the owner can submit; must have valid data
       allow create: if request.auth.uid == userId &&
-                     request.resource.data.email == request.auth.token.email;
+                    (isExporter(userId) || isCarrier(userId) || 
+                     (request.resource.data.userType in ['exporter', 'carrier'])) &&
+                    isValidVerificationSubmission(request.resource.data, get(/databases/$(database)/documents/users/$(userId)).data, userId);
 
-      // Allow updates with constraints
-      allow update: if request.auth.uid != null && (
-        // Employees can update anyone
-        isEmployee(request.auth.uid) ||
-
-        // Users can only update themselves
-        (request.auth.uid == userId && (
-          // First-time verification submission
-          (
-            resource.data.verificationStatus == 'unsubmitted' &&
-            request.resource.data.verificationStatus == 'pending' &&
-            isValidVerificationSubmission(request.resource.data, resource.data, userId)
-          ) ||
-
-          // General profile updates (can’t alter status/type)
-          (
-            request.resource.data.verificationStatus == resource.data.verificationStatus &&
-            request.resource.data.userType == resource.data.userType
-          )
-        ))
+      // UPDATE: Owner or Employee can update, but must maintain structure
+      allow update: if (
+        (request.auth.uid == userId || isEmployee(request.auth.uid)) &&
+        isValidVerificationSubmission(request.resource.data, get(/databases/$(database)/documents/users/$(userId)).data, userId)
       );
     }
 
     // ───── Shipments Collection ─────
     match /shipments/{shipmentId} {
-      allow create: if request.auth.uid != null &&
-                     isExporter(request.auth.uid) &&
-                     request.resource.data.exporterId == request.auth.uid;
 
-      allow list: if request.auth.uid != null && isEmployee(request.auth.uid);
+      allow create: if request.auth.uid != null
+                    && isExporter(request.auth.uid)
+                    && request.resource.data.exporterId == request.auth.uid;
+
+      allow list: if request.auth.uid != null;
 
       allow get: if request.auth.uid != null && (
         isEmployee(request.auth.uid) ||
@@ -93,57 +107,33 @@ service cloud.firestore {
       );
 
       allow update: if request.auth.uid != null && (
-        // Employees can always update
         isEmployee(request.auth.uid) ||
-
-        // Exporters with constraints
-        (isExporter(request.auth.uid) &&
-         resource.data.exporterId == request.auth.uid &&
-         (
-           // Editing draft/scheduled without changing core fields
-           (
-             (resource.data.status == 'draft' || resource.data.status == 'scheduled') &&
-             request.resource.data.exporterId == resource.data.exporterId &&
-             request.resource.data.createdAt == resource.data.createdAt
-           ) ||
-
-           // Awarding shipment
-           (
-             resource.data.status == 'live' &&
-             request.resource.data.status == 'awarded' &&
-             request.resource.data.winningBidId != null &&
-             request.resource.data.winningCarrierLegalName ==
-               get(/databases/$(database)/documents/users/$(request.resource.data.winningCarrierId)).data.companyDetails.legalName
-           )
-         )
-        ) ||
-
-        // POC updates allowed for awarded parties
         (
-          isShipmentAwardedParty(shipmentId, request.auth.uid) &&
-          request.resource.data.keys().hasAny([
-            'exporterPocFullName','exporterPocPhoneNumber',
-            'vendorPocFullName','vendorPocPhoneNumber'
-          ])
+          isExporter(request.auth.uid) &&
+          resource.data.exporterId == request.auth.uid &&
+          (
+            // Rule for editing a draft/scheduled shipment
+            (
+              (resource.data.status == 'draft' || resource.data.status == 'scheduled') &&
+              request.resource.data.exporterId == resource.data.exporterId &&
+              request.resource.data.createdAt == resource.data.createdAt
+            ) ||
+            // Rule for awarding a live shipment
+            (
+              resource.data.status == 'live' &&
+              request.resource.data.status == 'awarded' &&
+              request.resource.data.winningBidId != null &&
+              request.resource.data.exporterId == resource.data.exporterId && // immutable
+              request.resource.data.createdAt == resource.data.createdAt // immutable
+            )
+          )
         )
       );
 
       allow delete: if request.auth.uid != null &&
-                     isExporter(request.auth.uid) &&
-                     resource.data.exporterId == request.auth.uid &&
-                     resource.data.status == 'draft';
-
-      // ───── Documents Subcollection ─────
-      match /documents/{documentId} {
-        allow read: if isShipmentAwardedParty(shipmentId, request.auth.uid);
-
-        allow create: if isShipmentAwardedParty(shipmentId, request.auth.uid) &&
-                      request.resource.data.uploaderId == request.auth.uid;
-
-        allow delete: if isEmployee(request.auth.uid) ||
-                      (isShipmentAwardedParty(shipmentId, request.auth.uid) &&
-                       resource.data.uploaderId == request.auth.uid);
-      }
+        isExporter(request.auth.uid) &&
+        resource.data.exporterId == request.auth.uid &&
+        resource.data.status == 'draft';
     }
 
     // ───── Bids Subcollection ─────
@@ -157,37 +147,36 @@ service cloud.firestore {
       );
 
       allow create: if request.auth.uid != null &&
-                     isCarrier(request.auth.uid) &&
-                     request.resource.data.carrierId == request.auth.uid &&
-                     getShipment(shipmentId).data.status == 'live';
+        isCarrier(request.auth.uid) &&
+        request.resource.data.carrierId == request.auth.uid &&
+        getShipment(shipmentId).data.status == 'live';
     }
 
     // ───── Register Subcollection ─────
     match /shipments/{shipmentId}/register/{carrierId} {
       allow read: if request.auth.uid != null && (
         isEmployee(request.auth.uid) ||
-        (isExporter(request.auth.uid) &&
-         getShipment(shipmentId).data.exporterId == request.auth.uid) ||
+        (isExporter(request.auth.uid) && getShipment(shipmentId).data.exporterId == request.auth.uid) ||
         (isCarrier(request.auth.uid) && request.auth.uid == carrierId)
       );
 
       allow create: if request.auth.uid != null &&
-                     isCarrier(request.auth.uid) &&
-                     request.auth.uid == carrierId &&
-                     getShipment(shipmentId).data.status == 'scheduled';
+        isCarrier(request.auth.uid) &&
+        request.auth.uid == carrierId &&
+        getShipment(shipmentId).data.status == 'scheduled';
     }
 
     // ───── CollectionGroup Queries ─────
     match /{documentPath=**}/register/{docId} {
-      allow read: if request.auth.uid != null &&
-                   isCarrier(request.auth.uid) &&
-                   resource.data.carrierId == request.auth.uid;
+      allow read: if request.auth.uid != null
+                  && isCarrier(request.auth.uid)
+                  && resource.data.carrierId == request.auth.uid;
     }
 
     match /{documentPath=**}/bids/{bidId} {
-      allow read: if request.auth.uid != null &&
-                   isCarrier(request.auth.uid) &&
-                   resource.data.carrierId == request.auth.uid;
+      allow read: if request.auth.uid != null
+                  && isCarrier(request.auth.uid)
+                  && resource.data.carrierId == request.auth.uid;
     }
   }
 }

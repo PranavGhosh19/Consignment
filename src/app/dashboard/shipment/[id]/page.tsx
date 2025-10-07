@@ -271,7 +271,7 @@ export default function ShipmentDetailPage() {
   
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canDelete = isOwner && shipment.status === 'draft';
-  const canAcceptBid = (isOwner || isEmployee) && shipment.status === 'live';
+  const canAcceptBid = (isOwner && userType === 'exporter') || (isEmployee && shipment.status === 'live');
   const canGoLive = isEmployee && shipment.status === 'scheduled';
   const canViewDocuments = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
 

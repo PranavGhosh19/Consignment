@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 
 const InfoCardSkeleton = () => (
@@ -191,7 +193,8 @@ export default function ShipmentDocumentsPage() {
         const downloadUrl = await getDownloadURL(uploadResult.ref);
 
         // Add document metadata to Firestore
-        await addDoc(collection(db, "shipments", shipment.id, "documents"), {
+        const documentsRef = collection(db, "shipments", shipment.id, "documents");
+        const newDocumentPayload = {
             name: documentName,
             url: downloadUrl,
             path: storagePath,
@@ -199,18 +202,28 @@ export default function ShipmentDocumentsPage() {
             uploaderName: userData.name,
             uploadedAt: serverTimestamp(),
             fileType: fileToUpload.type,
-        });
+        };
 
-        toast({ title: "Success", description: "Document uploaded successfully." });
-        
-        // Reset form and close dialog
-        setDocumentName("");
-        setFileToUpload(null);
-        setIsUploadDialogOpen(false);
+        addDoc(documentsRef, newDocumentPayload)
+          .then(() => {
+              toast({ title: "Success", description: "Document uploaded successfully." });
+              setDocumentName("");
+              setFileToUpload(null);
+              setIsUploadDialogOpen(false);
+          })
+          .catch(async (serverError) => {
+              const permissionError = new FirestorePermissionError({
+                  path: documentsRef.path,
+                  operation: 'create',
+                  requestResourceData: newDocumentPayload,
+              });
+              errorEmitter.emit('permission-error', permissionError);
+          });
 
     } catch (error) {
-        console.error("Error uploading document:", error);
-        toast({ title: "Upload Failed", description: "Could not upload the document. Please try again.", variant: "destructive"});
+        // This will now primarily catch storage errors, not Firestore permission errors
+        console.error("Error uploading file to storage:", error);
+        toast({ title: "Upload Failed", description: "Could not upload the file. Please try again.", variant: "destructive"});
     } finally {
         setIsUploading(false);
     }

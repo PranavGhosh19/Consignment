@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { AuthButton, MobileMenu, NavLinks } from "@/components/auth-button";
 import { BottomBar } from "@/components/bottom-bar";
 import { Clock } from "@/components/clock";
+import { FirebaseErrorListener } from "./FirebaseErrorListener";
 
 const LogoIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -116,6 +117,7 @@ const Footer = () => (
 export function AppProviders({ children }: { children: React.ReactNode }) {
     return (
         <div className="relative flex min-h-screen flex-col">
+            <FirebaseErrorListener />
             <Header />
             <div className="flex-1">{children}</div>
             <Footer />

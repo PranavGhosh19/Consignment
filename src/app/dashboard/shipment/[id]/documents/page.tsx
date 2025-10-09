@@ -183,7 +183,7 @@ export default function ShipmentDocumentsPage() {
 
     try {
         // Create a storage reference
-        const storagePath = `shipment-documents/${shipment.id}/${fileToUpload.name}`;
+        const storagePath = `shipments/${shipment.id}/${user.uid}_${fileToUpload.name}`;
         const storageRef = ref(storage, storagePath);
 
         // Upload file
@@ -427,5 +427,7 @@ export default function ShipmentDocumentsPage() {
     </div>
   );
 }
+
+    
 
     

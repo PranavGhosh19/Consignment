@@ -4,47 +4,38 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Helper function to check if user is an employee
+    // ───── Helper Functions ─────
     function isEmployee() {
       return get(/databases/(default)/documents/users/$(request.auth.uid)).data.userType == 'employee';
     }
 
+    function getShipment(shipmentId) {
+      return get(/databases/(default)/documents/shipments/$(shipmentId));
+    }
+
+    function isShipmentParticipant(shipmentId) {
+      let shipment = getShipment(shipmentId).data;
+      return request.auth.uid == shipment.exporterId || request.auth.uid == shipment.winningCarrierId;
+    }
+
     // ───── Verification Documents ─────
-    // Documents uploaded by users during onboarding/verification.
-    match /verification-documents/{userType}/{userId}/{fileName} {
+    match /verification-documents/{userType}/{userId}/{allPaths=**} {
       function isOwner() {
         return request.auth.uid == userId;
       }
-
-      // READ: Owner or employee can read their own or others' docs
       allow read: if request.auth != null && (isOwner() || isEmployee());
-
-      // WRITE: Only owner can upload their own verification docs
-      allow write: if request.auth != null && isOwner()
-                   && request.resource.size < 5 * 1024 * 1024 // Max 5MB
-                   && (request.resource.contentType.matches('image/.*') || request.resource.contentType.matches('application/pdf'));
-    }
-    
-    // ───── Shipment-specific Documents ─────
-    match /shipment-documents/{shipmentId}/{fileName} {
-      function getShipment() {
-        return get(/databases/(default)/documents/shipments/$(shipmentId));
-      }
-
-      function isShipmentParticipant() {
-          let shipment = getShipment().data;
-          return request.auth.uid == shipment.exporterId || request.auth.uid == shipment.winningCarrierId;
-      }
-      
-      // READ: Employee or a participant (exporter/winning carrier) of the shipment
-      allow read: if request.auth != null && (isEmployee() || isShipmentParticipant());
-      
-      // WRITE: Only a participant can upload.
-      allow write: if request.auth != null && isShipmentParticipant()
-                   && request.resource.size < 5 * 1024 * 1024 // Max 5MB
-                   && (request.resource.contentType.matches('image/.*') || request.resource.contentType.matches('application/pdf'));
+      allow write: if request.auth != null && isOwner();
     }
 
+    // ───── Shipment Documents ─────
+    match /shipments/{shipmentId}/{userId}_{fileName} {
+       allow read: if request.auth != null && (isShipmentParticipant(shipmentId) || isEmployee());
+       allow create: if request.auth != null &&
+                      request.auth.uid == userId &&
+                      (isShipmentParticipant(shipmentId) || isEmployee()) &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*|application/pdf');
+    }
 
     // ───── Default Deny Rule ─────
     match /{allPaths=**} {

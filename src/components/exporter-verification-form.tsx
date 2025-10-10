@@ -39,18 +39,18 @@ interface VerificationFormProps {
     userType: string | null;
 }
 
-const FileInput = ({ id, label, onFileChange, disabled, file }: { id: string, label: string, onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled: boolean, file: File | null }) => (
+const FileInput = ({ id, onFileChange, disabled, file }: { id: string, onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled: boolean, file: File | null }) => (
     <div className="grid gap-2">
-        <Label htmlFor={id}>{label}</Label>
+        <Label htmlFor={id} className="sr-only">Upload file</Label>
         <Input 
             id={id} 
             type="file" 
             onChange={onFileChange} 
             disabled={disabled} 
             accept=".pdf,.jpg,.jpeg,.png"
-            className="text-muted-foreground"
+            className="text-muted-foreground file:text-primary file:font-semibold"
         />
-        {file && <p className="text-sm text-muted-foreground">File selected: {file.name}</p>}
+        {file && <p className="text-sm text-muted-foreground">Selected: {file.name}</p>}
     </div>
 );
 
@@ -185,7 +185,7 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
                                 <Label htmlFor="gst">GST Number</Label>
                                 <Input id="gst" value={gst} onChange={e => setGst(e.target.value)} disabled={isSubmitting} />
                             </div>
-                             <FileInput id="gst-file" label="Upload GST" onFileChange={handleFileChange(setGstFile)} disabled={isSubmitting} file={gstFile} />
+                             <FileInput id="gst-file" onFileChange={handleFileChange(setGstFile)} disabled={isSubmitting} file={gstFile} />
                         </div>
 
                          <div className="grid sm:grid-cols-2 gap-4">
@@ -193,7 +193,7 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
                                 <Label htmlFor="pan">PAN</Label>
                                 <Input id="pan" value={pan} onChange={e => setPan(e.target.value)} disabled={isSubmitting} />
                             </div>
-                            <FileInput id="pan-file" label="Upload PAN" onFileChange={handleFileChange(setPanFile)} disabled={isSubmitting} file={panFile} />
+                            <FileInput id="pan-file" onFileChange={handleFileChange(setPanFile)} disabled={isSubmitting} file={panFile} />
                         </div>
 
 
@@ -205,21 +205,21 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
                                         <Label htmlFor="tan">TAN (If registered)</Label>
                                         <Input id="tan" value={tan} onChange={e => setTan(e.target.value)} disabled={isSubmitting} />
                                     </div>
-                                    <FileInput id="tan-file" label="Upload TAN" onFileChange={handleFileChange(setTanFile)} disabled={isSubmitting} file={tanFile} />
+                                    <FileInput id="tan-file" onFileChange={handleFileChange(setTanFile)} disabled={isSubmitting} file={tanFile} />
                                 </div>
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     <div className="grid gap-2">
                                         <Label htmlFor="iec">IEC Code</Label>
                                         <Input id="iec" value={iecCode} onChange={e => setIecCode(e.target.value)} disabled={isSubmitting} />
                                     </div>
-                                     <FileInput id="iec-file" label="Upload IEC" onFileChange={handleFileChange(setIecCodeFile)} disabled={isSubmitting} file={iecCodeFile} />
+                                     <FileInput id="iec-file" onFileChange={handleFileChange(setIecCodeFile)} disabled={isSubmitting} file={iecCodeFile} />
                                 </div>
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     <div className="grid gap-2">
                                         <Label htmlFor="ad">AD Code</Label>
                                         <Input id="ad" value={adCode} onChange={e => setAdCode(e.target.value)} disabled={isSubmitting} />
                                     </div>
-                                    <FileInput id="ad-file" label="Upload AD Code" onFileChange={handleFileChange(setAdCodeFile)} disabled={isSubmitting} file={adCodeFile} />
+                                    <FileInput id="ad-file" onFileChange={handleFileChange(setAdCodeFile)} disabled={isSubmitting} file={adCodeFile} />
                                 </div>
                             </>
                         )}
@@ -244,7 +244,10 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
                                         </Select>
                                     </div>
                                 </div>
-                                <FileInput id="incorporation-cert" label="Incorporation Certificate" onFileChange={handleFileChange(setIncorporationCertificate)} disabled={isSubmitting} file={incorporationCertificate} />
+                                <div className="grid gap-2">
+                                  <Label>Incorporation Certificate</Label>
+                                  <FileInput id="incorporation-cert" onFileChange={handleFileChange(setIncorporationCertificate)} disabled={isSubmitting} file={incorporationCertificate} />
+                                </div>
                             </>
                         )}
                     </CardContent>
@@ -274,3 +277,5 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
         </>
     );
 }
+
+    

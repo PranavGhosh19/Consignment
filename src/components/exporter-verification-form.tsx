@@ -101,7 +101,7 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
     const handleSubmit = async () => {
         setIsConfirmOpen(false);
         if (isExporter && (!companyName || !gst || !pan || !iecCode || !adCode || !incorporationCertificate)) {
-             toast({ title: "Missing Fields", description: "Please fill out all required text fields and upload all required documents for exporters.", variant: "destructive" });
+             toast({ title: "Missing Fields", description: "Please fill out all required text fields and upload the incorporation certificate.", variant: "destructive" });
              return;
         }
         if (isCarrier && (!companyName || !gst || !pan || !licenseNumber || !companyType || !incorporationCertificate)) {
@@ -173,60 +173,68 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="company-name">Name of the Company</Label>
-                            <Input id="company-name" value={companyName} onChange={e => setCompanyName(e.target.value)} disabled={isSubmitting} />
+                        <div className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="company-name">Name of the Company</Label>
+                                <Input id="company-name" value={companyName} onChange={e => setCompanyName(e.target.value)} disabled={isSubmitting} />
+                            </div>
                         </div>
                         
                         <Separator />
 
-                        <div className="grid sm:grid-cols-2 gap-4 items-end">
-                             <div className="grid gap-2">
-                                <Label htmlFor="gst">GST Number</Label>
-                                <Input id="gst" value={gst} onChange={e => setGst(e.target.value)} disabled={isSubmitting} />
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Tax & Registration</h3>
+                            <div className="grid sm:grid-cols-2 gap-4 items-end">
+                                 <div className="grid gap-2">
+                                    <Label htmlFor="gst">GST Number</Label>
+                                    <Input id="gst" value={gst} onChange={e => setGst(e.target.value)} disabled={isSubmitting} />
+                                </div>
+                                 <FileInput id="gst-file" onFileChange={handleFileChange(setGstFile)} disabled={isSubmitting} file={gstFile} />
                             </div>
-                             <FileInput id="gst-file" onFileChange={handleFileChange(setGstFile)} disabled={isSubmitting} file={gstFile} />
-                        </div>
 
-                         <div className="grid sm:grid-cols-2 gap-4 items-end">
-                            <div className="grid gap-2">
-                                <Label htmlFor="pan">PAN</Label>
-                                <Input id="pan" value={pan} onChange={e => setPan(e.target.value)} disabled={isSubmitting} />
+                             <div className="grid sm:grid-cols-2 gap-4 items-end">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="pan">PAN</Label>
+                                    <Input id="pan" value={pan} onChange={e => setPan(e.target.value)} disabled={isSubmitting} />
+                                </div>
+                                <FileInput id="pan-file" onFileChange={handleFileChange(setPanFile)} disabled={isSubmitting} file={panFile} />
                             </div>
-                            <FileInput id="pan-file" onFileChange={handleFileChange(setPanFile)} disabled={isSubmitting} file={panFile} />
                         </div>
-
 
                         {isExporter && (
                             <>
-                                <Separator />
-                                <div className="grid sm:grid-cols-2 gap-4 items-end">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="tan">TAN (If registered)</Label>
-                                        <Input id="tan" value={tan} onChange={e => setTan(e.target.value)} disabled={isSubmitting} />
+                                <div className="space-y-4">
+                                     <div className="grid sm:grid-cols-2 gap-4 items-end">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="tan">TAN (If registered)</Label>
+                                            <Input id="tan" value={tan} onChange={e => setTan(e.target.value)} disabled={isSubmitting} />
+                                        </div>
+                                        <FileInput id="tan-file" onFileChange={handleFileChange(setTanFile)} disabled={isSubmitting} file={tanFile} />
                                     </div>
-                                    <FileInput id="tan-file" onFileChange={handleFileChange(setTanFile)} disabled={isSubmitting} file={tanFile} />
-                                </div>
-                                <div className="grid sm:grid-cols-2 gap-4 items-end">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="iec">IEC Code</Label>
-                                        <Input id="iec" value={iecCode} onChange={e => setIecCode(e.target.value)} disabled={isSubmitting} />
-                                    </div>
-                                     <FileInput id="iec-file" onFileChange={handleFileChange(setIecCodeFile)} disabled={isSubmitting} file={iecCodeFile} />
-                                </div>
-                                <div className="grid sm:grid-cols-2 gap-4 items-end">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="ad">AD Code</Label>
-                                        <Input id="ad" value={adCode} onChange={e => setAdCode(e.target.value)} disabled={isSubmitting} />
-                                    </div>
-                                    <FileInput id="ad-file" onFileChange={handleFileChange(setAdCodeFile)} disabled={isSubmitting} file={adCodeFile} />
                                 </div>
                                 <Separator />
-                                <div className="grid sm:grid-cols-2 gap-4 items-end">
-                                    <div className="grid gap-2">
-                                        <Label>Incorporation Certificate</Label>
-                                        <p className="text-xs text-muted-foreground">Required for verification.</p>
+
+                                <div className="space-y-4">
+                                     <h3 className="text-lg font-medium">Import/Export Codes</h3>
+                                     <div className="grid sm:grid-cols-2 gap-4 items-end">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="iec">IEC Code</Label>
+                                            <Input id="iec" value={iecCode} onChange={e => setIecCode(e.target.value)} disabled={isSubmitting} />
+                                        </div>
+                                         <FileInput id="iec-file" onFileChange={handleFileChange(setIecCodeFile)} disabled={isSubmitting} file={iecCodeFile} />
                                     </div>
+                                    <div className="grid sm:grid-cols-2 gap-4 items-end">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="ad">AD Code</Label>
+                                            <Input id="ad" value={adCode} onChange={e => setAdCode(e.target.value)} disabled={isSubmitting} />
+                                        </div>
+                                        <FileInput id="ad-file" onFileChange={handleFileChange(setAdCodeFile)} disabled={isSubmitting} file={adCodeFile} />
+                                    </div>
+                                </div>
+
+                                 <Separator />
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-medium">Incorporation Certificate</h3>
                                     <FileInput id="incorporation-cert-exporter" onFileChange={handleFileChange(setIncorporationCertificate)} disabled={isSubmitting} file={incorporationCertificate} />
                                 </div>
                             </>
@@ -234,31 +242,31 @@ export function ExporterVerificationForm({ user, userType }: VerificationFormPro
                         {isCarrier && (
                             <>
                                 <Separator />
-                                <div className="grid sm:grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="license-number">License Number</Label>
-                                        <Input id="license-number" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} disabled={isSubmitting} />
-                                    </div>
-                                     <div className="grid gap-2">
-                                        <Label htmlFor="company-type">Company Type</Label>
-                                        <Select value={companyType} onValueChange={setCompanyType} disabled={isSubmitting}>
-                                            <SelectTrigger id="company-type">
-                                                <SelectValue placeholder="Select type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="individual">Individual</SelectItem>
-                                                <SelectItem value="company">Company</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-medium">Carrier Details</h3>
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="license-number">License Number</Label>
+                                            <Input id="license-number" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} disabled={isSubmitting} />
+                                        </div>
+                                         <div className="grid gap-2">
+                                            <Label htmlFor="company-type">Company Type</Label>
+                                            <Select value={companyType} onValueChange={setCompanyType} disabled={isSubmitting}>
+                                                <SelectTrigger id="company-type">
+                                                    <SelectValue placeholder="Select type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="individual">Individual</SelectItem>
+                                                    <SelectItem value="company">Company</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 </div>
                                  <Separator />
-                                <div className="grid sm:grid-cols-2 gap-4 items-end">
-                                  <div className="grid gap-2">
-                                    <Label>Incorporation Certificate</Label>
-                                    <p className="text-xs text-muted-foreground">Required for verification.</p>
-                                  </div>
-                                  <FileInput id="incorporation-cert-carrier" onFileChange={handleFileChange(setIncorporationCertificate)} disabled={isSubmitting} file={incorporationCertificate} />
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-medium">Incorporation Certificate</h3>
+                                    <FileInput id="incorporation-cert-carrier" onFileChange={handleFileChange(setIncorporationCertificate)} disabled={isSubmitting} file={incorporationCertificate} />
                                 </div>
                             </>
                         )}

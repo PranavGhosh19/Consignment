@@ -45,25 +45,6 @@ const LogoIcon = (props: React.SVGProps<SVGSVGElement>) => (
   );
 
 const Header = () => {
-    const [clickCount, setClickCount] = useState(0);
-    const router = useRouter();
-
-    const handleLogoClick = (e: React.MouseEvent) => {
-        e.preventDefault();
-        const newClickCount = clickCount + 1;
-        setClickCount(newClickCount);
-
-        if (newClickCount >= 5) {
-            router.push('/login/employee');
-            setClickCount(0); // Reset after navigation
-        } else {
-             // Reset if time between clicks is too long
-            setTimeout(() => {
-                setClickCount(0);
-            }, 1000); // 1 second timeout
-        }
-    }
-
     return (
       <header
         className={cn(
@@ -75,7 +56,6 @@ const Header = () => {
           <div className="flex-1 sm:flex-none">
             <Link
               href="/"
-              onClick={handleLogoClick}
               className="flex items-center gap-2 font-bold text-lg font-headline justify-center sm:justify-start"
             >
               <LogoIcon />

@@ -26,12 +26,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 type RegisteredCarrier = {
     id: string;
@@ -59,6 +61,8 @@ export default function ShipmentDetailPage() {
   const [allCarriers, setAllCarriers] = useState<AllCarriers[]>([]);
   const [carrierSearchTerm, setCarrierSearchTerm] = useState("");
   const [loadingCarriers, setLoadingCarriers] = useState(false);
+  const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
 
   const router = useRouter();
@@ -166,7 +170,11 @@ export default function ShipmentDetailPage() {
   
   const fetchAllCarriers = useCallback(async () => {
     setLoadingCarriers(true);
-    const carriersQuery = query(collection(db, 'users'), where('userType', '==', 'carrier'));
+    const carriersQuery = query(
+      collection(db, 'users'), 
+      where('userType', '==', 'carrier'),
+      where('verificationStatus', '==', 'approved')
+    );
     
     getDocs(carriersQuery)
       .then(querySnapshot => {
@@ -179,7 +187,7 @@ export default function ShipmentDetailPage() {
       })
       .catch(serverError => {
         const permissionError = new FirestorePermissionError({
-          path: carriersQuery.path,
+          path: '/users', // This might be a simplification depending on the actual query
           operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -256,6 +264,25 @@ export default function ShipmentDetailPage() {
     }
   };
 
+  const handleCarrierSelection = (carrierId: string) => {
+    setSelectedCarriers(prev => 
+      prev.includes(carrierId) 
+        ? prev.filter(id => id !== carrierId)
+        : [...prev, carrierId]
+    );
+  };
+  
+  const handleInvite = () => {
+    // Placeholder for actual invite logic
+    console.log("Inviting carriers:", selectedCarriers);
+    toast({
+        title: "Invitations Sent (Simulated)",
+        description: `Successfully sent invitations to ${selectedCarriers.length} carriers.`
+    });
+    setSelectedCarriers([]);
+    setIsInviteDialogOpen(false);
+  }
+
 
   if (loading || !shipment) {
     return (
@@ -308,8 +335,7 @@ export default function ShipmentDetailPage() {
   const canInvite = (isOwner || isEmployee) && shipment.status === 'scheduled';
 
   const filteredCarriers = allCarriers.filter(carrier => 
-    carrier.name.toLowerCase().includes(carrierSearchTerm.toLowerCase()) ||
-    carrier.email.toLowerCase().includes(carrierSearchTerm.toLowerCase())
+    carrier.name.toLowerCase().includes(carrierSearchTerm.toLowerCase())
   );
 
   return (
@@ -527,7 +553,12 @@ export default function ShipmentDetailPage() {
                                )}
                            </div>
                            {canInvite && (
-                                <Dialog onOpenChange={(open) => open && fetchAllCarriers()}>
+                                <Dialog open={isInviteDialogOpen} onOpenChange={(open) => {
+                                    if (open) {
+                                        fetchAllCarriers();
+                                    }
+                                    setIsInviteDialogOpen(open);
+                                }}>
                                     <DialogTrigger asChild>
                                         <Button variant="outline" className="w-full mt-4">
                                             <Send className="mr-2 h-4 w-4" /> Invite Carriers
@@ -536,13 +567,13 @@ export default function ShipmentDetailPage() {
                                     <DialogContent className="sm:max-w-md">
                                         <DialogHeader>
                                             <DialogTitle>Invite Carriers</DialogTitle>
-                                            <DialogDescription>Search for and select carriers to invite to this shipment.</DialogDescription>
+                                            <DialogDescription>Select carriers to invite to this shipment.</DialogDescription>
                                         </DialogHeader>
                                         <div className="py-4 space-y-4">
                                             <div className="relative">
                                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input 
-                                                    placeholder="Search by name or email..."
+                                                    placeholder="Search by name..."
                                                     value={carrierSearchTerm}
                                                     onChange={(e) => setCarrierSearchTerm(e.target.value)}
                                                     className="pl-10"
@@ -556,26 +587,35 @@ export default function ShipmentDetailPage() {
                                                         <Skeleton className="h-12 w-full" />
                                                     </div>
                                                 ) : (
-                                                    <div className="space-y-2">
+                                                    <div className="space-y-1">
                                                         {filteredCarriers.map(carrier => (
-                                                            <div key={carrier.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary">
-                                                                <div className="flex items-center gap-3">
+                                                            <div key={carrier.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-secondary">
+                                                                <Checkbox 
+                                                                    id={`carrier-${carrier.id}`}
+                                                                    onCheckedChange={() => handleCarrierSelection(carrier.id)}
+                                                                    checked={selectedCarriers.includes(carrier.id)}
+                                                                />
+                                                                <Label htmlFor={`carrier-${carrier.id}`} className="flex items-center gap-3 cursor-pointer w-full">
                                                                     <Avatar>
                                                                         <AvatarFallback>{carrier.name.charAt(0).toUpperCase()}</AvatarFallback>
                                                                     </Avatar>
-                                                                    <div>
-                                                                        <p className="font-semibold">{carrier.name}</p>
-                                                                        <p className="text-xs text-muted-foreground">{carrier.email}</p>
-                                                                    </div>
-                                                                </div>
-                                                                {/* Placeholder for invite action */}
-                                                                <Button size="sm" variant="ghost" disabled>Invite</Button>
+                                                                    <p className="font-semibold">{carrier.name}</p>
+                                                                </Label>
                                                             </div>
                                                         ))}
                                                     </div>
                                                 )}
                                             </ScrollArea>
                                         </div>
+                                         <DialogFooter>
+                                            <Button 
+                                                onClick={handleInvite} 
+                                                disabled={selectedCarriers.length === 0}
+                                                className="w-full"
+                                            >
+                                                Invite {selectedCarriers.length > 0 ? selectedCarriers.length : ''} Carrier(s)
+                                            </Button>
+                                        </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
                             )}

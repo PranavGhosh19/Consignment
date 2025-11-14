@@ -336,7 +336,7 @@ function ExporterDashboardPage() {
   }
 
   const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft', goLiveTimestamp?: Timestamp | null) => {
-    if (!handleValidation()) return;
+    if (!handleValidation() || !user) return;
 
     setIsSubmitting(true);
     
@@ -377,14 +377,22 @@ function ExporterDashboardPage() {
         await updateDoc(shipmentDocRef, shipmentPayload);
         toast({ title: "Success", description: "Shipment updated." });
       } else {
-        const userDocRef = doc(db, 'users', user!.uid);
-        const userDoc = await getDoc(userDocRef);
-        const uData = userDoc.data();
-        const exporterName = uData?.companyDetails?.legalName || uData?.name || 'Unknown Exporter';
+        const userDocRef = doc(db, 'users', user.uid);
+        const companyDetailsRef = doc(db, 'users', user.uid, 'companyDetails', user.uid);
         
+        const [userDoc, companyDetailsDoc] = await Promise.all([
+          getDoc(userDocRef),
+          getDoc(companyDetailsRef)
+        ]);
+        
+        const uData = userDoc.data();
+        const companyData = companyDetailsDoc.data();
+        
+        const exporterName = companyData?.legalName || uData?.name || 'Unknown Exporter';
+
         await addDoc(collection(db, 'shipments'), {
           ...shipmentPayload,
-          exporterId: user!.uid,
+          exporterId: user.uid,
           exporterName: exporterName,
           createdAt: Timestamp.now(),
         });
@@ -396,7 +404,7 @@ function ExporterDashboardPage() {
       setIsScheduleDialogOpen(false);
       setGoLiveDate(undefined);
       router.push('/dashboard/exporter', { scroll: false });
-      await fetchProducts(user!.uid);
+      await fetchProducts(user.uid);
     } catch (error) {
       console.error("Error submitting document: ", error);
       toast({ title: "Error", description: "Failed to save shipment.", variant: "destructive" });

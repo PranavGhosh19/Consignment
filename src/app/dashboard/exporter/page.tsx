@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
@@ -25,7 +26,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -379,7 +379,8 @@ function ExporterDashboardPage() {
       } else {
         const userDocRef = doc(db, 'users', user!.uid);
         const userDoc = await getDoc(userDocRef);
-        const exporterName = userDoc.exists() ? userDoc.data().companyDetails.legalName : 'Unknown Exporter';
+        const uData = userDoc.data();
+        const exporterName = uData?.companyDetails?.legalName || uData?.name || 'Unknown Exporter';
         
         await addDoc(collection(db, 'shipments'), {
           ...shipmentPayload,

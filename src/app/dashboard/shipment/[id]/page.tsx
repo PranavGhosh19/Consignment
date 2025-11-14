@@ -4,14 +4,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, Timestamp, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, Timestamp, updateDoc, deleteDoc, where, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil, Trash2, FileText } from "lucide-react";
+import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil, Trash2, FileText, Send, Search } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -27,12 +27,21 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type RegisteredCarrier = {
     id: string;
     legalName?: string;
     registeredAt: Timestamp;
 };
+
+type AllCarriers = {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export default function ShipmentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -43,6 +52,11 @@ export default function ShipmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
+  // Carrier Invite State
+  const [allCarriers, setAllCarriers] = useState<AllCarriers[]>([]);
+  const [carrierSearchTerm, setCarrierSearchTerm] = useState("");
+  const [loadingCarriers, setLoadingCarriers] = useState(false);
 
 
   const router = useRouter();
@@ -147,6 +161,26 @@ export default function ShipmentDetailPage() {
 
     return () => unsubscribeRegister();
   }, [shipmentId, userType]);
+  
+  const fetchAllCarriers = useCallback(async () => {
+    setLoadingCarriers(true);
+    try {
+        const carriersQuery = query(collection(db, 'users'), where('userType', '==', 'carrier'));
+        const querySnapshot = await getDocs(carriersQuery);
+        const carriersList = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            name: doc.data().name || 'Unnamed Carrier',
+            email: doc.data().email
+        }));
+        setAllCarriers(carriersList);
+    } catch (error) {
+        toast({ title: "Error", description: "Could not load carrier list.", variant: "destructive" });
+        console.error("Error fetching all carriers:", error);
+    } finally {
+        setLoadingCarriers(false);
+    }
+  }, [toast]);
+
 
   const handleAcceptBid = async (bid: DocumentData) => {
     if (!shipmentId) return;
@@ -263,6 +297,12 @@ export default function ShipmentDetailPage() {
   const canAcceptBid = (isOwner && userType === 'exporter' && shipment.status === 'live') || (isEmployee && shipment.status === 'live');
   const canGoLive = isEmployee && shipment.status === 'scheduled';
   const canViewDocuments = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
+  const canInvite = (isOwner || isEmployee) && shipment.status === 'scheduled';
+
+  const filteredCarriers = allCarriers.filter(carrier => 
+    carrier.name.toLowerCase().includes(carrierSearchTerm.toLowerCase()) ||
+    carrier.email.toLowerCase().includes(carrierSearchTerm.toLowerCase())
+  );
 
   return (
     <div className="container py-6 md:py-10">
@@ -478,6 +518,59 @@ export default function ShipmentDetailPage() {
                                    </Dialog>
                                )}
                            </div>
+                           {canInvite && (
+                                <Dialog onOpenChange={(open) => open && fetchAllCarriers()}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" className="w-full mt-4">
+                                            <Send className="mr-2 h-4 w-4" /> Invite Carriers
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle>Invite Carriers</DialogTitle>
+                                            <DialogDescription>Search for and select carriers to invite to this shipment.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="py-4 space-y-4">
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input 
+                                                    placeholder="Search by name or email..."
+                                                    value={carrierSearchTerm}
+                                                    onChange={(e) => setCarrierSearchTerm(e.target.value)}
+                                                    className="pl-10"
+                                                />
+                                            </div>
+                                            <ScrollArea className="h-72">
+                                                {loadingCarriers ? (
+                                                    <div className="space-y-2 p-4">
+                                                        <Skeleton className="h-12 w-full" />
+                                                        <Skeleton className="h-12 w-full" />
+                                                        <Skeleton className="h-12 w-full" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {filteredCarriers.map(carrier => (
+                                                            <div key={carrier.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary">
+                                                                <div className="flex items-center gap-3">
+                                                                    <Avatar>
+                                                                        <AvatarFallback>{carrier.name.charAt(0).toUpperCase()}</AvatarFallback>
+                                                                    </Avatar>
+                                                                    <div>
+                                                                        <p className="font-semibold">{carrier.name}</p>
+                                                                        <p className="text-xs text-muted-foreground">{carrier.email}</p>
+                                                                    </div>
+                                                                </div>
+                                                                {/* Placeholder for invite action */}
+                                                                <Button size="sm" variant="ghost" disabled>Invite</Button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </ScrollArea>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
                         </CardContent>
                     </Card>
                 )}
@@ -486,3 +579,5 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
+
+    

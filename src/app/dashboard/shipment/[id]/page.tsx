@@ -30,6 +30,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 type RegisteredCarrier = {
     id: string;
@@ -164,22 +166,28 @@ export default function ShipmentDetailPage() {
   
   const fetchAllCarriers = useCallback(async () => {
     setLoadingCarriers(true);
-    try {
-        const carriersQuery = query(collection(db, 'users'), where('userType', '==', 'carrier'));
-        const querySnapshot = await getDocs(carriersQuery);
+    const carriersQuery = query(collection(db, 'users'), where('userType', '==', 'carrier'));
+    
+    getDocs(carriersQuery)
+      .then(querySnapshot => {
         const carriersList = querySnapshot.docs.map(doc => ({
             id: doc.id,
             name: doc.data().name || 'Unnamed Carrier',
             email: doc.data().email
         }));
         setAllCarriers(carriersList);
-    } catch (error) {
-        toast({ title: "Error", description: "Could not load carrier list.", variant: "destructive" });
-        console.error("Error fetching all carriers:", error);
-    } finally {
+      })
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+          path: carriersQuery.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
         setLoadingCarriers(false);
-    }
-  }, [toast]);
+      });
+  }, []);
 
 
   const handleAcceptBid = async (bid: DocumentData) => {

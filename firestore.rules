@@ -22,7 +22,8 @@ service cloud.firestore {
 
     // ───── Users Collection ─────
     match /users/{userId} {
-      allow read: if request.auth.uid == userId || isEmployee(request.auth.uid);
+      allow get: if request.auth.uid == userId || isEmployee(request.auth.uid);
+      allow list: if request.auth.uid != null && (isEmployee(request.auth.uid) || isExporter(request.auth.uid));
       allow create: if request.auth.uid == userId
                     && request.resource.data.email == request.auth.token.email;
 

@@ -292,7 +292,7 @@ export default function FindShipmentsPage() {
                           </CardHeader>
                           <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
                               {selectedShipment.shipmentType && <div className="md:col-span-2"><span className="font-semibold">Shipment Type: </span>{selectedShipment.shipmentType}</div>}
-                              {selectedShipment.hsnCode && <div><span className="font-semibold">HSN Code: </span>{selectedShipment.hsnCode}</div>}
+                              {selectedShipment.hsnCode && <div><span className="font-semibold">HSN / ITC-HS Code: </span>{selectedShipment.hsnCode}</div>}
                               {selectedShipment.modeOfShipment && <div><span className="font-semibold">Mode: </span>{selectedShipment.modeOfShipment}</div>}
 
                               <div><span className="font-semibold">Origin Port: </span>{selectedShipment.origin?.portOfLoading}</div>

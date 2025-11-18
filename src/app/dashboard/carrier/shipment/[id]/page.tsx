@@ -182,7 +182,7 @@ export default function CarrierShipmentDetailPage() {
                 <CardContent className="space-y-6 text-sm">
                     <div className="grid md:grid-cols-2 gap-4 border-b pb-6">
                          {shipment.shipmentType && <div><span className="font-semibold text-muted-foreground block mb-1">Shipment Type</span>{shipment.shipmentType}</div>}
-                         {shipment.hsnCode && <div><span className="font-semibold text-muted-foreground block mb-1">HSN Code</span>{shipment.hsnCode}</div>}
+                         {shipment.hsnCode && <div><span className="font-semibold text-muted-foreground block mb-1">HSN / ITC-HS Code</span>{shipment.hsnCode}</div>}
                          {shipment.modeOfShipment && <div className="md:col-span-2"><span className="font-semibold text-muted-foreground block mb-1">Mode of Shipment</span>{shipment.modeOfShipment}</div>}
                     </div>
                     <div className="grid md:grid-cols-2 gap-4 border-b pb-6">

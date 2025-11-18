@@ -319,7 +319,7 @@ function ExporterDashboardPage() {
       return false;
     }
     if (hsnCode && hsnCode.length < 4) {
-      toast({ title: "Invalid HSN Code", description: "HSN Code must be at least 4 digits.", variant: "destructive" });
+      toast({ title: "Invalid HSN Code", description: "HSN / ITC-HS Code must be at least 4 digits.", variant: "destructive" });
       return false;
     }
     if (!user) {
@@ -511,7 +511,7 @@ function ExporterDashboardPage() {
                       <Input id="product-name" placeholder="e.g., Electronics, Textiles" value={productName} onChange={e => setProductName(e.target.value)} disabled={isSubmitting} />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="hsn-code">HSN Code</Label>
+                      <Label htmlFor="hsn-code">HSN / ITC-HS Code</Label>
                       <Input id="hsn-code" placeholder="e.g., 85171290" value={hsnCode} onChange={e => setHsnCode(e.target.value)} disabled={isSubmitting} />
                     </div>
                     <div className="grid gap-2">

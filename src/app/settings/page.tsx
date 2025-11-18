@@ -66,6 +66,7 @@ const SidebarNav = ({ activeView, setView }: { activeView: SettingsView, setView
 export default function SettingsPage() {
     const [user, setUser] = useState<User | null>(null);
     const [userData, setUserData] = useState<DocumentData | null>(null);
+    const [companyDetails, setCompanyDetails] = useState<DocumentData | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeView, setActiveView] = useState<SettingsView>("profile");
 
@@ -92,6 +93,14 @@ export default function SettingsPage() {
                     const data = userDoc.data();
                     setUserData(data);
                     setName(data.name || "");
+                    
+                    if (data.verificationStatus === 'approved') {
+                        const companyDetailsRef = doc(db, "users", currentUser.uid, "companyDetails", currentUser.uid);
+                        const companyDetailsSnap = await getDoc(companyDetailsRef);
+                        if (companyDetailsSnap.exists()) {
+                            setCompanyDetails(companyDetailsSnap.data());
+                        }
+                    }
                 }
                 setLoading(false);
             } else {
@@ -204,46 +213,46 @@ export default function SettingsPage() {
                                 <CardDescription>Your verified company details.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {userData?.verificationStatus === 'approved' && userData?.companyDetails ? (
+                                {userData?.verificationStatus === 'approved' && companyDetails ? (
                                     <div className="space-y-4">
                                         <div className="grid sm:grid-cols-3 items-start gap-4">
                                             <Label>Legal Name</Label>
-                                            <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.companyDetails.legalName}</p>
+                                            <p className="sm:col-span-2 text-sm text-muted-foreground">{companyDetails.legalName}</p>
                                         </div>
-                                        {userData.companyDetails.address && (
+                                        {companyDetails.address && (
                                             <div className="grid sm:grid-cols-3 items-start gap-4">
                                                 <Label>Address</Label>
-                                                <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.companyDetails.address}</p>
+                                                <p className="sm:col-span-2 text-sm text-muted-foreground">{companyDetails.address}</p>
                                             </div>
                                         )}
                                         <div className="grid sm:grid-cols-3 items-start gap-4">
                                             <Label>GSTIN</Label>
-                                            <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.gstin}</p>
+                                            <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.gstin || companyDetails.gstin}</p>
                                         </div>
-                                        {userData.userType === 'exporter' && (
+                                        {userData?.userType === 'exporter' && (
                                             <>
                                                 <div className="grid sm:grid-cols-3 items-start gap-4">
                                                     <Label>PAN</Label>
-                                                    <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.companyDetails.pan}</p>
+                                                    <p className="sm:col-span-2 text-sm text-muted-foreground">{companyDetails.pan}</p>
                                                 </div>
                                                 <div className="grid sm:grid-cols-3 items-start gap-4">
                                                     <Label>TAN</Label>
-                                                    <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.companyDetails.tan || 'N/A'}</p>
+                                                    <p className="sm:col-span-2 text-sm text-muted-foreground">{companyDetails.tan || 'N/A'}</p>
                                                 </div>
                                                 <div className="grid sm:grid-cols-3 items-start gap-4">
                                                     <Label>IEC Code</Label>
-                                                    <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.companyDetails.iecCode}</p>
+                                                    <p className="sm:col-span-2 text-sm text-muted-foreground">{companyDetails.iecCode}</p>
                                                 </div>
                                                 <div className="grid sm:grid-cols-3 items-start gap-4">
                                                     <Label>AD Code</Label>
-                                                    <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.companyDetails.adCode}</p>
+                                                    <p className="sm:col-span-2 text-sm text-muted-foreground">{companyDetails.adCode}</p>
                                                 </div>
                                             </>
                                         )}
-                                        {userData.userType === 'carrier' && (
+                                        {userData?.userType === 'carrier' && (
                                              <div className="grid sm:grid-cols-3 items-start gap-4">
                                                 <Label>License No.</Label>
-                                                <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.companyDetails.licenseNumber}</p>
+                                                <p className="sm:col-span-2 text-sm text-muted-foreground">{companyDetails.licenseNumber}</p>
                                             </div>
                                         )}
                                     </div>
@@ -251,7 +260,9 @@ export default function SettingsPage() {
                                     <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-lg">
                                         <Building2 className="h-10 w-10 text-muted-foreground mb-4" />
                                         <p className="text-muted-foreground">Your business information is not yet verified.</p>
-                                        <Button variant="link" onClick={() => router.push('/gst-verification')}>Complete Verification</Button>
+                                        {userData?.verificationStatus === 'unsubmitted' && (
+                                            <Button variant="link" onClick={() => router.push('/gst-verification')}>Complete Verification</Button>
+                                        )}
                                     </div>
                                 )}
                             </CardContent>
@@ -368,4 +379,3 @@ export default function SettingsPage() {
             </div>
         </div>
     );
-}

@@ -250,10 +250,16 @@ export default function SettingsPage() {
                                             </>
                                         )}
                                         {userData?.userType === 'carrier' && (
+                                            <>
                                              <div className="grid sm:grid-cols-3 items-start gap-4">
                                                 <Label>License No.</Label>
                                                 <p className="sm:col-span-2 text-sm text-muted-foreground">{companyDetails.licenseNumber}</p>
                                             </div>
+                                             <div className="grid sm:grid-cols-3 items-start gap-4">
+                                                <Label>Company Type</Label>
+                                                <p className="sm:col-span-2 text-sm text-muted-foreground capitalize">{companyDetails.companyType}</p>
+                                            </div>
+                                            </>
                                         )}
                                     </div>
                                 ) : (
@@ -380,3 +386,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    

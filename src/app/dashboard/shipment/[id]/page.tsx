@@ -399,6 +399,8 @@ export default function ShipmentDetailPage() {
                 return { text: "Congratulations! You have Awarded", description: `to ${shipment.winningCarrierName || 'a carrier'}.` };
             }
             return { text: "Awarded", description: `Awarded to ${shipment.winningCarrierName || 'a carrier'}.` };
+        case 'delivered':
+            return { text: "Delivered", description: "This shipment has been successfully delivered." };
         default:
             return { text: "Status Unknown", description: "" };
     }

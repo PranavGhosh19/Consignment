@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil, Trash2, FileText, Send, Search, Award } from "lucide-react";
+import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil, Trash2, FileText, Send, Search, Award, Star } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type RegisteredCarrier = {
     id: string;
@@ -57,6 +58,10 @@ export default function ShipmentDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMarkedAsDelivered, setIsMarkedAsDelivered] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [feedback, setFeedback] = useState("");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   
   // Carrier Invite State
   const [allCarriers, setAllCarriers] = useState<AllCarriers[]>([]);
@@ -288,6 +293,20 @@ export default function ShipmentDetailPage() {
     setIsMarkedAsDelivered(true);
     // UI-only change for now
   }
+  
+  const handleFeedbackSubmit = () => {
+    if (rating === 0) {
+        toast({ title: "Please provide a rating", variant: "destructive" });
+        return;
+    }
+    setIsSubmittingFeedback(true);
+    console.log({ rating, feedback });
+    // Simulate API call
+    setTimeout(() => {
+      toast({ title: "Feedback Submitted!", description: "Thank you for your valuable feedback." });
+      setIsSubmittingFeedback(false);
+    }, 1000);
+  };
 
 
   if (loading || !shipment) {
@@ -322,7 +341,7 @@ export default function ShipmentDetailPage() {
             return { text: "Accepting Bids", description: "This shipment is live for carriers to bid on." };
         case 'awarded':
              if (isOwner) {
-                return { text: "You have Awarded", description: `Congratulations! You have Awarded to ${shipment.winningCarrierName || 'a carrier'}.` };
+                return { text: "Congratulations! You have Awarded", description: `to ${shipment.winningCarrierName || 'a carrier'}.` };
             }
             return { text: "Awarded", description: `Awarded to ${shipment.winningCarrierName || 'a carrier'}.` };
         default:
@@ -547,6 +566,48 @@ export default function ShipmentDetailPage() {
                         </CardContent>
                     </Card>
                 )}
+                
+                {isMarkedAsDelivered && isOwner && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Rating and Feedback</CardTitle>
+                            <CardDescription>Rate your experience with {shipment.winningCarrierName}.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                             <div className="flex items-center justify-center gap-1" onMouseLeave={() => setHoverRating(0)}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button 
+                                        key={star} 
+                                        onClick={() => setRating(star)}
+                                        onMouseEnter={() => setHoverRating(star)}
+                                        className="focus:outline-none"
+                                    >
+                                        <Star
+                                            className={cn("h-8 w-8 transition-colors",
+                                                star <= (hoverRating || rating)
+                                                ? "text-yellow-400 fill-yellow-400"
+                                                : "text-muted-foreground/50"
+                                            )}
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                            <Textarea 
+                                placeholder="Share your feedback about the carrier..."
+                                value={feedback}
+                                onChange={(e) => setFeedback(e.target.value)}
+                                disabled={isSubmittingFeedback}
+                            />
+                            <Button 
+                                onClick={handleFeedbackSubmit} 
+                                disabled={isSubmittingFeedback}
+                                className="w-full"
+                            >
+                                {isSubmittingFeedback ? "Submitting..." : "Submit Feedback"}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {shipment.status === 'scheduled' && (
                     <Card className="bg-white dark:bg-card">
@@ -671,5 +732,3 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
-
-    

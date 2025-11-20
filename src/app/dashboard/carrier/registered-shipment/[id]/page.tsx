@@ -10,12 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Clock, FileText, Award } from "lucide-react";
+import { ArrowLeft, Check, Clock, FileText, Award, Star } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function RegisteredShipmentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [shipment, setShipment] = useState<DocumentData | null>(null);
+  const [feedbackData, setFeedbackData] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -44,6 +46,7 @@ export default function RegisteredShipmentDetailPage() {
     if (!user || !shipmentId) return;
     
     let unsubscribeShipment: () => void = () => {};
+    let unsubscribeFeedback: (() => void) | null = null;
 
     const shipmentDocRef = doc(db, "shipments", shipmentId);
     unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
@@ -54,6 +57,19 @@ export default function RegisteredShipmentDetailPage() {
             return;
         }
         setShipment({ id: docSnap.id, ...shipmentData });
+
+        if (shipmentData.status === 'delivered') {
+          // Listen for feedback only when delivered
+          const feedbackQuery = query(collection(db, "shipments", shipmentId, "feedback"));
+          unsubscribeFeedback = onSnapshot(feedbackQuery, (querySnapshot) => {
+            if (!querySnapshot.empty) {
+              setFeedbackData(querySnapshot.docs[0].data());
+            } else {
+              setFeedbackData(null);
+            }
+          });
+        }
+
       } else {
         toast({ title: "Error", description: "Shipment not found.", variant: "destructive" });
         router.push("/dashboard/carrier");
@@ -67,6 +83,9 @@ export default function RegisteredShipmentDetailPage() {
 
     return () => {
         unsubscribeShipment();
+        if (unsubscribeFeedback) {
+          unsubscribeFeedback();
+        }
     };
 
   }, [user, shipmentId, router, toast]);
@@ -203,8 +222,38 @@ export default function RegisteredShipmentDetailPage() {
                 )}
               </CardContent>
             </Card>
+            {shipment.status === 'delivered' && feedbackData && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rating & Feedback</CardTitle>
+                  <CardDescription>From: {shipment.exporterName}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={cn(
+                          "h-8 w-8",
+                          star <= (feedbackData.rating || 0)
+                            ? "text-yellow-400 fill-yellow-400"
+                            : "text-muted-foreground/50"
+                        )}
+                      />
+                    ))}
+                  </div>
+                  {feedbackData.feedback && (
+                    <blockquote className="border-l-2 pl-6 italic text-muted-foreground">
+                      {feedbackData.feedback}
+                    </blockquote>
+                  )}
+                </CardContent>
+              </Card>
+            )}
         </div>
       </div>
     </div>
   );
 }
+
+    

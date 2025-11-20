@@ -207,6 +207,20 @@ service cloud.firestore {
         );
       }
 
+      // ───── FEEDBACK SUBCOLLECTION ─────
+      match /feedback/{userId} {
+        allow create: if request.auth.uid == userId && 
+                       isExporter(userId) &&
+                       getShipment(shipmentId).data.exporterId == userId &&
+                       getShipment(shipmentId).data.status == 'delivered';
+                       
+        allow read: if request.auth.uid != null && (
+          isEmployee(request.auth.uid) ||
+          getShipment(shipmentId).data.exporterId == request.auth.uid ||
+          getShipment(shipmentId).data.winningCarrierId == request.auth.uid
+        );
+      }
+
       // ───── BIDS SUBCOLLECTION ─────
       match /bids/{bidId} {
 

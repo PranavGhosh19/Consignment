@@ -1,17 +1,18 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, Timestamp, updateDoc, deleteDoc, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, Timestamp, updateDoc, deleteDoc, where, getDocs, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil, Trash2, FileText, Send, Search, Award, Star } from "lucide-react";
+import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil, Trash2, FileText, Send, Search, Award, Star, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -105,6 +106,9 @@ export default function ShipmentDetailPage() {
         // This check is primarily for initial page load authorization.
         // More granular access control is handled by the `can...` variables below.
         setShipment({ id: docSnap.id, ...shipmentData });
+        if (shipmentData.status === 'delivered') {
+          setIsMarkedAsDelivered(true);
+        }
 
       } else {
         toast({ title: "Error", description: "Shipment not found.", variant: "destructive" });
@@ -289,26 +293,52 @@ export default function ShipmentDetailPage() {
     setIsInviteDialogOpen(false);
   }
 
-  const handleMarkAsDelivered = () => {
-    setIsMarkedAsDelivered(true);
-    // UI-only change for now
+  const handleMarkAsDelivered = async () => {
+    if (!shipmentId) return;
+    setIsSubmitting(true);
+    try {
+      const shipmentDocRef = doc(db, "shipments", shipmentId);
+      await updateDoc(shipmentDocRef, { status: 'delivered' });
+      toast({ title: "Success!", description: "The shipment has been marked as delivered." });
+      setIsMarkedAsDelivered(true);
+    } catch (error) {
+      console.error("Error marking as delivered: ", error);
+      toast({ title: "Error", description: "Could not update the shipment status.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
   
-  const handleFeedbackSubmit = () => {
+  const handleFeedbackSubmit = async () => {
     if (rating === 0) {
         toast({ title: "Please provide a rating", variant: "destructive" });
         return;
     }
+    if (!user || !shipmentId) return;
+
     setIsSubmittingFeedback(true);
-    console.log({ rating, feedback });
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const feedbackDocRef = doc(db, "shipments", shipmentId, "feedback", user.uid);
+      await setDoc(feedbackDocRef, {
+        rating,
+        feedback,
+        submittedAt: Timestamp.now(),
+        authorId: user.uid,
+        authorType: userType
+      });
       toast({ title: "Feedback Submitted!", description: "Thank you for your valuable feedback." });
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast({ title: "Error", description: "Failed to submit feedback.", variant: "destructive" });
+    } finally {
       setIsSubmittingFeedback(false);
-    }, 1000);
+    }
   };
 
-
+  const isOwner = user?.uid === shipment?.exporterId;
+  const isEmployee = userType === 'employee';
+  const isWinningCarrier = user?.uid === shipment?.winningCarrierId;
+  
   if (loading || !shipment) {
     return (
       <div className="container py-6 md:py-10">
@@ -326,18 +356,14 @@ export default function ShipmentDetailPage() {
     );
   }
   
-  const isOwner = user?.uid === shipment.exporterId;
-  const isEmployee = userType === 'employee';
-  const isWinningCarrier = user?.uid === shipment.winningCarrierId;
-  
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canDelete = isOwner && shipment.status === 'draft';
-  const canAcceptBid = (isOwner && userType === 'exporter' && shipment.status === 'live') || (isEmployee && shipment.status === 'live');
+  const canAcceptBid = (isOwner && shipment.status === 'live') || (isEmployee && shipment.status === 'live');
   const canGoLive = isEmployee && shipment.status === 'scheduled';
   const canViewDocuments = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
   const canInvite = (isOwner || isEmployee) && shipment.status === 'scheduled';
   const canViewDeliveredCard = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
-  const canMarkAsDelivered = (isOwner || isEmployee);
+  const canMarkAsDelivered = isOwner;
   const canViewFeedbackCard = isMarkedAsDelivered && (isOwner || isEmployee || isWinningCarrier);
   const canSubmitFeedback = isOwner || isEmployee;
 
@@ -365,6 +391,8 @@ export default function ShipmentDetailPage() {
   const statusInfo = getStatusInfo();
   
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
+
+  const filteredCarriers = allCarriers.filter(c => c.name.toLowerCase().includes(carrierSearchTerm.toLowerCase()));
 
   return (
     <div className="container py-6 md:py-10">
@@ -551,8 +579,9 @@ export default function ShipmentDetailPage() {
                             <Button 
                                 className={cn("w-full", isMarkedAsDelivered && "bg-green-600 hover:bg-green-700")}
                                 onClick={handleMarkAsDelivered}
-                                disabled={isMarkedAsDelivered || !canMarkAsDelivered}
+                                disabled={isMarkedAsDelivered || !canMarkAsDelivered || isSubmitting}
                             >
+                                {isSubmitting && !isMarkedAsDelivered ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 {isMarkedAsDelivered ? (
                                     <>
                                         <Check className="mr-2 h-4 w-4" />
@@ -605,6 +634,7 @@ export default function ShipmentDetailPage() {
                                     disabled={isSubmittingFeedback}
                                     className="w-full"
                                 >
+                                    {isSubmittingFeedback && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     {isSubmittingFeedback ? "Submitting..." : "Submit Feedback"}
                                 </Button>
                             )}

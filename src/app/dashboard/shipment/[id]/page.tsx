@@ -56,6 +56,7 @@ export default function ShipmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isMarkedAsDelivered, setIsMarkedAsDelivered] = useState(false);
   
   // Carrier Invite State
   const [allCarriers, setAllCarriers] = useState<AllCarriers[]>([]);
@@ -281,6 +282,11 @@ export default function ShipmentDetailPage() {
     });
     setSelectedCarriers([]);
     setIsInviteDialogOpen(false);
+  }
+
+  const handleMarkAsDelivered = () => {
+    setIsMarkedAsDelivered(true);
+    // UI-only change for now
   }
 
 
@@ -518,6 +524,30 @@ export default function ShipmentDetailPage() {
                     </CardContent>
                 </Card>
 
+                {isOwner && shipment.status === 'awarded' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Delivered?</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Button 
+                                className={cn("w-full", isMarkedAsDelivered && "bg-green-600 hover:bg-green-700")}
+                                onClick={handleMarkAsDelivered}
+                                disabled={isMarkedAsDelivered}
+                            >
+                                {isMarkedAsDelivered ? (
+                                    <>
+                                        <Check className="mr-2 h-4 w-4" />
+                                        Confirmed
+                                    </>
+                                ) : (
+                                    "Delivered"
+                                )}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {shipment.status === 'scheduled' && (
                     <Card className="bg-white dark:bg-card">
                         <CardHeader>
@@ -641,3 +671,5 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
+
+    

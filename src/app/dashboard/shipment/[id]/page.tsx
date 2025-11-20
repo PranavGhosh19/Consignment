@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil, Trash2, FileText, Send, Search } from "lucide-react";
+import { ArrowLeft, Check, Clock, Shield, Users, Rocket, Pencil, Trash2, FileText, Send, Search, Award } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -300,6 +300,8 @@ export default function ShipmentDetailPage() {
       </div>
     );
   }
+  
+  const isOwner = user?.uid === shipment.exporterId;
 
   const getStatusInfo = () => {
     switch(shipment.status) {
@@ -313,6 +315,9 @@ export default function ShipmentDetailPage() {
         case 'live':
             return { text: "Accepting Bids", description: "This shipment is live for carriers to bid on." };
         case 'awarded':
+             if (isOwner) {
+                return { text: "You have Awarded", description: `Awarded to ${shipment.winningCarrierName || 'a carrier'}.` };
+            }
             return { text: "Awarded", description: `Awarded to ${shipment.winningCarrierName || 'a carrier'}.` };
         default:
             return { text: "Status Unknown", description: "" };
@@ -323,7 +328,6 @@ export default function ShipmentDetailPage() {
   
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
 
-  const isOwner = user?.uid === shipment.exporterId;
   const isEmployee = userType === 'employee';
   const isWinningCarrier = user?.uid === shipment.winningCarrierId;
   
@@ -485,11 +489,21 @@ export default function ShipmentDetailPage() {
             <div className="space-y-6 lg:sticky lg:top-24">
                 <Card className="bg-white dark:bg-card">
                     <CardHeader>
-                        <CardTitle>Status</CardTitle>
+                        <CardTitle>Shipment Status</CardTitle>
                         <CardDescription>{statusInfo.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-2xl font-bold font-headline text-accent-foreground capitalize">{statusInfo.text}</p>
+                        {isOwner && shipment.status === 'awarded' ? (
+                            <div className="flex flex-col items-center justify-center p-4 bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                    <Award className="h-6 w-6" />
+                                    <p className="text-lg font-semibold">{statusInfo.text}</p>
+                                </div>
+                            </div>
+                        ) : (
+                             <p className="text-2xl font-bold font-headline text-accent-foreground capitalize">{statusInfo.text}</p>
+                        )}
+                       
                         {canGoLive && (
                             <Button onClick={handleGoLive} disabled={isSubmitting} className="w-full mt-4">
                                 <Rocket className="mr-2 h-4 w-4" /> Go Live

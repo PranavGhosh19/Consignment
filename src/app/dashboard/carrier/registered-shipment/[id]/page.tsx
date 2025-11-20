@@ -104,6 +104,11 @@ export default function RegisteredShipmentDetailPage() {
                 return { text: "You are Awarded", description: `Congratulations! You have won the bid for this shipment.` };
              }
             return { text: "Other Carrier has been Awarded", description: `This shipment has been awarded to another carrier.` };
+        case 'delivered':
+             if (isWinningCarrier) {
+                return { text: "Delivered", description: "This shipment has been marked as delivered." };
+             }
+            return { text: "Delivered", description: `This shipment has been delivered by ${shipment.winningCarrierName}.` };
         default:
             return { text: "Pending", description: "This shipment is not yet available for bidding." };
     }
@@ -171,10 +176,17 @@ export default function RegisteredShipmentDetailPage() {
                             <p className="text-lg font-semibold">{statusInfo.text}</p>
                         </div>
                     </div>
+                ) : shipment.status === 'delivered' ? (
+                     <div className="flex flex-col items-center justify-center p-4 bg-gray-800 text-white dark:bg-gray-900 rounded-lg">
+                        <div className="flex items-center gap-2">
+                            <Check className="text-yellow-400 h-6 w-6" />
+                            <p className="text-lg font-semibold">{statusInfo.text}</p>
+                        </div>
+                    </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
                         <div className="flex items-center gap-2">
-                            <Check className="h-6 w-6 text-primary" />
+                            <Clock className="h-6 w-6 text-primary" />
                             <p className="text-lg font-semibold">{statusInfo.text}</p>
                         </div>
                     </div>

@@ -128,32 +128,12 @@ service cloud.firestore {
               request.resource.data.exporterId == resource.data.exporterId &&
               request.resource.data.createdAt == resource.data.createdAt
             ) ||
-            // ④ Exporter marking shipment as delivered
+            // ③ Exporter marking shipment as delivered
             (
               resource.data.status == 'awarded' &&
               request.resource.data.status == 'delivered' &&
               request.resource.data.keys().hasAll(['status']) &&
               request.resource.data.keys().size() == 1
-            )
-          )
-        ) ||
-
-        // Carrier updates
-        (
-          isCarrier(request.auth.uid) &&
-          resource.data.winningCarrierId == request.auth.uid &&
-          resource.data.status == 'awarded' &&
-          (
-             // ⑤ Carrier updating tracking status
-            (
-                request.resource.data.keys().hasAll(['trackingStatus']) &&
-                request.resource.data.keys().size() == 1
-            ) ||
-            // ⑥ Carrier marking as delivered
-            (
-                request.resource.data.status == 'delivered' &&
-                request.resource.data.keys().hasAll(['status', 'trackingStatus']) &&
-                request.resource.data.keys().size() == 2
             )
           )
         )

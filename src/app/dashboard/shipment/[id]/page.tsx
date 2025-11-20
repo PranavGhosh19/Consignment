@@ -59,9 +59,12 @@ export default function ShipmentDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMarkedAsDelivered, setIsMarkedAsDelivered] = useState(false);
+
+  // Feedback state
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const [feedbackData, setFeedbackData] = useState<DocumentData | null>(null);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   
   // Carrier Invite State
@@ -120,8 +123,23 @@ export default function ShipmentDetailPage() {
         toast({ title: "Error", description: "Failed to fetch shipment details.", variant: "destructive" });
         setLoading(false);
     });
+    
+    // Listen for feedback
+    const feedbackQuery = query(collection(db, "shipments", shipmentId, "feedback"));
+    const unsubscribeFeedback = onSnapshot(feedbackQuery, (querySnapshot) => {
+      if (!querySnapshot.empty) {
+        // For this app, we'll just show the first feedback document found.
+        const feedbackDoc = querySnapshot.docs[0];
+        setFeedbackData(feedbackDoc.data());
+      } else {
+        setFeedbackData(null);
+      }
+    });
 
-    return () => unsubscribeShipment();
+    return () => {
+      unsubscribeShipment();
+      unsubscribeFeedback();
+    };
 
   }, [user, shipmentId, router, toast]);
 
@@ -381,7 +399,7 @@ export default function ShipmentDetailPage() {
   const canViewDeliveredCard = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
   const canMarkAsDelivered = isOwner;
   const canViewFeedbackCard = isMarkedAsDelivered && (isOwner || isEmployee || isWinningCarrier);
-  const canSubmitFeedback = isOwner || isEmployee;
+  const canSubmitFeedback = (isOwner || isEmployee) && !feedbackData;
 
   const getStatusInfo = () => {
     switch(shipment.status) {
@@ -635,10 +653,14 @@ export default function ShipmentDetailPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Rating and Feedback</CardTitle>
-                            <CardDescription>Rate your experience with {shipment.winningCarrierName}.</CardDescription>
+                            <CardDescription>
+                                {canSubmitFeedback
+                                    ? `Rate your experience with ${shipment.winningCarrierName}.`
+                                    : 'Feedback has been submitted for this shipment.'}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                             <div className="flex items-center justify-center gap-1" onMouseLeave={() => setHoverRating(0)}>
+                            <div className="flex items-center justify-center gap-1" onMouseLeave={() => canSubmitFeedback && setHoverRating(0)}>
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <button 
                                         key={star} 
@@ -649,7 +671,7 @@ export default function ShipmentDetailPage() {
                                     >
                                         <Star
                                             className={cn("h-8 w-8 transition-colors",
-                                                star <= (hoverRating || rating)
+                                                star <= (hoverRating || rating || (feedbackData?.rating || 0))
                                                 ? "text-yellow-400 fill-yellow-400"
                                                 : "text-muted-foreground/50",
                                                 canSubmitFeedback ? "cursor-pointer" : "cursor-not-allowed"
@@ -660,9 +682,10 @@ export default function ShipmentDetailPage() {
                             </div>
                             <Textarea 
                                 placeholder="Share your feedback about the carrier..."
-                                value={feedback}
+                                value={feedbackData?.feedback || feedback}
                                 onChange={(e) => setFeedback(e.target.value)}
                                 disabled={isSubmittingFeedback || !canSubmitFeedback}
+                                readOnly={!!feedbackData}
                             />
                             {canSubmitFeedback && (
                                 <Button 
@@ -801,5 +824,6 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
+
 
 

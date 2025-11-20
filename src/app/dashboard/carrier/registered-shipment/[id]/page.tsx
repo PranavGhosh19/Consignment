@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Clock, FileText } from "lucide-react";
+import { ArrowLeft, Check, Clock, FileText, Award } from "lucide-react";
 import { format } from "date-fns";
 
 export default function RegisteredShipmentDetailPage() {
@@ -101,7 +101,7 @@ export default function RegisteredShipmentDetailPage() {
             return { text: "Registered", description: "This shipment is scheduled to go live soon." };
         case 'awarded':
              if (isWinningCarrier) {
-                return { text: "You are Awarded", description: `Congratulations! You have won the bid for this shipment.` };
+                return { text: "You have Awarded", description: `Congratulations! You have won the bid for this shipment.` };
              }
             return { text: "Other Carrier has been Awarded", description: `This shipment has been awarded to another carrier.` };
         default:
@@ -164,12 +164,22 @@ export default function RegisteredShipmentDetailPage() {
                 <CardDescription>{statusInfo.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Check className="h-6 w-6 text-primary" />
-                    <p className="text-lg font-semibold">{statusInfo.text}</p>
-                  </div>
-                </div>
+                {shipment.status === 'awarded' && isWinningCarrier ? (
+                     <div className="flex flex-col items-center justify-center p-4 bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 rounded-lg">
+                        <div className="flex items-center gap-2">
+                            <Award className="h-6 w-6" />
+                            <p className="text-lg font-semibold">{statusInfo.text}</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
+                        <div className="flex items-center gap-2">
+                            <Check className="h-6 w-6 text-primary" />
+                            <p className="text-lg font-semibold">{statusInfo.text}</p>
+                        </div>
+                    </div>
+                )}
+                
                 {shipment.status === 'scheduled' && (
                     <p className="text-center text-sm text-muted-foreground">You will be notified when this shipment goes live for bidding.</p>
                 )}

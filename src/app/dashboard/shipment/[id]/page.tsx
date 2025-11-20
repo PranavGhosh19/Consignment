@@ -557,36 +557,54 @@ export default function ShipmentDetailPage() {
                  )}
             </div>
             <div className="space-y-6 lg:sticky lg:top-24">
-                <Card className="bg-white dark:bg-card">
-                    <CardHeader>
-                        <CardTitle>Shipment Status</CardTitle>
-                        <CardDescription>{statusInfo.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isOwner && shipment.status === 'awarded' ? (
-                            <div className="flex flex-col items-center justify-center p-4 bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 rounded-lg">
-                                <div className="flex items-center gap-2">
-                                    <Award className="h-6 w-6" />
-                                    <p className="text-lg font-semibold">{statusInfo.text}</p>
-                                </div>
+                {shipment.status === 'delivered' ? (
+                    <Card className="bg-gray-800 text-white dark:bg-gray-900">
+                        <CardHeader>
+                            <CardTitle>Shipment Status</CardTitle>
+                            <CardDescription className="text-gray-400">{statusInfo.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-center p-4 bg-gray-700 dark:bg-gray-800 rounded-lg">
+                                <Check className="text-yellow-400 h-6 w-6 mr-3" />
+                                <p className="text-2xl font-bold font-headline text-white capitalize">
+                                    {statusInfo.text}
+                                </p>
                             </div>
-                        ) : (
-                             <p className="text-2xl font-bold font-headline text-accent-foreground capitalize">{statusInfo.text}</p>
-                        )}
-                       
-                        {canGoLive && (
-                            <Button onClick={handleGoLive} disabled={isSubmitting} className="w-full mt-4">
-                                <Rocket className="mr-2 h-4 w-4" /> Go Live
-                            </Button>
-                        )}
-                        {canViewDocuments && (
-                            <Button onClick={() => router.push(`/dashboard/shipment/${shipmentId}/documents`)} className="w-full mt-4">
-                               <FileText className="mr-2 h-4 w-4" />
-                               View Documents
-                            </Button>
-                        )}
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card className="bg-white dark:bg-card">
+                        <CardHeader>
+                            <CardTitle>Shipment Status</CardTitle>
+                            <CardDescription>{statusInfo.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isOwner && shipment.status === 'awarded' ? (
+                                <div className="flex flex-col items-center justify-center p-4 bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <Award className="h-6 w-6" />
+                                        <p className="text-lg font-semibold">{statusInfo.text}</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-2xl font-bold font-headline text-accent-foreground capitalize">{statusInfo.text}</p>
+                            )}
+                        
+                            {canGoLive && (
+                                <Button onClick={handleGoLive} disabled={isSubmitting} className="w-full mt-4">
+                                    <Rocket className="mr-2 h-4 w-4" /> Go Live
+                                </Button>
+                            )}
+                            {canViewDocuments && (
+                                <Button onClick={() => router.push(`/dashboard/shipment/${shipmentId}/documents`)} className="w-full mt-4">
+                                <FileText className="mr-2 h-4 w-4" />
+                                View Documents
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
 
                 {canViewDeliveredCard && (
                     <Card>
@@ -783,4 +801,5 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
+
 

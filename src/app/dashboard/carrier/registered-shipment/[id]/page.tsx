@@ -101,7 +101,7 @@ export default function RegisteredShipmentDetailPage() {
             return { text: "Registered", description: "This shipment is scheduled to go live soon." };
         case 'awarded':
              if (isWinningCarrier) {
-                return { text: "You have Awarded", description: `Congratulations! You have won the bid for this shipment.` };
+                return { text: "You are Awarded", description: `Congratulations! You have won the bid for this shipment.` };
              }
             return { text: "Other Carrier has been Awarded", description: `This shipment has been awarded to another carrier.` };
         default:

@@ -191,8 +191,7 @@ service cloud.firestore {
       // ───── FEEDBACK SUBCOLLECTION ─────
       match /feedback/{userId} {
         allow create: if request.auth.uid == userId && 
-                       isExporter(userId) &&
-                       getShipment(shipmentId).data.exporterId == userId &&
+                       (isExporter(userId) || isEmployee(userId)) &&
                        getShipment(shipmentId).data.status == 'delivered';
                        
         allow read: if request.auth.uid != null && (

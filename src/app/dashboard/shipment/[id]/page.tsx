@@ -328,6 +328,18 @@ export default function ShipmentDetailPage() {
   
   const isOwner = user?.uid === shipment.exporterId;
   const isEmployee = userType === 'employee';
+  const isWinningCarrier = user?.uid === shipment.winningCarrierId;
+  
+  const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
+  const canDelete = isOwner && shipment.status === 'draft';
+  const canAcceptBid = (isOwner && userType === 'exporter' && shipment.status === 'live') || (isEmployee && shipment.status === 'live');
+  const canGoLive = isEmployee && shipment.status === 'scheduled';
+  const canViewDocuments = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
+  const canInvite = (isOwner || isEmployee) && shipment.status === 'scheduled';
+  const canViewDeliveredCard = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
+  const canMarkAsDelivered = (isOwner || isEmployee);
+  const canViewFeedbackCard = isMarkedAsDelivered && (isOwner || isEmployee || isWinningCarrier);
+  const canSubmitFeedback = isOwner || isEmployee;
 
   const getStatusInfo = () => {
     switch(shipment.status) {
@@ -353,19 +365,6 @@ export default function ShipmentDetailPage() {
   const statusInfo = getStatusInfo();
   
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
-
-  const isWinningCarrier = user?.uid === shipment.winningCarrierId;
-  
-  const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
-  const canDelete = isOwner && shipment.status === 'draft';
-  const canAcceptBid = (isOwner && userType === 'exporter' && shipment.status === 'live') || (isEmployee && shipment.status === 'live');
-  const canGoLive = isEmployee && shipment.status === 'scheduled';
-  const canViewDocuments = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
-  const canInvite = (isOwner || isEmployee) && shipment.status === 'scheduled';
-
-  const filteredCarriers = allCarriers.filter(carrier => 
-    carrier.name.toLowerCase().includes(carrierSearchTerm.toLowerCase())
-  );
 
   return (
     <div className="container py-6 md:py-10">
@@ -543,7 +542,7 @@ export default function ShipmentDetailPage() {
                     </CardContent>
                 </Card>
 
-                {(isOwner || isEmployee) && shipment.status === 'awarded' && (
+                {canViewDeliveredCard && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Delivered?</CardTitle>
@@ -552,7 +551,7 @@ export default function ShipmentDetailPage() {
                             <Button 
                                 className={cn("w-full", isMarkedAsDelivered && "bg-green-600 hover:bg-green-700")}
                                 onClick={handleMarkAsDelivered}
-                                disabled={isMarkedAsDelivered}
+                                disabled={isMarkedAsDelivered || !canMarkAsDelivered}
                             >
                                 {isMarkedAsDelivered ? (
                                     <>
@@ -567,7 +566,7 @@ export default function ShipmentDetailPage() {
                     </Card>
                 )}
                 
-                {isMarkedAsDelivered && (isOwner || isEmployee) && (
+                {canViewFeedbackCard && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Rating and Feedback</CardTitle>
@@ -578,15 +577,17 @@ export default function ShipmentDetailPage() {
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <button 
                                         key={star} 
-                                        onClick={() => setRating(star)}
-                                        onMouseEnter={() => setHoverRating(star)}
-                                        className="focus:outline-none"
+                                        onClick={() => canSubmitFeedback && setRating(star)}
+                                        onMouseEnter={() => canSubmitFeedback && setHoverRating(star)}
+                                        className="focus:outline-none disabled:cursor-not-allowed"
+                                        disabled={!canSubmitFeedback}
                                     >
                                         <Star
                                             className={cn("h-8 w-8 transition-colors",
                                                 star <= (hoverRating || rating)
                                                 ? "text-yellow-400 fill-yellow-400"
-                                                : "text-muted-foreground/50"
+                                                : "text-muted-foreground/50",
+                                                canSubmitFeedback ? "cursor-pointer" : "cursor-not-allowed"
                                             )}
                                         />
                                     </button>
@@ -596,15 +597,17 @@ export default function ShipmentDetailPage() {
                                 placeholder="Share your feedback about the carrier..."
                                 value={feedback}
                                 onChange={(e) => setFeedback(e.target.value)}
-                                disabled={isSubmittingFeedback}
+                                disabled={isSubmittingFeedback || !canSubmitFeedback}
                             />
-                            <Button 
-                                onClick={handleFeedbackSubmit} 
-                                disabled={isSubmittingFeedback}
-                                className="w-full"
-                            >
-                                {isSubmittingFeedback ? "Submitting..." : "Submit Feedback"}
-                            </Button>
+                            {canSubmitFeedback && (
+                                <Button 
+                                    onClick={handleFeedbackSubmit} 
+                                    disabled={isSubmittingFeedback}
+                                    className="w-full"
+                                >
+                                    {isSubmittingFeedback ? "Submitting..." : "Submit Feedback"}
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 )}

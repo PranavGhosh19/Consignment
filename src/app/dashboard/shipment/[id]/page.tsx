@@ -316,7 +316,7 @@ export default function ShipmentDetailPage() {
             return { text: "Accepting Bids", description: "This shipment is live for carriers to bid on." };
         case 'awarded':
              if (isOwner) {
-                return { text: "You have Awarded", description: `Awarded to ${shipment.winningCarrierName || 'a carrier'}.` };
+                return { text: "You have Awarded", description: `Congratulations! You have Awarded to ${shipment.winningCarrierName || 'a carrier'}.` };
             }
             return { text: "Awarded", description: `Awarded to ${shipment.winningCarrierName || 'a carrier'}.` };
         default:

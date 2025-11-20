@@ -131,9 +131,7 @@ service cloud.firestore {
             // ③ Exporter marking shipment as delivered
             (
               resource.data.status == 'awarded' &&
-              request.resource.data.status == 'delivered' &&
-              request.resource.data.keys().hasAll(['status']) &&
-              request.resource.data.keys().size() == 1
+              request.resource.data.status == 'delivered'
             )
           )
         )

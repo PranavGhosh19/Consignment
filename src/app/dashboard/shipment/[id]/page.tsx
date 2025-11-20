@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import { FirestorePermissionError, type SecurityRuleContext } from "@/firebase/errors";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -296,18 +296,26 @@ export default function ShipmentDetailPage() {
   const handleMarkAsDelivered = async () => {
     if (!shipmentId) return;
     setIsSubmitting(true);
-    try {
-      const shipmentDocRef = doc(db, "shipments", shipmentId);
-      await updateDoc(shipmentDocRef, { status: 'delivered' });
-      toast({ title: "Success!", description: "The shipment has been marked as delivered." });
-      setIsMarkedAsDelivered(true);
-    } catch (error) {
-      console.error("Error marking as delivered: ", error);
-      toast({ title: "Error", description: "Could not update the shipment status.", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
+    const shipmentDocRef = doc(db, "shipments", shipmentId);
+    const payload = { status: 'delivered' };
+    
+    updateDoc(shipmentDocRef, payload)
+        .then(() => {
+            toast({ title: "Success!", description: "The shipment has been marked as delivered." });
+            setIsMarkedAsDelivered(true);
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: shipmentDocRef.path,
+                operation: 'update',
+                requestResourceData: payload,
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        })
+        .finally(() => {
+            setIsSubmitting(false);
+        });
     }
-  }
   
   const handleFeedbackSubmit = async () => {
     if (rating === 0) {
@@ -317,22 +325,30 @@ export default function ShipmentDetailPage() {
     if (!user || !shipmentId) return;
 
     setIsSubmittingFeedback(true);
-    try {
-      const feedbackDocRef = doc(db, "shipments", shipmentId, "feedback", user.uid);
-      await setDoc(feedbackDocRef, {
-        rating,
-        feedback,
-        submittedAt: Timestamp.now(),
-        authorId: user.uid,
-        authorType: userType
+    const feedbackDocRef = doc(db, "shipments", shipmentId, "feedback", user.uid);
+    const payload = {
+      rating,
+      feedback,
+      submittedAt: Timestamp.now(),
+      authorId: user.uid,
+      authorType: userType
+    };
+
+    setDoc(feedbackDocRef, payload)
+      .then(() => {
+        toast({ title: "Feedback Submitted!", description: "Thank you for your valuable feedback." });
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: feedbackDocRef.path,
+            operation: 'create',
+            requestResourceData: payload,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setIsSubmittingFeedback(false);
       });
-      toast({ title: "Feedback Submitted!", description: "Thank you for your valuable feedback." });
-    } catch (error) {
-      console.error("Error submitting feedback:", error);
-      toast({ title: "Error", description: "Failed to submit feedback.", variant: "destructive" });
-    } finally {
-      setIsSubmittingFeedback(false);
-    }
   };
 
   const isOwner = user?.uid === shipment?.exporterId;
@@ -765,3 +781,4 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
+

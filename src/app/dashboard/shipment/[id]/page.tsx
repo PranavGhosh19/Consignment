@@ -327,6 +327,7 @@ export default function ShipmentDetailPage() {
   }
   
   const isOwner = user?.uid === shipment.exporterId;
+  const isEmployee = userType === 'employee';
 
   const getStatusInfo = () => {
     switch(shipment.status) {
@@ -353,7 +354,6 @@ export default function ShipmentDetailPage() {
   
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
 
-  const isEmployee = userType === 'employee';
   const isWinningCarrier = user?.uid === shipment.winningCarrierId;
   
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
@@ -543,7 +543,7 @@ export default function ShipmentDetailPage() {
                     </CardContent>
                 </Card>
 
-                {isOwner && shipment.status === 'awarded' && (
+                {(isOwner || isEmployee) && shipment.status === 'awarded' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Delivered?</CardTitle>
@@ -567,7 +567,7 @@ export default function ShipmentDetailPage() {
                     </Card>
                 )}
                 
-                {isMarkedAsDelivered && isOwner && (
+                {isMarkedAsDelivered && (isOwner || isEmployee) && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Rating and Feedback</CardTitle>

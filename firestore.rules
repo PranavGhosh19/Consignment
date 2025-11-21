@@ -88,22 +88,22 @@ service cloud.firestore {
     // ───── SHIPMENTS COLLECTION ─────
     match /shipments/{shipmentId} {
 
-      // CREATE: Only exporter creating their own shipment
+      // CREATE
       allow create: if request.auth.uid != null
                     && isExporter(request.auth.uid)
                     && request.resource.data.exporterId == request.auth.uid;
 
-      // READ / LIST: Exporter (owner), Employee, or Carrier involved in the shipment
+      // READ / LIST
       allow get, list: if request.auth.uid != null && (
         isEmployee(request.auth.uid) ||
         (isExporter(request.auth.uid) && resource.data.exporterId == request.auth.uid) ||
-        (isCarrier(request.auth.uid) && (resource.data.winningCarrierId == request.auth.uid || resource.data.status != 'delivered'))
+        isCarrier(request.auth.uid)
       );
 
-      // UPDATE: Exporter or Employee based on rules
+      // UPDATE
       allow update: if request.auth.uid != null && (
 
-        // Employees can update anything
+        // Employees can edit anything
         isEmployee(request.auth.uid) ||
 
         // Exporter updates
@@ -112,7 +112,7 @@ service cloud.firestore {
           resource.data.exporterId == request.auth.uid &&
           (
 
-            // ① Exporter editing drafts or scheduled shipments
+            // ① Exporter editing draft / scheduled
             (
               (resource.data.status == 'draft' || resource.data.status == 'scheduled') &&
               request.resource.data.exporterId == resource.data.exporterId &&
@@ -128,7 +128,18 @@ service cloud.firestore {
               request.resource.data.exporterId == resource.data.exporterId &&
               request.resource.data.createdAt == resource.data.createdAt
             ) ||
-            // ③ Exporter marking shipment as delivered
+
+            // ③ Exporter updating ONLY their POC fields on awarded shipment
+            (
+              resource.data.status == 'awarded' &&
+              request.resource.data.keys().hasAll([
+                'exporterPocFullName',
+                'exporterPocPhoneNumber'
+              ]) &&
+              request.resource.data.size() == 2
+            ) ||
+
+            // ④ Exporter marking awarded → delivered
             (
               resource.data.status == 'awarded' &&
               request.resource.data.status == 'delivered'
@@ -137,7 +148,7 @@ service cloud.firestore {
         )
       );
 
-      // DELETE — Only exporter can delete draft
+      // DELETE
       allow delete: if request.auth.uid != null &&
         isExporter(request.auth.uid) &&
         resource.data.exporterId == request.auth.uid &&
@@ -202,7 +213,6 @@ service cloud.firestore {
       // ───── BIDS SUBCOLLECTION ─────
       match /bids/{bidId} {
 
-        // READ
         allow read: if request.auth.uid != null && (
           isEmployee(request.auth.uid) ||
           (isExporter(request.auth.uid) &&
@@ -211,7 +221,6 @@ service cloud.firestore {
            getShipment(shipmentId).data.status == 'live')
         );
 
-        // CREATE — carrier placing bid
         allow create: if request.auth.uid != null &&
           isCarrier(request.auth.uid) &&
           request.resource.data.carrierId == request.auth.uid &&
@@ -221,7 +230,6 @@ service cloud.firestore {
       // ───── REGISTER SUBCOLLECTION ─────
       match /register/{carrierId} {
 
-        // READ
         allow read: if request.auth.uid != null && (
           isEmployee(request.auth.uid) ||
           (isExporter(request.auth.uid) &&
@@ -229,7 +237,6 @@ service cloud.firestore {
           (isCarrier(request.auth.uid) && request.auth.uid == carrierId)
         );
 
-        // CREATE — Carrier registering for scheduled shipment
         allow create: if request.auth.uid != null &&
           isCarrier(request.auth.uid) &&
           request.auth.uid == carrierId &&

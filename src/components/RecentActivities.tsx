@@ -143,7 +143,7 @@ export function RecentActivities() {
     }
   };
 
-  const getStatusInfo = (shipment: Shipment): { text: string; variant: "success" | "secondary" | "outline" | "destructive" } => {
+  const getStatusInfo = (shipment: Shipment): { text: string; variant: "success" | "secondary" | "outline" | "destructive" | "default" } => {
     switch (shipment.status) {
         case 'live':
             return { text: 'Live', variant: 'success' };
@@ -154,6 +154,8 @@ export function RecentActivities() {
             return { text: 'Better luck next time', variant: 'destructive' };
         case 'scheduled':
             return { text: 'Registered', variant: 'secondary' };
+        case 'delivered':
+             return { text: 'Delivered', variant: 'default' };
         default:
             return { text: 'Registered', variant: 'outline' };
     }

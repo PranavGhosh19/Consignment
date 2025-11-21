@@ -188,7 +188,6 @@ export function RecentActivities() {
                         <TableHead className="hidden md:table-cell">Destination</TableHead>
                         <TableHead className="hidden lg:table-cell">Delivery Deadline</TableHead>
                         <TableHead className="text-center">Status</TableHead>
-                        <TableHead className="text-right">Freight Cost</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -205,19 +204,6 @@ export function RecentActivities() {
                                         {statusInfo.text}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-right">
-                                     {shipment.status === 'awarded' && shipment.winningCarrierId === user?.uid ? (
-                                        <span className="font-semibold">${(shipment.winningBidAmount || 0).toLocaleString()}</span>
-                                    ) : shipment.status === 'scheduled' && shipment.goLiveAt ? (
-                                        <span>{format(shipment.goLiveAt.toDate(), "PPp")}</span>
-                                    ) : shipment.status === 'live' ? (
-                                         <Badge variant="success" className="animate-blink">Live Now</Badge>
-                                    ) : statusInfo.text === 'Better luck next time' ? (
-                                        <span>-</span>
-                                    ) : (
-                                        <Badge variant="secondary">Pending</Badge>
-                                    )}
-                                </TableCell>
                             </TableRow>
                         )
                     })}
@@ -227,4 +213,3 @@ export function RecentActivities() {
     </>
   );
 }
-

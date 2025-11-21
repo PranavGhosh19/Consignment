@@ -245,7 +245,7 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
  * scheduled shipments that should have gone live but were missed by the
  * task queue for any reason.
  */
-export const hourlyShipmentSweeper = onSchedule("every 1 hours", async () => {
+export const hourlyShipmentSweeper = onSchedule("every 1 minute", async () => {
   logger.log("Running hourly shipment sweeper function.");
   const now = admin.firestore.Timestamp.now();
 

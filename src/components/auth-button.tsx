@@ -22,6 +22,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "./ui/skeleton";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { Separator } from "./ui/separator";
+import { NotificationBell } from "./NotificationBell";
 
 const exporterNavLinks = [
   { href: "/dashboard/exporter", label: "My Shipments" },
@@ -287,10 +288,7 @@ export function AuthButton() {
   if (user) {
     return (
       <div className="flex items-center gap-2 sm:gap-4">
-        <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Notifications</span>
-        </Button>
+        <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">

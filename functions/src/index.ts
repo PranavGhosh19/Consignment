@@ -241,12 +241,12 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
 });
 
 /**
- * A sweeper function that runs every hour as a safety net. It finds any
+ * A sweeper function that runs every minute as a safety net. It finds any
  * scheduled shipments that should have gone live but were missed by the
  * task queue for any reason.
  */
-export const hourlyShipmentSweeper = onSchedule("every 1 minute", async () => {
-  logger.log("Running hourly shipment sweeper function.");
+export const minuteShipmentSweeper = onSchedule("every 1 minute", async () => {
+  logger.log("Running minute shipment sweeper function.");
   const now = admin.firestore.Timestamp.now();
 
   try {
@@ -276,6 +276,6 @@ export const hourlyShipmentSweeper = onSchedule("every 1 minute", async () => {
 
     logger.log(`Successfully updated ${snapshot.size} overdue shipments.`);
   } catch (error) {
-    logger.error("Error running hourly shipment sweeper:", error);
+    logger.error("Error running minute shipment sweeper:", error);
   }
 });

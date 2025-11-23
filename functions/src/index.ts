@@ -32,7 +32,7 @@ const SERVICE_ACCOUNT_EMAIL =
 const tasksClient = new CloudTasksClient();
 
 // Set default region globally
-setGlobalOptions({region: "us-central1", maxInstances: 10});
+setGlobalOptions({ region: "us-central1", maxInstances: 10 });
 
 // -----------------------------------------------------------------------------
 // Notification Helpers

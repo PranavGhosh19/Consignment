@@ -23,7 +23,7 @@ const db = admin.firestore();
 // Cloud Tasks Configuration
 // -----------------------------------------------------------------------------
 const PROJECT_ID = "cargoflow-j35du";
-const QUEUE_LOCATION = "asia-south1";
+const QUEUE_LOCATION = "us-central1";
 const QUEUE_ID = "shipment-go-live-queue";
 
 // This must be a service account with Cloud Tasks Enqueuer role
@@ -32,8 +32,8 @@ const SERVICE_ACCOUNT_EMAIL =
 
 const tasksClient = new CloudTasksClient();
 
-// Limit concurrent container instances
-setGlobalOptions({maxInstances: 10});
+// Set default region globally, but onSchedule needs it explicitly.
+setGlobalOptions({region: "us-central1", maxInstances: 10});
 
 // -----------------------------------------------------------------------------
 // Notification Helpers
@@ -245,39 +245,43 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
  * scheduled shipments that should have gone live but were missed by the
  * task queue for any reason.
  */
-export const minuteShipmentSweeper = onSchedule("every 1 minute", async () => {
-  logger.log("Running minute shipment sweeper function.");
-  const now = admin.firestore.Timestamp.now();
+export const minuteShipmentSweeper = onSchedule(
+  "every 1 minutes",
+  { region: "us-central1" },
+  async () => {
+    logger.log("Running minute shipment sweeper function.");
+    const now = admin.firestore.Timestamp.now();
 
-  try {
-    const query = db
-        .collection("shipments")
-        .where("status", "==", "scheduled")
-        .where("goLiveAt", "<=", now);
+    try {
+      const query = db
+          .collection("shipments")
+          .where("status", "==", "scheduled")
+          .where("goLiveAt", "<=", now);
 
-    const snapshot = await query.get();
+      const snapshot = await query.get();
 
-    if (snapshot.empty) {
-      logger.log("No overdue scheduled shipments found.");
-      return;
+      if (snapshot.empty) {
+        logger.log("No overdue scheduled shipments found.");
+        return;
+      }
+
+      const docs = snapshot.docs;
+      for (let i = 0; i < docs.length; i += 500) {
+        const chunk = docs.slice(i, i + 500);
+        const batch = db.batch();
+        chunk.forEach((doc) => {
+          logger.log(
+              `Sweeper: Found overdue shipment ${doc.id}. Setting to live.`);
+          batch.update(doc.ref, {status: "live"});
+        });
+        await batch.commit();
+      }
+
+      logger.log(`Successfully updated ${snapshot.size} overdue shipments.`);
+    } catch (error) {
+      logger.error("Error running minute shipment sweeper:", error);
     }
-
-    const docs = snapshot.docs;
-    for (let i = 0; i < docs.length; i += 500) {
-      const chunk = docs.slice(i, i + 500);
-      const batch = db.batch();
-      chunk.forEach((doc) => {
-        logger.log(
-            `Sweeper: Found overdue shipment ${doc.id}. Setting to live.`);
-        batch.update(doc.ref, {status: "live"});
-      });
-      await batch.commit();
-    }
-
-    logger.log(`Successfully updated ${snapshot.size} overdue shipments.`);
-  } catch (error) {
-    logger.error("Error running minute shipment sweeper:", error);
   }
-});
+);
 
 // A simple comment to trigger deployment.

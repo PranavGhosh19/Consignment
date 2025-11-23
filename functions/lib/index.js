@@ -46,13 +46,13 @@ const db = admin.firestore();
 // Cloud Tasks Configuration
 // -----------------------------------------------------------------------------
 const PROJECT_ID = "cargoflow-j35du";
-const QUEUE_LOCATION = "asia-south1";
+const QUEUE_LOCATION = "us-central1";
 const QUEUE_ID = "shipment-go-live-queue";
 // This must be a service account with Cloud Tasks Enqueuer role
 const SERVICE_ACCOUNT_EMAIL = `cloud-tasks-invoker@${PROJECT_ID}.iam.gserviceaccount.com`;
 const tasksClient = new tasks_1.CloudTasksClient();
-// Limit concurrent container instances
-(0, v2_1.setGlobalOptions)({ maxInstances: 10 });
+// Set default region globally, but onSchedule needs it explicitly.
+(0, v2_1.setGlobalOptions)({ region: "us-central1", maxInstances: 10 });
 /**
  * Creates a notification document in Firestore.
  * @param {Notification} notification The notification object.
@@ -225,7 +225,7 @@ exports.executeShipmentGoLive = (0, https_1.onRequest)(async (req, res) => {
  * scheduled shipments that should have gone live but were missed by the
  * task queue for any reason.
  */
-exports.minuteShipmentSweeper = (0, scheduler_1.onSchedule)("every 1 minute", async () => {
+exports.minuteShipmentSweeper = (0, scheduler_1.onSchedule)("every 1 minutes", { region: "us-central1" }, async () => {
     logger.log("Running minute shipment sweeper function.");
     const now = admin.firestore.Timestamp.now();
     try {

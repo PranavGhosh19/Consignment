@@ -92,7 +92,8 @@ exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmen
         logger.log("Deleting previous task:", beforeData.goLiveTaskName);
         await tasksClient.deleteTask({ name: beforeData.goLiveTaskName })
             .catch((err) => {
-            if (err.code !== 5) { // 5 = NOT_FOUND
+            // 5 = NOT_FOUND - It's okay if the task doesn't exist anymore.
+            if (err.code !== 5) {
                 logger.error("Failed to delete previous task", err);
             }
         });
@@ -164,7 +165,8 @@ exports.onBidCreate = (0, firestore_1.onDocumentCreated)("shipments/{shipmentId}
         return;
     }
     try {
-        const shipmentDoc = await db.collection("shipments").doc(shipmentId).get();
+        const shipmentDoc = await db.collection("shipments").doc(shipmentId)
+            .get();
         if (shipmentDoc.exists) {
             const shipmentData = shipmentDoc.data();
             if (shipmentData && shipmentData.exporterId) {

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -18,11 +19,14 @@ export function Clock() {
     return () => clearInterval(timerId);
   }, []);
 
-  const formatTime = (date: Date | null) => {
+  const formatDateTime = (date: Date | null) => {
     if (!date) {
-      return '00:00:00 AM';
+      return 'Loading...';
     }
-    return date.toLocaleTimeString('en-US', {
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
@@ -32,9 +36,7 @@ export function Clock() {
 
   return (
     <div className="text-sm text-muted-foreground font-mono">
-      {formatTime(time)}
+      {formatDateTime(time)}
     </div>
   );
 }
-
-    

@@ -11,6 +11,7 @@ import {setGlobalOptions} from "firebase-functions/v2";
 import * as logger from "firebase-functions/logger";
 import {onDocumentWritten, onDocumentCreated} from "firebase-functions/v2/firestore";
 import {onRequest} from "firebase-functions/v2/https";
+import {onSchedule} from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 import {CloudTasksClient} from "@google-cloud/tasks";
 
@@ -31,7 +32,7 @@ const SERVICE_ACCOUNT_EMAIL =
 
 const tasksClient = new CloudTasksClient();
 
-// Set default region globally
+// Set default region globally, but onSchedule needs it explicitly.
 setGlobalOptions({ region: "us-central1", maxInstances: 10 });
 
 // -----------------------------------------------------------------------------
@@ -238,3 +239,43 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
+
+/**
+ * A sweeper function that runs every minute as a safety net. It finds any
+ * scheduled shipments that should have gone live but were missed by the
+- * task queue for any reason.
++ * task queue for any reason. This provides redundancy.
+ */
+export const minuteShipmentSweeper = onSchedule(
+  "every 1 minutes",
+  async () => {
+    logger.log("Running minute shipment sweeper function.");
+    const now = admin.firestore.Timestamp.now();
+
+    try {
+      const query = db
+          .collection("shipments")
+          .where("status", "==", "scheduled")
+          .where("goLiveAt", "<=", now);
+
+      const snapshot = await query.get();
+      if (snapshot.empty) {
+        logger.log("No overdue scheduled shipments found.");
+        return;
+      }
+      
+      // Use a batched write to update all found documents efficiently.
+      const batch = db.batch();
+      snapshot.docs.forEach((doc) => {
+        logger.log(`Sweeper: Found overdue shipment ${doc.id}. Setting to live.`);
+        batch.update(doc.ref, { status: "live" });
+      });
+
+      await batch.commit();
+      logger.log(`Successfully updated ${snapshot.size} overdue shipments.`);
+    } catch (error) {
+      logger.error("Error running minute shipment sweeper:", error);
+    }
+  },
+);

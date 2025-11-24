@@ -257,8 +257,7 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
 /**
  * A sweeper function that runs every minute as a safety net. It finds any
  * scheduled shipments that should have gone live but were missed by the
-- * task queue for any reason.
-+ * task queue for any reason.
+ * task queue for any reason.
  */
 export const minuteShipmentSweeper =
   onSchedule({region: "us-central1", schedule: "every 1 minutes"},
@@ -293,5 +292,3 @@ export const minuteShipmentSweeper =
         logger.error("Error running minute shipment sweeper:", error);
       }
     });
-
-    

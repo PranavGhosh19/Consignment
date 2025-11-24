@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
-    "lib": ["es2020"],
-    "moduleResolution": "node",
-    "strict": false,
+    "module": "NodeNext",
     "esModuleInterop": true,
-    "resolveJsonModule": true,
+    "moduleResolution": "nodenext",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
     "outDir": "lib",
-    "skipLibCheck": true
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2017"
   },
+  "compileOnSave": true,
   "include": [
     "src"
   ]

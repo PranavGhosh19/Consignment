@@ -23,21 +23,31 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.minuteShipmentSweeper = exports.executeShipmentGoLive = exports.onBidCreate = exports.onShipmentWrite = void 0;
 const v2_1 = require("firebase-functions/v2");
-const logger = __importStar(require("firebase-functions/logger"));
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const admin = __importStar(require("firebase-admin"));
+const logger = __importStar(require("firebase-functions/logger"));
 const tasks_1 = require("@google-cloud/tasks");
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -48,7 +58,7 @@ const db = admin.firestore();
 const PROJECT_ID = "cargoflow-j35du";
 const QUEUE_LOCATION = "us-central1";
 const QUEUE_ID = "shipment-go-live-queue";
-// This must be a service account with Cloud Tasks Enqueuer role
+// Service account must have Cloud Tasks Enqueuer role
 const SERVICE_ACCOUNT_EMAIL = `cloud-tasks-invoker@${PROJECT_ID}.iam.gserviceaccount.com`;
 const tasksClient = new tasks_1.CloudTasksClient();
 // Set default region globally, but onSchedule needs it explicitly.
@@ -59,11 +69,7 @@ const tasksClient = new tasks_1.CloudTasksClient();
  */
 async function createNotification(notification) {
     try {
-        await db.collection("notifications").add({
-            ...notification,
-            isRead: false,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        await db.collection("notifications").add(Object.assign(Object.assign({}, notification), { isRead: false, createdAt: admin.firestore.FieldValue.serverTimestamp() }));
         logger.log(`Notification created for ${notification.recipientId}`);
     }
     catch (error) {
@@ -73,15 +79,16 @@ async function createNotification(notification) {
 /**
  * Creates or updates a Cloud Task to trigger a shipment go-live event.
  * This function is triggered whenever a document in the 'shipments'
- * collection is written to (created or updated).
+ * collection is written to.
  */
 exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmentId}", async (event) => {
+    var _a, _b;
     const shipmentId = event.params.shipmentId;
-    const beforeData = event.data?.before.data();
-    const afterData = event.data?.after.data();
+    const beforeData = (_a = event.data) === null || _a === void 0 ? void 0 : _a.before.data();
+    const afterData = (_b = event.data) === null || _b === void 0 ? void 0 : _b.after.data();
     // --- Task Deletion Logic ---
     // If a task was scheduled for the previous version, delete it.
-    if (beforeData?.goLiveTaskName) {
+    if (beforeData === null || beforeData === void 0 ? void 0 : beforeData.goLiveTaskName) {
         logger.log("Deleting previous task:", beforeData.goLiveTaskName);
         await tasksClient.deleteTask({ name: beforeData.goLiveTaskName })
             .catch((err) => {
@@ -91,11 +98,12 @@ exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmen
         });
     }
     // --- Status Change Notifications (Awarded) ---
-    if (beforeData?.status !== "awarded" && afterData?.status === "awarded") {
+    if ((beforeData === null || beforeData === void 0 ? void 0 : beforeData.status) !== "awarded" && (afterData === null || afterData === void 0 ? void 0 : afterData.status) === "awarded") {
         if (afterData.winningCarrierId && afterData.productName) {
             await createNotification({
                 recipientId: afterData.winningCarrierId,
-                message: `Congratulations! You've won the bid for the '${afterData.productName}' shipment.`,
+                message: "Congratulations! You've won the bid for the " +
+                    `'${afterData.productName}' shipment.`,
                 link: `/dashboard/shipment/${shipmentId}`,
             });
         }
@@ -111,13 +119,14 @@ exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmen
     const goLiveAt = afterData.goLiveAt.toDate();
     const now = new Date();
     if (goLiveAt <= now) {
-        logger.log(`Shipment ${shipmentId} goLiveAt is in the past. Skipping task creation.`);
+        logger.log(`Shipment ${shipmentId} goLiveAt is in the past. Skipping task.`);
         return;
     }
     const task = {
         httpRequest: {
             httpMethod: "POST",
-            url: `https://${QUEUE_LOCATION}-${PROJECT_ID}.cloudfunctions.net/executeShipmentGoLive`,
+            url: `https://${QUEUE_LOCATION}-${PROJECT_ID}.cloudfunctions.net/` +
+                "executeShipmentGoLive",
             headers: { "Content-Type": "application/json" },
             body: Buffer.from(JSON.stringify({ shipmentId })).toString("base64"),
             oidcToken: {
@@ -147,8 +156,9 @@ exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmen
  * Creates a notification when a new bid is placed on a shipment.
  */
 exports.onBidCreate = (0, firestore_1.onDocumentCreated)("shipments/{shipmentId}/bids/{bidId}", async (event) => {
+    var _a;
     const shipmentId = event.params.shipmentId;
-    const bidData = event.data?.data();
+    const bidData = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!bidData) {
         logger.log("No bid data found, cannot create notification.");
         return;
@@ -160,7 +170,8 @@ exports.onBidCreate = (0, firestore_1.onDocumentCreated)("shipments/{shipmentId}
             if (shipmentData && shipmentData.exporterId) {
                 await createNotification({
                     recipientId: shipmentData.exporterId,
-                    message: `You have a new bid of $${bidData.bidAmount} on your '${shipmentData.productName}' shipment.`,
+                    message: `You have a new bid of $${bidData.bidAmount} ` +
+                        `on your '${shipmentData.productName}' shipment.`,
                     link: `/dashboard/shipment/${shipmentId}`,
                 });
             }
@@ -190,7 +201,7 @@ exports.executeShipmentGoLive = (0, https_1.onRequest)(async (req, res) => {
         }
         const shipmentData = doc.data();
         // Only update if the shipment is still in the 'scheduled' state.
-        if (shipmentData?.status === "scheduled") {
+        if ((shipmentData === null || shipmentData === void 0 ? void 0 : shipmentData.status) === "scheduled") {
             await shipmentRef.update({ status: "live" });
             logger.log("Set shipment", shipmentId, "to 'live' via Cloud Task.");
             // --- Notify Registered Carriers ---
@@ -201,12 +212,14 @@ exports.executeShipmentGoLive = (0, https_1.onRequest)(async (req, res) => {
                     const carrierId = regDoc.id;
                     return createNotification({
                         recipientId: carrierId,
-                        message: `The shipment '${shipmentData.productName}' is now live for bidding!`,
+                        message: `The shipment '${shipmentData.productName}' is ` +
+                            "now live for bidding!",
                         link: `/dashboard/carrier/shipment/${shipmentId}`,
                     });
                 });
                 await Promise.all(notifications);
-                logger.log(`Sent ${notifications.length} go-live notifications for shipment ${shipmentId}.`);
+                logger.log(`Sent ${notifications.length} go-live notifications for ` +
+                    `shipment ${shipmentId}.`);
             }
             res.status(200).send("OK");
         }
@@ -225,7 +238,7 @@ exports.executeShipmentGoLive = (0, https_1.onRequest)(async (req, res) => {
  * scheduled shipments that should have gone live but were missed by the
  * task queue for any reason.
  */
-exports.minuteShipmentSweeper = (0, scheduler_1.onSchedule)("every 1 minutes", { region: "us-central1" }, async () => {
+exports.minuteShipmentSweeper = (0, scheduler_1.onSchedule)({ region: "us-central1", schedule: "every 1 minutes" }, async () => {
     logger.log("Running minute shipment sweeper function.");
     const now = admin.firestore.Timestamp.now();
     try {
@@ -238,20 +251,16 @@ exports.minuteShipmentSweeper = (0, scheduler_1.onSchedule)("every 1 minutes", {
             logger.log("No overdue scheduled shipments found.");
             return;
         }
-        const docs = snapshot.docs;
-        for (let i = 0; i < docs.length; i += 500) {
-            const chunk = docs.slice(i, i + 500);
-            const batch = db.batch();
-            chunk.forEach((doc) => {
-                logger.log(`Sweeper: Found overdue shipment ${doc.id}. Setting to live.`);
-                batch.update(doc.ref, { status: "live" });
-            });
-            await batch.commit();
-        }
+        const batch = db.batch();
+        snapshot.docs.forEach((doc) => {
+            logger.log(`Sweeper: Found overdue shipment ${doc.id}. Setting to live.`);
+            batch.update(doc.ref, { status: "live" });
+        });
+        await batch.commit();
         logger.log(`Successfully updated ${snapshot.size} overdue shipments.`);
     }
     catch (error) {
         logger.error("Error running minute shipment sweeper:", error);
     }
 });
-// A simple comment to trigger deployment.
+//# sourceMappingURL=index.js.map

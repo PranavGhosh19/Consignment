@@ -17,7 +17,7 @@ import {onRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
-import {CloudTasksClient} from "@google-cloud/tasks";
+import {CloudTasksClient, protos} from "@google-cloud/tasks";
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -78,7 +78,8 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
       logger.log("Deleting previous task:", beforeData.goLiveTaskName);
       await tasksClient.deleteTask({name: beforeData.goLiveTaskName})
         .catch((err) => {
-          if (err.code !== 5) { // 5 = NOT_FOUND
+          // 5 = NOT_FOUND - It's okay if the task doesn't exist anymore.
+          if (err.code !== 5) {
             logger.error("Failed to delete previous task", err);
           }
         });
@@ -90,7 +91,7 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
         await createNotification({
           recipientId: afterData.winningCarrierId,
           message:
-            `Congratulations! You've won the bid for the ` +
+            "Congratulations! You've won the bid for the " +
             `'${afterData.productName}' shipment.`,
           link: `/dashboard/shipment/${shipmentId}`,
         });
@@ -116,7 +117,7 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
       return;
     }
 
-    const task = {
+    const task: protos.google.cloud.tasks.v2.ITask = {
       httpRequest: {
         httpMethod: "POST",
         url:
@@ -157,7 +158,8 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
 /**
  * Creates a notification when a new bid is placed on a shipment.
  */
-export const onBidCreate = onDocumentCreated("shipments/{shipmentId}/bids/{bidId}",
+export const onBidCreate = onDocumentCreated(
+  "shipments/{shipmentId}/bids/{bidId}",
   async (event) => {
     const shipmentId = event.params.shipmentId;
     const bidData = event.data?.data();
@@ -168,7 +170,8 @@ export const onBidCreate = onDocumentCreated("shipments/{shipmentId}/bids/{bidId
     }
 
     try {
-      const shipmentDoc = await db.collection("shipments").doc(shipmentId).get();
+      const shipmentDoc = await db.collection("shipments").doc(shipmentId)
+        .get();
       if (shipmentDoc.exists) {
         const shipmentData = shipmentDoc.data();
         if (shipmentData && shipmentData.exporterId) {
@@ -254,7 +257,8 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
 /**
  * A sweeper function that runs every minute as a safety net. It finds any
  * scheduled shipments that should have gone live but were missed by the
- * task queue for any reason.
+- * task queue for any reason.
++ * task queue for any reason.
  */
 export const minuteShipmentSweeper =
   onSchedule({region: "us-central1", schedule: "every 1 minutes"},

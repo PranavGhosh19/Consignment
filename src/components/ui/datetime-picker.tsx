@@ -38,21 +38,27 @@ export function DateTimePicker({ date, setDate, disabled, disabledDates }: DateT
   };
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>, part: "hours" | "minutes") => {
-    const value = parseInt(e.target.value, 10);
+    const value = e.target.value;
     const newDate = date ? new Date(date) : new Date();
 
-    if (part === "hours") {
-      if (value >= 0 && value < 24) {
-        newDate.setHours(value);
-      }
+    if (value === "") {
+        // Handle empty input if needed, maybe reset to a default or just allow it
+        // For now, we'll let the visual input be empty but won't change the date object's time until a valid number is entered.
+        // A better approach would be to manage a separate string state for the input if strict control is needed.
     } else {
-      if (value >= 0 && value < 60) {
-        newDate.setMinutes(value);
-      }
+        const numValue = parseInt(value, 10);
+        if (!isNaN(numValue)) {
+            if (part === "hours" && numValue >= 0 && numValue < 24) {
+                newDate.setHours(numValue);
+                setDate(newDate);
+            } else if (part === "minutes" && numValue >= 0 && numValue < 60) {
+                newDate.setMinutes(numValue);
+                setDate(newDate);
+            }
+        }
     }
-    setDate(newDate);
   };
-
+  
   const handleSet = () => {
     setOpen(false);
   };
@@ -91,7 +97,7 @@ export function DateTimePicker({ date, setDate, disabled, disabledDates }: DateT
                     <Input 
                         id="hours"
                         type="number"
-                        value={date ? date.getHours() : ''}
+                        value={date ? date.getHours().toString().padStart(2, '0') : ''}
                         onChange={(e) => handleTimeChange(e, 'hours')}
                         min="0"
                         max="23"
@@ -102,7 +108,7 @@ export function DateTimePicker({ date, setDate, disabled, disabledDates }: DateT
                     <Input 
                         id="minutes"
                         type="number"
-                        value={date ? date.getMinutes() : ''}
+                        value={date ? date.getMinutes().toString().padStart(2, '0') : ''}
                         onChange={(e) => handleTimeChange(e, 'minutes')}
                         min="0"
                         max="59"

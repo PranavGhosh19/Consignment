@@ -156,50 +156,6 @@ export default function MyBidsPage() {
     }
   };
 
-  const renderTable = (data: BidWithShipment[]) => {
-    if (data.length === 0) {
-        return (
-             <div className="border rounded-lg p-12 text-center bg-card dark:bg-card mt-8">
-                <h2 className="text-xl font-semibold mb-2">No bids in this category</h2>
-                <p className="text-muted-foreground">You have not placed any bids that match this filter.</p>
-            </div>
-        )
-    }
-    return (
-        <div className="border rounded-lg overflow-x-auto mt-8">
-            <Table>
-                <TableHeader>
-                <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Your Bid (USD)</TableHead>
-                    <TableHead className="hidden md:table-cell">Bid Placed On</TableHead>
-                    <TableHead className="hidden md:table-cell">Shipment Destination</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                </TableRow>
-                </TableHeader>
-                <TableBody>
-                {data.map((item) => {
-                    const status = getBidStatus(item);
-                    return (
-                        <TableRow key={item.bid.id} onClick={() => handleRowClick(item.shipment.id, item.shipment.status)} className="cursor-pointer">
-                            <TableCell className="font-medium">{item.shipment.productName || 'N/A'}</TableCell>
-                            <TableCell>${item.bid.bidAmount.toLocaleString()}</TableCell>
-                            <TableCell className="hidden md:table-cell">{format(item.bid.createdAt.toDate(), "dd/MM/yyyy p")}</TableCell>
-                            <TableCell className="hidden md:table-cell">{item.shipment.destination?.portOfDelivery || 'N/A'}</TableCell>
-                            <TableCell className="text-center">
-                                <Badge variant={status.variant} className={cn({ "animate-blink bg-green-500/80": status.text === 'Live' })}>
-                                    {status.text}
-                                </Badge>
-                            </TableCell>
-                        </TableRow>
-                    );
-                })}
-                </TableBody>
-            </Table>
-        </div>
-    )
-  }
-
   if (loading) {
     return <PageSkeleton />;
   }
@@ -211,19 +167,6 @@ export default function MyBidsPage() {
       </div>
       <p className="text-muted-foreground mb-8">Track the status of all your bids in one place.</p>
         
-      <Tabs value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList>
-            <TabsTrigger value="all">All Bids</TabsTrigger>
-            <TabsTrigger value="live">Live</TabsTrigger>
-            <TabsTrigger value="won">Won</TabsTrigger>
-            <TabsTrigger value="lost">Lost</TabsTrigger>
-        </TabsList>
-        <TabsContent value="all">{renderTable(filteredBids)}</TabsContent>
-        <TabsContent value="live">{renderTable(filteredBids)}</TabsContent>
-        <TabsContent value="won">{renderTable(filteredBids)}</TabsContent>
-        <TabsContent value="lost">{renderTable(filteredBids)}</TabsContent>
-      </Tabs>
-      
       {!loading && bidsWithShipments.length === 0 && (
          <div className="border rounded-lg p-12 text-center bg-card dark:bg-card mt-8">
             <h2 className="text-xl font-semibold mb-2">You haven't placed any bids yet</h2>

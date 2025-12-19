@@ -24,6 +24,10 @@ service cloud.firestore {
     function isRegistered(shipmentId, userId) {
       return exists(/databases/$(database)/documents/shipments/$(shipmentId)/register/$(userId));
     }
+    
+    function userStatus(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.verificationStatus;
+    }
 
     // ───── Verification Logic (for Exporter & Carrier) ─────
     function isValidVerificationSubmission(requestData, resourceData, userId) {
@@ -38,24 +42,22 @@ service cloud.firestore {
       let exporterExtra = ['iecCode', 'adCode'];
       let carrierExtra = ['licenseNumber', 'companyType'];
 
-      let userType =
-        resourceData.userType != null
-          ? resourceData.userType
-          : (requestData.userType != null ? requestData.userType : null);
-
+      // This part is tricky. On create, `resourceData` is null.
+      // We rely on the request having the userType.
+      let userType = request.auth.token.userType;
+      
       let requiredKeys =
         userType == 'exporter'
           ? baseFields.concat(exporterExtra)
           : userType == 'carrier'
             ? baseFields.concat(carrierExtra)
-            : baseFields;
+            : [];
 
       let hasAllKeys =
-        requestData.companyDetails is map &&
-        requestData.companyDetails.keys().hasAll(requiredKeys);
+        requestData.keys().hasAll(requiredKeys);
 
       let validPath =
-        requestData.companyDetails.incorporationCertificatePath.matches(
+        requestData.incorporationCertificatePath.matches(
           'verification-documents/' + userType + '/' + userId + '/.*'
         );
 
@@ -76,12 +78,13 @@ service cloud.firestore {
 
       // ───── COMPANY DETAILS SUBCOLLECTION ─────
       match /companyDetails/{detailId} {
-        allow read, write: if request.auth != null &&
+        allow read: if request.auth != null &&
           (request.auth.uid == userId || isEmployee(request.auth.uid));
 
-        allow create, update: if request.auth != null &&
-          (request.auth.uid == userId || isEmployee(request.auth.uid)) &&
-          isValidVerificationSubmission(request.resource.data, resource.data, userId);
+        // Allow write only if user is submitting for the first time ('unsubmitted')
+        // or if they have been rejected and are re-submitting.
+        allow write: if request.auth != null && request.auth.uid == userId &&
+          (userStatus(request.auth.uid) == 'unsubmitted' || userStatus(request.auth.uid) == 'rejected');
       }
     }
 
@@ -276,5 +279,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

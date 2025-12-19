@@ -36,7 +36,7 @@ import { Separator } from "./ui/separator";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError, type SecurityRuleContext } from "@/firebase/errors";
 
-const FileInput = ({ id, onFileChange, disabled, file }: { id: string, onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled: boolean, file: File | null }) => (
+const FileInput = ({ id, onFileChange, disabled, file, currentFileUrl }: { id: string, onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled: boolean, file: File | null, currentFileUrl?: string }) => (
     <div className="grid gap-2">
         <Label htmlFor={id} className="sr-only">Upload file</Label>
         <Input 
@@ -47,7 +47,11 @@ const FileInput = ({ id, onFileChange, disabled, file }: { id: string, onFileCha
             accept=".pdf,.jpg,.jpeg,.png"
             className="text-muted-foreground file:text-primary file:font-semibold"
         />
-        {file && <p className="text-sm text-muted-foreground">Selected: {file.name}</p>}
+        {file ? (
+            <p className="text-sm text-muted-foreground">New file: {file.name}</p>
+        ) : currentFileUrl ? (
+            <a href={currentFileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">View current document</a>
+        ) : null}
     </div>
 );
 
@@ -75,21 +79,46 @@ export function ExporterVerificationForm({ user }: { user: User }) {
     const [adCodeFile, setAdCodeFile] = useState<File | null>(null);
     const [licenseFile, setLicenseFile] = useState<File | null>(null);
     const [incorporationCertificate, setIncorporationCertificate] = useState<File | null>(null);
+    
+    // For pre-filling
+    const [existingDetails, setExistingDetails] = useState<any>(null);
+
 
     // UI state
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchUserType = async () => {
+        const fetchUserData = async () => {
             if (user) {
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
-                    setUserType(userDoc.data().userType);
+                    const userData = userDoc.data();
+                    setUserType(userData.userType);
+
+                    // If user was rejected, fetch their previous details to pre-fill the form
+                    if (userData.verificationStatus === 'rejected') {
+                        const detailsRef = doc(db, 'users', user.uid, 'companyDetails', user.uid);
+                        const detailsSnap = await getDoc(detailsRef);
+                        if (detailsSnap.exists()) {
+                            const details = detailsSnap.data();
+                            setExistingDetails(details);
+                            setCompanyName(details.legalName || "");
+                            setGst(details.gstin || "");
+                            setPan(details.pan || "");
+                            setTan(details.tan || "");
+                            setIecCode(details.iecCode || "");
+                            setAdCode(details.adCode || "");
+                            setLicenseNumber(details.licenseNumber || "");
+                            setCompanyType(details.companyType || "");
+                        }
+                    }
                 }
+                 setLoading(false);
             }
         };
-        fetchUserType();
+        fetchUserData();
     }, [user]);
 
     const isExporter = userType === 'exporter';
@@ -111,14 +140,19 @@ export function ExporterVerificationForm({ user }: { user: User }) {
 
     const handleSubmit = async () => {
         setIsConfirmOpen(false);
-        if (isExporter && (!companyName || !gst || !pan || !iecCode || !adCode || !incorporationCertificate)) {
-             toast({ title: "Missing Fields", description: "Please fill out all required text fields and upload the incorporation certificate.", variant: "destructive" });
+        if (isExporter && (!companyName || !gst || !pan || !iecCode || !adCode)) {
+             toast({ title: "Missing Fields", description: "Please fill out all required text fields.", variant: "destructive" });
              return;
         }
-        if (isCarrier && (!companyName || !gst || !pan || !licenseNumber || !companyType || !incorporationCertificate)) {
-             toast({ title: "Missing Fields", description: "Please fill out all required fields and upload the incorporation certificate for carriers.", variant: "destructive" });
+        if (isCarrier && (!companyName || !gst || !pan || !licenseNumber || !companyType)) {
+             toast({ title: "Missing Fields", description: "Please fill out all required fields for carriers.", variant: "destructive" });
              return;
         }
+        if (!incorporationCertificate && !existingDetails?.incorporationCertificateUrl) {
+            toast({ title: "Missing Document", description: "Please upload the incorporation certificate.", variant: "destructive" });
+            return;
+        }
+
 
         setIsSubmitting(true);
 
@@ -129,6 +163,7 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                 pan,
             };
 
+            // Only update file URL if a new file is provided
             if (gstFile) {
               const gstUpload = await uploadFile(gstFile, 'gst');
               companyDetailsPayload.gstFileUrl = gstUpload.url;
@@ -179,23 +214,12 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                 }
             }
             
-            // 1. Save company details to the subcollection
-            // We use the user's UID as the document ID to ensure there's only one.
             const companyDetailsDocRef = doc(db, "users", user.uid, "companyDetails", user.uid);
-            await setDoc(companyDetailsDocRef, companyDetailsPayload);
+            await setDoc(companyDetailsDocRef, companyDetailsPayload, { merge: true });
 
-            // 2. Update the verification status on the main user document
             const userDocRef = doc(db, "users", user.uid);
             const userUpdatePayload = { verificationStatus: 'pending' };
-            
-            updateDoc(userDocRef, userUpdatePayload).catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: userDocRef.path,
-                    operation: 'update',
-                    requestResourceData: userUpdatePayload,
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-            });
+            await updateDoc(userDocRef, userUpdatePayload)
 
 
             toast({ title: "Verification Submitted", description: "Your business details have been submitted for review." });
@@ -208,6 +232,14 @@ export function ExporterVerificationForm({ user }: { user: User }) {
             setIsSubmitting(false);
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
+                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        )
+    }
 
 
     return (
@@ -240,7 +272,7 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                                     <Label htmlFor="gst">GST Number</Label>
                                     <Input id="gst" value={gst} onChange={e => setGst(e.target.value)} disabled={isSubmitting} />
                                 </div>
-                                 <FileInput id="gst-file" onFileChange={handleFileChange(setGstFile)} disabled={isSubmitting} file={gstFile} />
+                                 <FileInput id="gst-file" onFileChange={handleFileChange(setGstFile)} disabled={isSubmitting} file={gstFile} currentFileUrl={existingDetails?.gstFileUrl} />
                             </div>
 
                              <div className="grid sm:grid-cols-2 gap-4 items-end">
@@ -248,7 +280,7 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                                     <Label htmlFor="pan">PAN</Label>
                                     <Input id="pan" value={pan} onChange={e => setPan(e.target.value)} disabled={isSubmitting} />
                                 </div>
-                                <FileInput id="pan-file" onFileChange={handleFileChange(setPanFile)} disabled={isSubmitting} file={panFile} />
+                                <FileInput id="pan-file" onFileChange={handleFileChange(setPanFile)} disabled={isSubmitting} file={panFile} currentFileUrl={existingDetails?.panFileUrl}/>
                             </div>
                             
                             {isExporter && (
@@ -257,7 +289,7 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                                         <Label htmlFor="tan">TAN (If registered)</Label>
                                         <Input id="tan" value={tan} onChange={e => setTan(e.target.value)} disabled={isSubmitting} />
                                     </div>
-                                    <FileInput id="tan-file" onFileChange={handleFileChange(setTanFile)} disabled={isSubmitting} file={tanFile} />
+                                    <FileInput id="tan-file" onFileChange={handleFileChange(setTanFile)} disabled={isSubmitting} file={tanFile} currentFileUrl={existingDetails?.tanFileUrl} />
                                 </div>
                             )}
                         </div>
@@ -272,14 +304,14 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                                             <Label htmlFor="iec">IEC Code</Label>
                                             <Input id="iec" value={iecCode} onChange={e => setIecCode(e.target.value)} disabled={isSubmitting} />
                                         </div>
-                                         <FileInput id="iec-file" onFileChange={handleFileChange(setIecCodeFile)} disabled={isSubmitting} file={iecCodeFile} />
+                                         <FileInput id="iec-file" onFileChange={handleFileChange(setIecCodeFile)} disabled={isSubmitting} file={iecCodeFile} currentFileUrl={existingDetails?.iecCodeFileUrl} />
                                     </div>
                                     <div className="grid sm:grid-cols-2 gap-4 items-end">
                                         <div className="grid gap-2">
                                             <Label htmlFor="ad">AD Code</Label>
                                             <Input id="ad" value={adCode} onChange={e => setAdCode(e.target.value)} disabled={isSubmitting} />
                                         </div>
-                                        <FileInput id="ad-file" onFileChange={handleFileChange(setAdCodeFile)} disabled={isSubmitting} file={adCodeFile} />
+                                        <FileInput id="ad-file" onFileChange={handleFileChange(setAdCodeFile)} disabled={isSubmitting} file={adCodeFile} currentFileUrl={existingDetails?.adCodeFileUrl} />
                                     </div>
                                 </div>
                             </>
@@ -295,7 +327,7 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                                             <Label htmlFor="license-number">License Number</Label>
                                             <Input id="license-number" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} disabled={isSubmitting} />
                                         </div>
-                                        <FileInput id="license-file" onFileChange={handleFileChange(setLicenseFile)} disabled={isSubmitting} file={licenseFile} />
+                                        <FileInput id="license-file" onFileChange={handleFileChange(setLicenseFile)} disabled={isSubmitting} file={licenseFile} currentFileUrl={existingDetails?.licenseFileUrl} />
                                     </div>
                                      <div className="grid sm:grid-cols-2 gap-4">
                                          <div className="grid gap-2">
@@ -319,7 +351,7 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                         <Separator />
                         <div className="space-y-4">
                             <h3 className="text-lg font-medium">Incorporation Certificate</h3>
-                            <FileInput id="incorporation-cert" onFileChange={handleFileChange(setIncorporationCertificate)} disabled={isSubmitting} file={incorporationCertificate} />
+                            <FileInput id="incorporation-cert" onFileChange={handleFileChange(setIncorporationCertificate)} disabled={isSubmitting} file={incorporationCertificate} currentFileUrl={existingDetails?.incorporationCertificateUrl} />
                         </div>
                     </CardContent>
                     <CardFooter>

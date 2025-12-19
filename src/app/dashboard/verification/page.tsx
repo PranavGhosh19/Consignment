@@ -33,9 +33,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function VerificationPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -43,7 +43,8 @@ export default function VerificationPage() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<DocumentData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
   const router = useRouter();
   const { toast } = useToast();
 
@@ -86,6 +87,13 @@ export default function VerificationPage() {
     return () => unsubscribe();
 
   }, [user, toast]);
+  
+  useEffect(() => {
+    // Reset checks when a new user is selected
+    if (selectedUser) {
+        setCheckedItems({});
+    }
+  }, [selectedUser]);
 
   const handleVerification = async (userId: string, status: 'approved' | 'rejected') => {
       try {
@@ -136,6 +144,43 @@ export default function VerificationPage() {
     }
   };
 
+  const handleCheckChange = (itemId: string) => {
+    setCheckedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+  };
+
+  const requiredDocs = selectedUser?.userType === 'exporter'
+    ? ['gst', 'pan', 'iecCode', 'adCode', 'incorporationCertificate']
+    : ['gst', 'pan', 'licenseNumber', 'incorporationCertificate'];
+
+  const allDocsChecked = selectedUser
+    ? requiredDocs.every(docKey => {
+        const hasDocUrl = !!selectedUser.companyDetails?.[`${docKey}Url`] || !!selectedUser.companyDetails?.[`${docKey}FileUrl`];
+        // If there's no URL, we consider it "checked" as there's nothing to verify.
+        // The main check is that the required fields *with* uploads are ticked.
+        return !hasDocUrl || checkedItems[docKey];
+      })
+    : false;
+
+
+  const InfoRow = ({ id, label, value, onPreviewClick, hasDocument }: { id: string, label: string, value?: string | null, onPreviewClick?: () => void, hasDocument?: boolean }) => (
+    <div className="flex items-center justify-between border-b py-3">
+      <div className="flex items-center gap-4">
+        {hasDocument && (
+            <Checkbox id={`check-${id}`} checked={!!checkedItems[id]} onCheckedChange={() => handleCheckChange(id)} />
+        )}
+        <div className={!hasDocument ? 'pl-8' : ''}>
+          <dt className="text-muted-foreground">{label}</dt>
+          <dd className="font-semibold text-left">{value || 'N/A'}</dd>
+        </div>
+      </div>
+      {hasDocument && onPreviewClick && (
+          <Button variant="ghost" size="sm" onClick={onPreviewClick}>
+              <Eye className="mr-2 h-4 w-4" /> Preview
+          </Button>
+      )}
+    </div>
+  )
+
 
   if (loading) {
     return (
@@ -146,20 +191,6 @@ export default function VerificationPage() {
     );
   }
   
-  const InfoRow = ({ label, value, onPreviewClick, hasDocument }: { label: string, value?: string | null, onPreviewClick?: () => void, hasDocument?: boolean }) => (
-    <div className="flex items-center justify-between border-b py-3">
-      <div>
-        <dt className="text-muted-foreground">{label}</dt>
-        <dd className="font-semibold text-left">{value || 'N/A'}</dd>
-      </div>
-      {hasDocument && onPreviewClick && (
-          <Button variant="ghost" size="sm" onClick={onPreviewClick}>
-              <Eye className="mr-2 h-4 w-4" /> Preview
-          </Button>
-      )}
-    </div>
-  )
-
   return (
     <>
     <div className="container py-6 md:py-10">
@@ -226,14 +257,16 @@ export default function VerificationPage() {
                 {selectedUser?.companyDetails ? (
                     <div className="py-4 space-y-4">
                         <dl className="space-y-1">
-                            <InfoRow label="Legal Name" value={selectedUser.companyDetails.legalName} />
+                            <InfoRow id="legalName" label="Legal Name" value={selectedUser.companyDetails.legalName} />
                             <InfoRow 
+                                id="gst"
                                 label="GST" 
                                 value={selectedUser.companyDetails.gstin} 
                                 hasDocument={!!selectedUser.companyDetails.gstFileUrl}
                                 onPreviewClick={() => handleOpenPreview(selectedUser.companyDetails.gstFileUrl)}
                             />
                             <InfoRow 
+                                id="pan"
                                 label="PAN" 
                                 value={selectedUser.companyDetails.pan}
                                 hasDocument={!!selectedUser.companyDetails.panFileUrl}
@@ -242,18 +275,21 @@ export default function VerificationPage() {
                             {selectedUser.userType === 'exporter' ? (
                                 <>
                                     <InfoRow 
+                                        id="tan"
                                         label="TAN" 
                                         value={selectedUser.companyDetails.tan}
                                         hasDocument={!!selectedUser.companyDetails.tanFileUrl}
                                         onPreviewClick={() => handleOpenPreview(selectedUser.companyDetails.tanFileUrl)}
                                     />
                                     <InfoRow 
+                                        id="iecCode"
                                         label="IEC Code" 
                                         value={selectedUser.companyDetails.iecCode}
                                         hasDocument={!!selectedUser.companyDetails.iecCodeFileUrl}
                                         onPreviewClick={() => handleOpenPreview(selectedUser.companyDetails.iecCodeFileUrl)}
                                     />
                                     <InfoRow 
+                                        id="adCode"
                                         label="AD Code" 
                                         value={selectedUser.companyDetails.adCode}
                                         hasDocument={!!selectedUser.companyDetails.adCodeFileUrl}
@@ -263,17 +299,19 @@ export default function VerificationPage() {
                             ) : (
                                 <>
                                     <InfoRow 
+                                        id="licenseNumber"
                                         label="License Number" 
                                         value={selectedUser.companyDetails.licenseNumber}
                                         hasDocument={!!selectedUser.companyDetails.licenseFileUrl}
                                         onPreviewClick={() => handleOpenPreview(selectedUser.companyDetails.licenseFileUrl)}
                                     />
-                                    <InfoRow label="Company Type" value={selectedUser.companyDetails.companyType} />
+                                    <InfoRow id="companyType" label="Company Type" value={selectedUser.companyDetails.companyType} />
                                 </>
                             )}
                         </dl>
                         <Separator />
                         <InfoRow 
+                            id="incorporationCertificate"
                             label="Incorporation Certificate" 
                             hasDocument={!!selectedUser.companyDetails.incorporationCertificateUrl}
                             onPreviewClick={() => handleOpenPreview(selectedUser.companyDetails.incorporationCertificateUrl)}
@@ -303,7 +341,7 @@ export default function VerificationPage() {
                 </AlertDialog>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button className="bg-green-600 hover:bg-green-700">
+                        <Button className="bg-green-600 hover:bg-green-700" disabled={!allDocsChecked}>
                             <Check className="mr-2 h-4 w-4" /> Approve
                         </Button>
                     </AlertDialogTrigger>

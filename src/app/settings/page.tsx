@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Moon, Sun, Monitor, User as UserIcon, Lock, Palette, Landmark, FileText, Building2 } from "lucide-react";
+import { Moon, Sun, Monitor, User as UserIcon, Lock, Palette, Landmark, FileText, Building2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type SettingsView = "profile" | "business" | "password" | "preferences" | "bank" | "regulatory";
@@ -94,12 +94,10 @@ export default function SettingsPage() {
                     setUserData(data);
                     setName(data.name || "");
                     
-                    if (data.verificationStatus === 'approved') {
-                        const companyDetailsRef = doc(db, "users", currentUser.uid, "companyDetails", currentUser.uid);
-                        const companyDetailsSnap = await getDoc(companyDetailsRef);
-                        if (companyDetailsSnap.exists()) {
-                            setCompanyDetails(companyDetailsSnap.data());
-                        }
+                    const companyDetailsRef = doc(db, "users", currentUser.uid, "companyDetails", currentUser.uid);
+                    const companyDetailsSnap = await getDoc(companyDetailsRef);
+                    if (companyDetailsSnap.exists()) {
+                        setCompanyDetails(companyDetailsSnap.data());
                     }
                 }
                 setLoading(false);
@@ -213,7 +211,7 @@ export default function SettingsPage() {
                                 <CardDescription>Your verified company details.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {userData?.verificationStatus === 'approved' && companyDetails ? (
+                                {companyDetails ? (
                                     <div className="space-y-4">
                                         <div className="grid sm:grid-cols-3 items-start gap-4">
                                             <Label>Legal Name</Label>
@@ -260,6 +258,14 @@ export default function SettingsPage() {
                                                 <p className="sm:col-span-2 text-sm text-muted-foreground capitalize">{companyDetails.companyType}</p>
                                             </div>
                                             </>
+                                        )}
+                                        {userData?.verificationStatus === 'rejected' && (
+                                            <div className="pt-4 flex justify-end">
+                                                <Button variant="outline" onClick={() => router.push('/gst-verification')}>
+                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                    Edit & Re-submit Details
+                                                </Button>
+                                            </div>
                                         )}
                                     </div>
                                 ) : (
@@ -386,5 +392,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    

@@ -43,7 +43,7 @@ export default function GstVerificationPage() {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const data = userDoc.data();
-          if (data.verificationStatus && data.verificationStatus !== 'unsubmitted') {
+          if (data.verificationStatus && data.verificationStatus !== 'unsubmitted' && data.verificationStatus !== 'rejected') {
             router.push('/dashboard');
           } else {
             setUserType(data.userType);
@@ -64,6 +64,7 @@ export default function GstVerificationPage() {
     return <PageSkeleton />;
   }
 
-  // Both exporters and carriers will now use the same detailed verification form.
   return <ExporterVerificationForm user={user} userType={userType} />
 }
+
+    

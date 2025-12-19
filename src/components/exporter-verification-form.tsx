@@ -33,8 +33,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Separator } from "./ui/separator";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError, type SecurityRuleContext } from "@/firebase/errors";
 
 const FileInput = ({ id, onFileChange, disabled, file, currentFileUrl }: { id: string, onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled: boolean, file: File | null, currentFileUrl?: string }) => (
     <div className="grid gap-2">
@@ -56,10 +54,9 @@ const FileInput = ({ id, onFileChange, disabled, file, currentFileUrl }: { id: s
 );
 
 
-export function ExporterVerificationForm({ user }: { user: User }) {
+export function ExporterVerificationForm({ user, userType }: { user: User, userType: string | null }) {
     const router = useRouter();
     const { toast } = useToast();
-    const [userType, setUserType] = useState<string | null>(null);
 
     // Text input state
     const [companyName, setCompanyName] = useState("");
@@ -95,7 +92,6 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
-                    setUserType(userData.userType);
 
                     // If user was rejected, fetch their previous details to pre-fill the form
                     if (userData.verificationStatus === 'rejected') {
@@ -214,13 +210,13 @@ export function ExporterVerificationForm({ user }: { user: User }) {
                 }
             }
             
+            // Save the details to the subcollection
             const companyDetailsDocRef = doc(db, "users", user.uid, "companyDetails", user.uid);
             await setDoc(companyDetailsDocRef, companyDetailsPayload, { merge: true });
 
+            // **CRITICAL STEP:** Update the main user document status back to 'pending'
             const userDocRef = doc(db, "users", user.uid);
-            const userUpdatePayload = { verificationStatus: 'pending' };
-            await updateDoc(userDocRef, userUpdatePayload)
-
+            await updateDoc(userDocRef, { verificationStatus: 'pending' });
 
             toast({ title: "Verification Submitted", description: "Your business details have been submitted for review." });
             router.push("/dashboard");
@@ -380,3 +376,5 @@ export function ExporterVerificationForm({ user }: { user: User }) {
         </>
     );
 }
+
+    

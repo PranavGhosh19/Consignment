@@ -243,7 +243,7 @@ service cloud.firestore {
           getShipment(shipmentId).data.status == 'scheduled';
       }
     }
-
+    
     // ───── NOTIFICATIONS COLLECTION ─────
     match /notifications/{notificationId} {
       allow read: if request.auth != null
@@ -270,15 +270,11 @@ service cloud.firestore {
                   resource.data.carrierId == request.auth.uid;
     }
 
-    match /{path=**}/notifications/{notificationId} {
-      allow list: if request.auth != null && 
-                   request.query.limit <= 10 &&
-                   request.query.get("where").get(0)[2] == request.auth.uid;
-    }
-
     // ───── DEFAULT DENY ─────
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
+
+    

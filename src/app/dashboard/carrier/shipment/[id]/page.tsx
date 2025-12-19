@@ -98,15 +98,20 @@ export default function CarrierShipmentDetailPage() {
     };
   }, [shipmentId, toast]);
   
-  const { userBidRank, isL1 } = useMemo(() => {
+  const { userBidRank, isL1, userBidCount } = useMemo(() => {
     if (!user || bids.length === 0) {
-      return { userBidRank: null, isL1: false };
+      return { userBidRank: null, isL1: false, userBidCount: 0 };
     }
-    const uniqueBidAmounts = [...new Set(bids.map(b => b.bidAmount))];
+    
     const userBids = bids.filter(b => b.carrierId === user.uid);
-    if (userBids.length === 0) {
-      return { userBidRank: null, isL1: false };
+    const count = userBids.length;
+
+    if (count === 0) {
+      return { userBidRank: null, isL1: false, userBidCount: 0 };
     }
+
+    const uniqueBidAmounts = [...new Set(bids.map(b => b.bidAmount))].sort((a, b) => a - b);
+    
     // Find the best (lowest) bid by the current user
     const userBestBid = userBids.reduce((min, bid) => bid.bidAmount < min.bidAmount ? bid : min, userBids[0]);
     const rankIndex = uniqueBidAmounts.indexOf(userBestBid.bidAmount);
@@ -114,6 +119,7 @@ export default function CarrierShipmentDetailPage() {
     return {
       userBidRank: rankIndex !== -1 ? `L${rankIndex + 1}` : null,
       isL1: rankIndex === 0,
+      userBidCount: count
     };
   }, [bids, user]);
 
@@ -121,6 +127,11 @@ export default function CarrierShipmentDetailPage() {
   const handlePlaceBid = async () => {
     if (!user || !shipmentId || !bidAmount) {
       toast({ title: "Error", description: "Please enter a bid amount.", variant: "destructive" });
+      return;
+    }
+
+    if (userBidCount >= 3) {
+      toast({ title: "Limit Reached", description: "You cannot place more than 3 bids.", variant: "destructive" });
       return;
     }
 
@@ -170,11 +181,13 @@ export default function CarrierShipmentDetailPage() {
   }
 
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
+  const atBidLimit = userBidCount >= 3;
+
 
   return (
     <div className="container py-6 md:py-10">
       <div className="mb-6">
-          <Button variant="ghost" onClick={() => router.push('/dashboard/carrier')}>
+          <Button variant="ghost" onClick={() => router.push('/dashboard/carrier/find-shipments')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to All Shipments
           </Button>
@@ -221,7 +234,7 @@ export default function CarrierShipmentDetailPage() {
             <Card className="bg-white dark:bg-card">
               <CardHeader>
                 <CardTitle>Live Bidding</CardTitle>
-                <CardDescription>Place your bid for this shipment.</CardDescription>
+                <CardDescription>Place your bid for this shipment. ({userBidCount} of 3 bids placed)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
@@ -239,25 +252,34 @@ export default function CarrierShipmentDetailPage() {
                          <p className="text-sm text-muted-foreground mt-2">You haven't placed a bid yet.</p>
                     )}
                 </div>
-                 <div className="grid gap-2">
-                    <Label htmlFor="bid-amount">Your Bid Amount (USD)</Label>
-                    <div className="flex items-center">
-                        <span className="bg-muted text-muted-foreground px-3 py-2 border border-r-0 rounded-l-md">$</span>
-                        <Input
-                        id="bid-amount"
-                        type="number"
-                        placeholder={"e.g., 2500"}
-                        value={bidAmount}
-                        onChange={(e) => setBidAmount(e.target.value)}
-                        disabled={isSubmitting}
-                        className="rounded-l-none"
-                        />
+
+                {atBidLimit ? (
+                     <div className="text-center text-muted-foreground border-dashed border-2 p-4 rounded-md">
+                        You have reached your bid limit for this shipment.
                     </div>
-                </div>
-                <Button onClick={handlePlaceBid} disabled={isSubmitting} className="w-full">
-                    <Send className="mr-2 h-4 w-4" />
-                    {isSubmitting ? 'Placing Bid...' : 'Place Bid'}
-                </Button>
+                ) : (
+                    <>
+                        <div className="grid gap-2">
+                            <Label htmlFor="bid-amount">Your Bid Amount (USD)</Label>
+                            <div className="flex items-center">
+                                <span className="bg-muted text-muted-foreground px-3 py-2 border border-r-0 rounded-l-md">$</span>
+                                <Input
+                                id="bid-amount"
+                                type="number"
+                                placeholder={"e.g., 2500"}
+                                value={bidAmount}
+                                onChange={(e) => setBidAmount(e.target.value)}
+                                disabled={isSubmitting}
+                                className="rounded-l-none"
+                                />
+                            </div>
+                        </div>
+                        <Button onClick={handlePlaceBid} disabled={isSubmitting} className="w-full">
+                            <Send className="mr-2 h-4 w-4" />
+                            {isSubmitting ? 'Placing Bid...' : 'Place Bid'}
+                        </Button>
+                    </>
+                )}
               </CardContent>
             </Card>
         </div>
@@ -265,3 +287,5 @@ export default function CarrierShipmentDetailPage() {
     </div>
   );
 }
+
+    

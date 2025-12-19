@@ -26,6 +26,7 @@ import { NotificationBell } from "./NotificationBell";
 
 const exporterNavLinks = [
   { href: "/dashboard/exporter", label: "My Shipments" },
+  { href: "/dashboard/exporter/find-carriers", label: "Find Carriers" },
 ];
 
 const carrierNavLinks = [
@@ -355,5 +356,3 @@ export function MobileMenu() {
         </div>
     );
 }
-
-    

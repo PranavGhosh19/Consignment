@@ -16,16 +16,21 @@ export default function PostShipmentsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold font-headline">Post a New Shipment</h1>
           <p className="text-muted-foreground">Fill in the details below to create a new shipment request.</p>
         </div>
+        {!showForm && (
+            <Button size="lg" onClick={() => setShowForm(true)}>
+                <PlusCircle className="mr-2 h-5 w-5" />
+                New Shipment Request
+            </Button>
+        )}
       </div>
       
       {showForm ? (
         <ShipmentForm />
       ) : (
         <div className="flex justify-center items-center h-96 border-2 border-dashed rounded-lg">
-            <Button size="lg" onClick={() => setShowForm(true)}>
-                <PlusCircle className="mr-2 h-5 w-5" />
-                New Shipment Request
-            </Button>
+            <div className="text-center text-muted-foreground">
+                <p>Click the button above to start a new shipment request.</p>
+            </div>
         </div>
       )}
     </div>

@@ -1,15 +1,25 @@
+
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Ship } from "lucide-react";
+import { PlusCircle, Ship } from "lucide-react";
+import Link from "next/link";
 
 export default function PostShipmentsPage() {
   return (
     <div className="container py-6 md:py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold font-headline">Post Shipments</h1>
-        <p className="text-muted-foreground">This is where you will manage your posted shipments.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+            <h1 className="text-2xl sm:text-3xl font-bold font-headline">Post Shipments</h1>
+            <p className="text-muted-foreground">This is where you will manage your posted shipments.</p>
+        </div>
+        <Button asChild>
+            <Link href="/dashboard/exporter?edit=new">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Shipment Request
+            </Link>
+        </Button>
       </div>
       
       <Card>

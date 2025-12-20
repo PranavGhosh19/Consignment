@@ -268,7 +268,11 @@ export default function ShipmentDocumentsPage() {
 
 
   const handleBackNavigation = () => {
-    router.push(`/dashboard/shipment/${shipmentId}`);
+    if (userType === 'carrier') {
+        router.push(`/dashboard/carrier/registered-shipment/${shipmentId}`);
+    } else {
+        router.push(`/dashboard/shipment/${shipmentId}`);
+    }
   }
 
   if (loading || !shipment) {
@@ -294,7 +298,7 @@ export default function ShipmentDocumentsPage() {
         <div className="flex justify-between items-center mb-6">
             <Button variant="ghost" onClick={handleBackNavigation}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Shipment
+                Back
             </Button>
         </div>
         

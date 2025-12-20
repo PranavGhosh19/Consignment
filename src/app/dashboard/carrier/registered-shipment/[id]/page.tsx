@@ -52,10 +52,13 @@ export default function RegisteredShipmentDetailPage() {
     unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
        if (docSnap.exists()) {
         const shipmentData = docSnap.data();
+        // A carrier should only see this page for scheduled, awarded, or delivered shipments.
+        // If it's live, they should be on the bidding page.
         if (shipmentData.status === 'live') {
             router.replace(`/dashboard/carrier/shipment/${shipmentId}`);
             return;
         }
+
         setShipment({ id: docSnap.id, ...shipmentData });
 
         if (shipmentData.status === 'delivered') {
@@ -120,9 +123,9 @@ export default function RegisteredShipmentDetailPage() {
             return { text: "Registered", description: "This shipment is scheduled to go live soon." };
         case 'awarded':
              if (isWinningCarrier) {
-                return { text: "You are Awarded", description: `Congratulations! You have won the bid for this shipment.` };
+                return { text: "You Won!", description: `Congratulations! You have won the bid for this shipment.` };
              }
-            return { text: "Other Carrier has been Awarded", description: `This shipment has been awarded to another carrier.` };
+            return { text: "Awarded to Another Carrier", description: `This shipment has been awarded to another carrier.` };
         case 'delivered':
              if (isWinningCarrier) {
                 return { text: "Delivered", description: "This shipment has been marked as delivered." };

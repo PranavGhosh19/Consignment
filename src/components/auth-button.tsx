@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -26,6 +25,7 @@ import { NotificationBell } from "./NotificationBell";
 
 const exporterNavLinks = [
   { href: "/dashboard/exporter", label: "My Shipments" },
+  { href: "/dashboard/exporter/post-shipments", label: "Post Shipments" },
 ];
 
 const carrierNavLinks = [

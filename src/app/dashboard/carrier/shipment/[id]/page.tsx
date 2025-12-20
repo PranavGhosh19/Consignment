@@ -109,13 +109,22 @@ export default function CarrierShipmentDetailPage() {
     if (count === 0) {
       return { userBidRank: null, isL1: false, userBidCount: 0 };
     }
+    
+    // Step 1: Find the lowest bid for each carrier
+    const lowestBidsByCarrier: Record<string, number> = {};
+    bids.forEach(bid => {
+      if (!lowestBidsByCarrier[bid.carrierId] || bid.bidAmount < lowestBidsByCarrier[bid.carrierId]) {
+        lowestBidsByCarrier[bid.carrierId] = bid.bidAmount;
+      }
+    });
 
-    const uniqueBidAmounts = [...new Set(bids.map(b => b.bidAmount))].sort((a, b) => a - b);
+    // Step 2: Get unique sorted list of these lowest bids
+    const uniqueLowestBids = [...new Set(Object.values(lowestBidsByCarrier))].sort((a, b) => a - b);
     
-    // Find the best (lowest) bid by the current user
-    const userBestBid = userBids.reduce((min, bid) => bid.bidAmount < min.bidAmount ? bid : min, userBids[0]);
-    const rankIndex = uniqueBidAmounts.indexOf(userBestBid.bidAmount);
-    
+    // Step 3: Find the user's best bid and its rank
+    const userBestBidAmount = lowestBidsByCarrier[user.uid];
+    const rankIndex = uniqueLowestBids.indexOf(userBestBidAmount);
+
     return {
       userBidRank: rankIndex !== -1 ? `L${rankIndex + 1}` : null,
       isL1: rankIndex === 0,

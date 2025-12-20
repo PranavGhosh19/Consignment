@@ -382,7 +382,7 @@ export function ShipmentForm() {
                       <FormLabel>Preferred Departure Date</FormLabel>
                       <DateTimePicker 
                         date={field.value} 
-                        setDate={field.onChange} 
+                        setDate={field.onChange}
                         disabledDates={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                       />
                       <FormMessage />

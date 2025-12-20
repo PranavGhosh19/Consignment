@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -212,7 +213,7 @@ const formSchema = z
 type ShipmentFormValues = z.infer<typeof formSchema>;
 
 
-export function ShipmentForm() {
+export function ShipmentForm({ onFormSubmit }: { onFormSubmit: () => void }) {
   const { toast } = useToast();
   
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
@@ -227,7 +228,7 @@ export function ShipmentForm() {
       hsnCode: "",
       modeOfShipment: "Sea – FCL (Full Container Load)",
       cargoType: "General Cargo",
-      packageType: "PALLET",
+      packageType: "PALLETS",
       numberOfPackages: undefined,
       equipmentType: EQUIPMENT_TYPES[0],
       weight: undefined,
@@ -323,6 +324,7 @@ export function ShipmentForm() {
     });
     setIsScheduleDialogOpen(false);
     form.reset();
+    onFormSubmit();
   }
 
   const handleSaveDraft = () => {
@@ -334,6 +336,7 @@ export function ShipmentForm() {
         description: "Your shipment request has been saved as a draft.",
       });
       form.reset();
+      onFormSubmit();
     });
   };
 
@@ -357,12 +360,10 @@ export function ShipmentForm() {
                 <CardTitle className="font-headline flex items-center gap-2"><Package className="h-6 w-6 text-primary" /> Shipment Information</CardTitle>
                 <CardDescription>Enter the core details of your shipment.</CardDescription>
               </div>
-              {isFCL && (
-                <Button variant="outline" size="icon" type="button" onClick={() => setIsCbmDialogOpen(true)}>
+              <Button variant="outline" size="icon" type="button" onClick={() => setIsCbmDialogOpen(true)}>
                   <Calculator className="h-4 w-4" />
                   <span className="sr-only">Open CBM Calculator</span>
-                </Button>
-              )}
+              </Button>
             </CardHeader>
             <CardContent>
               <ShipmentDetailsSection form={form} />

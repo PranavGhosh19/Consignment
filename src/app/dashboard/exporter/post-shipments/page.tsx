@@ -14,7 +14,6 @@ export default function PostShipmentsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold font-headline">Post a New Shipment</h1>
-          <p className="text-muted-foreground">Fill in the details below to create a new shipment request.</p>
         </div>
         {!showForm && (
             <Button size="lg" onClick={() => setShowForm(true)}>
@@ -24,15 +23,7 @@ export default function PostShipmentsPage() {
         )}
       </div>
       
-      {showForm ? (
-        <ShipmentForm />
-      ) : (
-        <div className="flex justify-center items-center h-96 border-2 border-dashed rounded-lg">
-            <div className="text-center text-muted-foreground">
-                <p>Click the button above to start a new shipment request.</p>
-            </div>
-        </div>
-      )}
+      {showForm && <ShipmentForm />}
     </div>
   );
 }

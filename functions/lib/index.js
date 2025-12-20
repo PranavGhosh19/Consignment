@@ -23,23 +23,13 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.minuteShipmentSweeper = exports.executeShipmentGoLive = exports.onBidCreate = exports.onShipmentWrite = void 0;
 const v2_1 = require("firebase-functions/v2");
@@ -69,7 +59,11 @@ const tasksClient = new tasks_1.CloudTasksClient();
  */
 async function createNotification(notification) {
     try {
-        await db.collection("notifications").add(Object.assign(Object.assign({}, notification), { isRead: false, createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+        await db.collection("notifications").add({
+            ...notification,
+            isRead: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
         logger.log(`Notification created for ${notification.recipientId}`);
     }
     catch (error) {
@@ -82,13 +76,12 @@ async function createNotification(notification) {
  * collection is written to.
  */
 exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmentId}", async (event) => {
-    var _a, _b;
     const shipmentId = event.params.shipmentId;
-    const beforeData = (_a = event.data) === null || _a === void 0 ? void 0 : _a.before.data();
-    const afterData = (_b = event.data) === null || _b === void 0 ? void 0 : _b.after.data();
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
     // --- Task Deletion Logic ---
     // If a task was scheduled for the previous version, delete it.
-    if (beforeData === null || beforeData === void 0 ? void 0 : beforeData.goLiveTaskName) {
+    if (beforeData?.goLiveTaskName) {
         logger.log("Deleting previous task:", beforeData.goLiveTaskName);
         await tasksClient.deleteTask({ name: beforeData.goLiveTaskName })
             .catch((err) => {
@@ -99,13 +92,13 @@ exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmen
         });
     }
     // --- Status Change Notifications (Awarded) ---
-    if ((beforeData === null || beforeData === void 0 ? void 0 : beforeData.status) !== "awarded" && (afterData === null || afterData === void 0 ? void 0 : afterData.status) === "awarded") {
+    if (beforeData?.status !== "awarded" && afterData?.status === "awarded") {
         if (afterData.winningCarrierId && afterData.productName) {
             await createNotification({
                 recipientId: afterData.winningCarrierId,
                 message: "Congratulations! You've won the bid for the " +
                     `'${afterData.productName}' shipment.`,
-                link: `/dashboard/shipment/${shipmentId}`,
+                link: `/dashboard/carrier/registered-shipment/${shipmentId}`,
             });
         }
     }
@@ -157,9 +150,8 @@ exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmen
  * Creates a notification when a new bid is placed on a shipment.
  */
 exports.onBidCreate = (0, firestore_1.onDocumentCreated)("shipments/{shipmentId}/bids/{bidId}", async (event) => {
-    var _a;
     const shipmentId = event.params.shipmentId;
-    const bidData = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
+    const bidData = event.data?.data();
     if (!bidData) {
         logger.log("No bid data found, cannot create notification.");
         return;
@@ -203,7 +195,7 @@ exports.executeShipmentGoLive = (0, https_1.onRequest)(async (req, res) => {
         }
         const shipmentData = doc.data();
         // Only update if the shipment is still in the 'scheduled' state.
-        if ((shipmentData === null || shipmentData === void 0 ? void 0 : shipmentData.status) === "scheduled") {
+        if (shipmentData?.status === "scheduled") {
             await shipmentRef.update({ status: "live" });
             logger.log("Set shipment", shipmentId, "to 'live' via Cloud Task.");
             // --- Notify Registered Carriers ---

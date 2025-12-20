@@ -93,7 +93,7 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
           message:
             "Congratulations! You've won the bid for the " +
             `'${afterData.productName}' shipment.`,
-          link: `/dashboard/shipment/${shipmentId}`,
+          link: `/dashboard/carrier/registered-shipment/${shipmentId}`,
         });
       }
     }

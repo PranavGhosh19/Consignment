@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -19,7 +20,7 @@ import { User as UserIcon, LogOut, Settings, LifeBuoy, Menu, Shield, Users, File
 import { cn } from "@/lib/utils";
 import { doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "./ui/skeleton";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Separator } from "./ui/separator";
 import { NotificationBell } from "./NotificationBell";
 
@@ -193,12 +194,6 @@ export function MobileNavLinks() {
                 </Button>
             </SheetTrigger>
             <SheetContent side="right" className="pt-12 flex flex-col">
-                <SheetHeader className="text-left">
-                    <SheetTitle>Menu</SheetTitle>
-                    <SheetDescription className="sr-only">
-                        Main navigation menu for Shipping Battlefield.
-                    </SheetDescription>
-                </SheetHeader>
                 <div className="flex flex-col gap-3 py-4 text-lg font-medium">
                     {links.map((link) => {
                         let isActive = false;

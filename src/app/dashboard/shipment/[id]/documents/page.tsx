@@ -292,7 +292,7 @@ export default function ShipmentDocumentsPage() {
   return (
     <div className="container py-6 md:py-10">
         <div className="flex justify-between items-center mb-6">
-            <Button variant="ghost" onClick={handleBackNavigation} className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" onClick={handleBackNavigation}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Shipment
             </Button>

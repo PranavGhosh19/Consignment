@@ -24,6 +24,7 @@ type Notification = DocumentData & {
 
 export default function NotificationsPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,6 +35,11 @@ export default function NotificationsPage() {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setUserType(userDoc.data()?.userType || null);
+        }
       } else {
         router.push('/login');
       }
@@ -83,6 +89,18 @@ export default function NotificationsPage() {
     }
   };
 
+  const handleBack = () => {
+    if (userType === 'exporter') {
+      router.push('/dashboard/exporter');
+    } else if (userType === 'carrier') {
+      router.push('/dashboard/carrier');
+    } else if (userType === 'employee') {
+      router.push('/dashboard/employee');
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
   if (loading) {
     return (
       <div className="container py-6 md:py-10">
@@ -99,7 +117,7 @@ export default function NotificationsPage() {
   return (
     <div className="container py-6 md:py-10">
        <div className="flex items-center mb-8 gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="sm:hidden">
+        <Button variant="ghost" size="icon" onClick={handleBack}>
           <ArrowLeft />
         </Button>
         <h1 className="text-2xl sm:text-3xl font-bold font-headline">Notifications</h1>

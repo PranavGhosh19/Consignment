@@ -288,7 +288,7 @@ export default function ShipmentDetailPage() {
     } else if (userType === 'employee') {
       router.push('/dashboard/manage-shipments');
     } else {
-      router.back();
+      router.push('/dashboard');
     }
   };
 

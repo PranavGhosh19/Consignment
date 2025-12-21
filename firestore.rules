@@ -247,19 +247,6 @@ service cloud.firestore {
       }
     }
     
-    // ───── NOTIFICATIONS COLLECTION ─────
-    match /notifications/{notificationId} {
-      allow read: if request.auth != null
-        && resource.data.recipientId == request.auth.uid;
-
-      allow update: if request.auth != null
-        && resource.data.recipientId == request.auth.uid
-        && request.resource.data.diff(resource.data).changedKeys().hasOnly(["isRead"]);
-
-      allow create: if false; // Only Cloud Functions can create
-      allow delete: if false;
-    }
-
     // ───── COLLECTION GROUP READ ACCESS ─────
     match /{documentPath=**}/register/{docId} {
       allow read: if request.auth.uid != null &&

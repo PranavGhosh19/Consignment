@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
@@ -29,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator } from "lucide-react";
+import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator, Anchor, MapPin } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,7 +40,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { CbmCalculatorDialog } from "@/components/cbm-calculator-dialog";
-import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS } from "@/lib/constants";
+import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS, INLAND_CONTAINER_DEPOTS, INDIAN_SEA_PORTS, FOREIGN_SEA_PORTS } from "@/lib/constants";
+import { Combobox } from "@/components/ui/combobox";
 
 
 const PageSkeleton = () => (
@@ -88,10 +88,14 @@ function ExporterDashboardPage() {
   const [equipmentType, setEquipmentType] = useState("");
   const [departureDate, setDepartureDate] = useState<Date>();
   const [deliveryDeadline, setDeliveryDeadline] = useState<Date>();
+  const [placeOfReceipt, setPlaceOfReceipt] = useState("");
+  const [otherPlaceOfReceipt, setOtherPlaceOfReceipt] = useState("");
   const [portOfLoading, setPortOfLoading] = useState("");
-  const [originZip, setOriginZip] = useState("");
-  const [portOfDelivery, setPortOfDelivery] = useState("");
-  const [destinationZip, setDestinationZip] = useState("");
+  const [originAddress, setOriginAddress] = useState("");
+  const [portOfDischarge, setPortOfDischarge] = useState("");
+  const [finalPlaceOfDelivery, setFinalPlaceOfDelivery] = useState("");
+  const [otherFinalPlaceOfDelivery, setOtherFinalPlaceOfDelivery] = useState("");
+  const [destinationAddress, setDestinationAddress] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState("");
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -231,10 +235,14 @@ function ExporterDashboardPage() {
                     setEquipmentType(data.cargo?.equipmentType || "");
                     setDepartureDate(data.departureDate?.toDate());
                     setDeliveryDeadline(data.deliveryDeadline?.toDate());
+                    setPlaceOfReceipt(data.origin?.placeOfReceipt || "");
+                    setOtherPlaceOfReceipt(data.origin?.otherPlaceOfReceipt || "");
                     setPortOfLoading(data.origin?.portOfLoading || "");
-                    setOriginZip(data.origin?.zipCode || "");
-                    setPortOfDelivery(data.destination?.portOfDelivery || "");
-                    setDestinationZip(data.destination?.zipCode || "");
+                    setOriginAddress(data.origin?.address || "");
+                    setPortOfDischarge(data.destination?.portOfDischarge || "");
+                    setFinalPlaceOfDelivery(data.destination?.finalPlaceOfDelivery || "");
+                    setOtherFinalPlaceOfDelivery(data.destination?.otherFinalPlaceOfDelivery || "");
+                    setDestinationAddress(data.destination?.address || "");
                     setSpecialInstructions(data.specialInstructions || "");
                     
                     setEditingShipmentId(editId);
@@ -280,10 +288,14 @@ function ExporterDashboardPage() {
     setEquipmentType("");
     setDepartureDate(undefined);
     setDeliveryDeadline(undefined);
+    setPlaceOfReceipt("");
+    setOtherPlaceOfReceipt("");
     setPortOfLoading("");
-    setOriginZip("");
-    setPortOfDelivery("");
-    setDestinationZip("");
+    setOriginAddress("");
+    setPortOfDischarge("");
+    setFinalPlaceOfDelivery("");
+    setOtherFinalPlaceOfDelivery("");
+    setDestinationAddress("");
     setSpecialInstructions("");
     setEditingShipmentId(null);
   }
@@ -297,7 +309,7 @@ function ExporterDashboardPage() {
   }
 
   const handleValidation = () => {
-    if (!productName || !portOfLoading || !originZip || !portOfDelivery || !destinationZip || !departureDate || !deliveryDeadline) {
+    if (!productName || !portOfLoading || !originAddress || !portOfDischarge || !destinationAddress || !departureDate) {
       toast({ title: "Error", description: "Please fill out all required fields.", variant: "destructive" });
       return false;
     }
@@ -345,12 +357,16 @@ function ExporterDashboardPage() {
       departureDate: departureDate ? Timestamp.fromDate(departureDate) : null,
       deliveryDeadline: deliveryDeadline ? Timestamp.fromDate(deliveryDeadline) : null,
       origin: {
-          portOfLoading,
-          zipCode: originZip,
+        placeOfReceipt: placeOfReceipt,
+        otherPlaceOfReceipt: otherPlaceOfReceipt,
+        portOfLoading,
+        address: originAddress,
       },
       destination: {
-          portOfDelivery,
-          zipCode: destinationZip,
+        portOfDischarge,
+        finalPlaceOfDelivery: finalPlaceOfDelivery,
+        otherFinalPlaceOfDelivery: otherFinalPlaceOfDelivery,
+        address: destinationAddress,
       },
       specialInstructions,
       status: status,
@@ -407,6 +423,15 @@ function ExporterDashboardPage() {
         toast({title: "Error", description: "Please select a date and time to go live.", variant: "destructive"})
     }
   }
+  
+  const indianPortOptions = useMemo(() => {
+    return INDIAN_SEA_PORTS.map(port => ({ value: port, label: port }));
+  }, []);
+  
+  const foreignPortOptions = useMemo(() => {
+    return FOREIGN_SEA_PORTS.map(port => ({ value: port, label: port }));
+  }, []);
+
 
   const VerificationStatus = () => {
     const status = userData?.verificationStatus;
@@ -631,30 +656,74 @@ function ExporterDashboardPage() {
                     </CardContent>
                 </Card>
                 
-                <div className="grid md:grid-cols-2 gap-6">
+                 <div className="grid md:grid-cols-2 gap-6">
                     <Card className="bg-secondary">
-                        <CardHeader><CardTitle>Origin</CardTitle></CardHeader>
-                        <CardContent className="grid gap-6">
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Anchor className="h-5 w-5 text-primary" /> Origin</CardTitle></CardHeader>
+                        <CardContent className="grid gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="place-of-receipt">Place of Receipt</Label>
+                                <Select value={placeOfReceipt} onValueChange={setPlaceOfReceipt} disabled={isSubmitting}>
+                                    <SelectTrigger id="place-of-receipt"><SelectValue placeholder="Select an Inland Container Depot" /></SelectTrigger>
+                                    <SelectContent>
+                                        {INLAND_CONTAINER_DEPOTS.map(depot => <SelectItem key={depot} value={depot}>{depot}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {placeOfReceipt === 'Other' && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="other-place-of-receipt">Please specify Place of Receipt</Label>
+                                    <Input id="other-place-of-receipt" placeholder="Enter ICD name" value={otherPlaceOfReceipt} onChange={e => setOtherPlaceOfReceipt(e.target.value)} disabled={isSubmitting} />
+                                </div>
+                            )}
                             <div className="grid gap-2">
                                 <Label htmlFor="port-of-loading">Port of Loading</Label>
-                                <Input id="port-of-loading" placeholder="e.g., Port of Hamburg" value={portOfLoading} onChange={e => setPortOfLoading(e.target.value)} disabled={isSubmitting} />
+                                <Combobox
+                                    options={indianPortOptions}
+                                    value={portOfLoading}
+                                    onChange={setPortOfLoading}
+                                    placeholder="Search Indian ports..."
+                                    searchPlaceholder="Search ports..."
+                                    noResultsMessage="No ports found."
+                                />
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="origin-zip">Pin / Zip Code</Label>
-                                <Input id="origin-zip" placeholder="e.g., 20457" value={originZip} onChange={e => setOriginZip(e.target.value)} disabled={isSubmitting} />
+                             <div className="grid gap-2">
+                                <Label htmlFor="origin-address">Origin Address</Label>
+                                <Textarea id="origin-address" placeholder="Enter the full origin address" value={originAddress} onChange={e => setOriginAddress(e.target.value)} disabled={isSubmitting} />
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="bg-secondary">
-                        <CardHeader><CardTitle>Destination</CardTitle></CardHeader>
-                        <CardContent className="grid gap-6">
+                        <CardHeader><CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /> Destination</CardTitle></CardHeader>
+                        <CardContent className="grid gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="port-of-delivery">Port of Delivery</Label>
-                                <Input id="port-of-delivery" placeholder="e.g., Port of Shanghai" value={portOfDelivery} onChange={e => setPortOfDelivery(e.target.value)} disabled={isSubmitting} />
+                                <Label htmlFor="port-of-discharge">Port of Discharge</Label>
+                                <Combobox
+                                    options={foreignPortOptions}
+                                    value={portOfDischarge}
+                                    onChange={setPortOfDischarge}
+                                    placeholder="Search foreign ports..."
+                                    searchPlaceholder="Search ports..."
+                                    noResultsMessage="No ports found."
+                                />
                             </div>
+                             <div className="grid gap-2">
+                                <Label htmlFor="final-place-of-delivery">Final Place of Delivery</Label>
+                                <Select value={finalPlaceOfDelivery} onValueChange={setFinalPlaceOfDelivery} disabled={isSubmitting}>
+                                    <SelectTrigger id="final-place-of-delivery"><SelectValue placeholder="Select an Inland Container Depot" /></SelectTrigger>
+                                    <SelectContent>
+                                        {INLAND_CONTAINER_DEPOTS.map(depot => <SelectItem key={depot} value={depot}>{depot}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {finalPlaceOfDelivery === 'Other' && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="other-final-place-of-delivery">Please specify Final Place of Delivery</Label>
+                                    <Input id="other-final-place-of-delivery" placeholder="Enter ICD name" value={otherFinalPlaceOfDelivery} onChange={e => setOtherFinalPlaceOfDelivery(e.target.value)} disabled={isSubmitting} />
+                                </div>
+                            )}
                             <div className="grid gap-2">
-                                <Label htmlFor="destination-zip">Pin / Zip Code</Label>
-                                <Input id="destination-zip" placeholder="e.g., 200000" value={destinationZip} onChange={e => setDestinationZip(e.target.value)} disabled={isSubmitting} />
+                                <Label htmlFor="destination-address">Destination Address</Label>
+                                <Textarea id="destination-address" placeholder="Enter the full destination address" value={destinationAddress} onChange={e => setDestinationAddress(e.target.value)} disabled={isSubmitting} />
                             </div>
                         </CardContent>
                     </Card>
@@ -675,7 +744,7 @@ function ExporterDashboardPage() {
                     {editingShipmentId ? <Pencil className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
                      {isSubmitting ? 'Saving...' : (editingShipmentId ? 'Save Changes to Draft' : 'Save as Draft')}
                 </Button>
-                <Button type="button" onClick={handleOpenScheduleDialog} disabled={isSubmitting} className="w-full sm:w-auto">
+                <Button type="button" onClick={handleOpenScheduleDialog} disabled={isSubmitting || !isApproved} title={!isApproved ? "Your account must be approved to schedule shipments." : ""}>
                   <Clock className="mr-2 h-4 w-4" />
                   Schedule
                 </Button>
@@ -729,7 +798,7 @@ function ExporterDashboardPage() {
               {products.map((product) => (
                 <TableRow key={product.id} onClick={() => router.push(`/dashboard/shipment/${product.id}`)} className="cursor-pointer">
                   <TableCell className="font-medium">{product.productName || 'N/A'}</TableCell>
-                  <TableCell className="hidden md:table-cell">{product.destination?.portOfDelivery || 'N/A'}</TableCell>
+                  <TableCell className="hidden md:table-cell">{product.destination?.portOfDischarge || 'N/A'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{product.departureDate ? format(product.departureDate.toDate(), "PP") : 'N/A'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{product.deliveryDeadline ? format(product.deliveryDeadline.toDate(), "PP") : 'N/A'}</TableCell>
                   <TableCell className="text-center">

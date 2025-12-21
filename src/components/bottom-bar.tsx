@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,28 +13,22 @@ import { LayoutDashboard, Truck, Gavel, Ship, Bell } from "lucide-react";
 
 type UserType = "carrier" | "exporter" | "employee" | null;
 
-const NavItem = ({ href, icon: Icon, label, isActive, badgeCount }: { href: string, icon: React.ElementType, label: string, isActive: boolean, badgeCount?: number }) => (
+const NavItem = ({ href, icon: Icon, label, isActive }: { href: string, icon: React.ElementType, label: string, isActive: boolean }) => (
     <Link href={href} className={cn(
         "relative flex flex-col items-center justify-center gap-1 w-full h-full rounded-lg transition-colors",
         isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-secondary"
     )}>
         <Icon className="h-6 w-6" />
         <span className="text-xs font-medium">{label}</span>
-         {badgeCount !== undefined && badgeCount > 0 && (
-            <span className="absolute top-2 right-6 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                {badgeCount}
-            </span>
-        )}
     </Link>
 );
 
-const CarrierBottomNav = ({ unreadCount }: { unreadCount: number }) => {
+const CarrierBottomNav = () => {
     const pathname = usePathname();
     const carrierLinks = [
         { href: "/dashboard/carrier", label: "Dashboard", icon: LayoutDashboard },
         { href: "/dashboard/carrier/find-shipments", label: "Find Shipments", icon: Truck },
         { href: "/dashboard/carrier/my-bids", label: "My Bids", icon: Gavel },
-        { href: "/dashboard/notifications", label: "Notifications", icon: Bell, badgeCount: unreadCount },
     ];
     return (
         <div className="flex h-full items-center justify-evenly gap-2">
@@ -51,7 +46,6 @@ const CarrierBottomNav = ({ unreadCount }: { unreadCount: number }) => {
                         icon={link.icon}
                         label={link.label}
                         isActive={isActive}
-                        badgeCount={link.badgeCount}
                     />
                 )
             })}
@@ -59,11 +53,10 @@ const CarrierBottomNav = ({ unreadCount }: { unreadCount: number }) => {
     );
 };
 
-const ExporterBottomNav = ({ unreadCount }: { unreadCount: number }) => {
+const ExporterBottomNav = () => {
     const pathname = usePathname();
     const exporterLinks = [
         { href: "/dashboard/exporter", label: "My Shipments", icon: Ship },
-        { href: "/dashboard/notifications", label: "Notifications", icon: Bell, badgeCount: unreadCount },
     ];
     return (
         <div className="flex h-full items-center justify-evenly gap-2">
@@ -76,7 +69,6 @@ const ExporterBottomNav = ({ unreadCount }: { unreadCount: number }) => {
                         icon={link.icon}
                         label={link.label}
                         isActive={isActive}
-                        badgeCount={link.badgeCount}
                     />
                 )
             })}
@@ -89,7 +81,6 @@ export function BottomBar() {
   const [user, setUser] = useState<User | null>(null);
   const [userType, setUserType] = useState<UserType>(null);
   const [loading, setLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -110,25 +101,6 @@ export function BottomBar() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!user) {
-        setUnreadCount(0);
-        return;
-    };
-
-    const q = query(
-      collection(db, "notifications"),
-      where("recipientId", "==", user.uid),
-      where("isRead", "==", false)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setUnreadCount(snapshot.size);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
   const hideOnPaths = ["/login", "/signup", "/gst-verification", "/select-type", "/how-it-works", "/support"];
   const isHidden = hideOnPaths.some(path => pathname.startsWith(path)) || pathname === '/';
 
@@ -139,9 +111,9 @@ export function BottomBar() {
   const renderNavForUser = () => {
       switch(userType) {
           case 'carrier':
-              return <CarrierBottomNav unreadCount={unreadCount} />;
+              return <CarrierBottomNav />;
           case 'exporter':
-              return <ExporterBottomNav unreadCount={unreadCount} />;
+              return <ExporterBottomNav />;
           default:
               return null; // No bottom bar for employees or other roles
       }

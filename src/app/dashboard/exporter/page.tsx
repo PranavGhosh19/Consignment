@@ -40,7 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { CbmCalculatorDialog } from "@/components/cbm-calculator-dialog";
-import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS, INLAND_CONTAINER_DEPOTS, INDIAN_SEA_PORTS, FOREIGN_SEA_PORTS, ATTACHMENT_TYPES } from "@/lib/constants";
+import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS, INLAND_CONTAINER_DEPOTS, FOREIGN_SEA_PORTS, ATTACHMENT_TYPES } from "@/lib/constants";
 import { Combobox } from "@/components/ui/combobox";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -97,6 +97,14 @@ function ExporterDashboardPage() {
   const [finalPlaceOfDelivery, setFinalPlaceOfDelivery] = useState("");
   const [otherFinalPlaceOfDelivery, setOtherFinalPlaceOfDelivery] = useState("");
   const [destinationAddress, setDestinationAddress] = useState("");
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [packingListNo, setPackingListNo] = useState("");
+  const [buyerCompanyName, setBuyerCompanyName] = useState("");
+  const [buyerCountry, setBuyerCountry] = useState("");
+  const [buyerAddress, setBuyerAddress] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [attachments, setAttachments] = useState<string[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState("");
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -244,6 +252,14 @@ function ExporterDashboardPage() {
                     setFinalPlaceOfDelivery(data.destination?.finalPlaceOfDelivery || "");
                     setOtherFinalPlaceOfDelivery(data.destination?.otherFinalPlaceOfDelivery || "");
                     setDestinationAddress(data.destination?.address || "");
+                    setInvoiceNo(data.documentation?.invoiceNo || "");
+                    setPackingListNo(data.documentation?.packingListNo || "");
+                    setBuyerCompanyName(data.buyer?.companyName || "");
+                    setBuyerCountry(data.buyer?.country || "");
+                    setBuyerAddress(data.buyer?.address || "");
+                    setBuyerEmail(data.buyer?.email || "");
+                    setBuyerPhone(data.buyer?.phone || "");
+                    setAttachments(data.certificationsNeeded || []);
                     setSpecialInstructions(data.specialInstructions || "");
                     
                     setEditingShipmentId(editId);
@@ -297,6 +313,14 @@ function ExporterDashboardPage() {
     setFinalPlaceOfDelivery("");
     setOtherFinalPlaceOfDelivery("");
     setDestinationAddress("");
+    setInvoiceNo("");
+    setPackingListNo("");
+    setBuyerCompanyName("");
+    setBuyerCountry("");
+    setBuyerAddress("");
+    setBuyerEmail("");
+    setBuyerPhone("");
+    setAttachments([]);
     setSpecialInstructions("");
     setEditingShipmentId(null);
   }
@@ -369,6 +393,18 @@ function ExporterDashboardPage() {
         otherFinalPlaceOfDelivery: otherFinalPlaceOfDelivery,
         address: destinationAddress,
       },
+      documentation: {
+        invoiceNo,
+        packingListNo,
+      },
+      buyer: {
+        companyName: buyerCompanyName,
+        country: buyerCountry,
+        address: buyerAddress,
+        email: buyerEmail,
+        phone: buyerPhone,
+      },
+      certificationsNeeded: attachments,
       specialInstructions,
       status: status,
       ...(goLiveTimestamp && { goLiveAt: goLiveTimestamp })
@@ -425,7 +461,7 @@ function ExporterDashboardPage() {
     }
   }
   
-  const indianPortOptions = useMemo(() => {
+  const allPortsOptions = useMemo(() => {
     return FOREIGN_SEA_PORTS.map(port => ({ value: port, label: port }));
   }, []);
   
@@ -679,7 +715,7 @@ function ExporterDashboardPage() {
                             <div className="grid gap-2">
                                 <Label htmlFor="port-of-loading">Port of Loading</Label>
                                 <Combobox
-                                    options={indianPortOptions}
+                                    options={allPortsOptions}
                                     value={portOfLoading}
                                     onChange={setPortOfLoading}
                                     placeholder="Search ports..."
@@ -736,7 +772,7 @@ function ExporterDashboardPage() {
                       <div className="grid gap-4">
                           <div className="grid gap-2">
                               <Label htmlFor="invoice-number">Export Invoice Number</Label>
-                              <Input id="invoice-number" placeholder="e.g., EXP-001/23-24" />
+                              <Input id="invoice-number" placeholder="e.g., EXP-001/23-24" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} />
                           </div>
                           <div className="grid gap-2">
                               <Label htmlFor="invoice-upload">Invoice Upload</Label>
@@ -746,7 +782,7 @@ function ExporterDashboardPage() {
                       <div className="grid gap-4">
                           <div className="grid gap-2">
                               <Label htmlFor="packing-list-number">Packing List Number</Label>
-                              <Input id="packing-list-number" placeholder="e.g., PKL-001/23-24" />
+                              <Input id="packing-list-number" placeholder="e.g., PKL-001/23-24" value={packingListNo} onChange={(e) => setPackingListNo(e.target.value)} />
                           </div>
                           <div className="grid gap-2">
                               <Label htmlFor="packing-list-upload">Packing List Upload</Label>
@@ -764,23 +800,23 @@ function ExporterDashboardPage() {
                   <CardContent className="grid md:grid-cols-2 gap-6">
                       <div className="grid gap-2">
                         <Label>Company Name</Label>
-                        <Input placeholder="Buyer's company name" />
+                        <Input placeholder="Buyer's company name" value={buyerCompanyName} onChange={(e) => setBuyerCompanyName(e.target.value)} />
                       </div>
                       <div className="grid gap-2">
                         <Label>Country</Label>
-                        <Input placeholder="Country" />
+                        <Input placeholder="Country" value={buyerCountry} onChange={(e) => setBuyerCountry(e.target.value)} />
                       </div>
                       <div className="grid gap-2 md:col-span-2">
                         <Label>Address</Label>
-                        <Textarea placeholder="Full address" />
+                        <Textarea placeholder="Full address" value={buyerAddress} onChange={(e) => setBuyerAddress(e.target.value)} />
                       </div>
                       <div className="grid gap-2">
                         <Label>Email</Label>
-                        <Input type="email" placeholder="Buyer's email" />
+                        <Input type="email" placeholder="Buyer's email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} />
                       </div>
                       <div className="grid gap-2">
                         <Label>Phone</Label>
-                        <Input type="tel" placeholder="Buyer's phone" />
+                        <Input type="tel" placeholder="Buyer's phone" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} />
                       </div>
                   </CardContent>
                 </Card>
@@ -794,7 +830,17 @@ function ExporterDashboardPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {ATTACHMENT_TYPES.map((item) => (
                             <div key={item} className="flex items-center space-x-2">
-                                <Checkbox id={`attachment-${item}`} />
+                                <Checkbox
+                                    id={`attachment-${item}`}
+                                    checked={attachments.includes(item)}
+                                    onCheckedChange={(checked) => {
+                                        if (checked) {
+                                            setAttachments(prev => [...prev, item]);
+                                        } else {
+                                            setAttachments(prev => prev.filter(i => i !== item));
+                                        }
+                                    }}
+                                />
                                 <Label htmlFor={`attachment-${item}`} className="font-normal">{item}</Label>
                             </div>
                         ))}
@@ -898,4 +944,3 @@ function ExporterDashboardPage() {
   );
 }
 
-    

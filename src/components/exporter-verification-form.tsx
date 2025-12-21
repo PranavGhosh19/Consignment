@@ -136,7 +136,7 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
 
     const handleSubmit = async () => {
         setIsConfirmOpen(false);
-        if (isExporter && (!companyName || !gst || !pan || !iecCode || !adCode)) {
+        if (isExporter && (!companyName || !gst || !pan || !iecCode || !adCode || !companyType)) {
              toast({ title: "Missing Fields", description: "Please fill out all required text fields.", variant: "destructive" });
              return;
         }
@@ -157,6 +157,7 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
                 legalName: companyName,
                 gstin: gst,
                 pan,
+                companyType,
             };
 
             // Only update file URL if a new file is provided
@@ -202,7 +203,6 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
             // Carrier specific fields
             if (isCarrier) {
                 companyDetailsPayload.licenseNumber = licenseNumber;
-                companyDetailsPayload.companyType = companyType;
                 if (licenseFile) {
                   const licenseUpload = await uploadFile(licenseFile, 'license');
                   companyDetailsPayload.licenseFileUrl = licenseUpload.url;
@@ -253,9 +253,28 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
                     <CardContent className="space-y-6">
                         <div className="space-y-4">
                             <h3 className="text-lg font-medium">Company Details</h3>
-                            <div className="grid gap-2">
-                                <Label htmlFor="company-name">Name of the Company</Label>
-                                <Input id="company-name" value={companyName} onChange={e => setCompanyName(e.target.value)} disabled={isSubmitting} />
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="company-name">Name of the Company</Label>
+                                    <Input id="company-name" value={companyName} onChange={e => setCompanyName(e.target.value)} disabled={isSubmitting} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="company-type">Company Type</Label>
+                                    <Select value={companyType} onValueChange={setCompanyType} disabled={isSubmitting}>
+                                        <SelectTrigger id="company-type">
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Sole Proprietorship">Sole Proprietorship</SelectItem>
+                                            <SelectItem value="Partnership">Partnership</SelectItem>
+                                            <SelectItem value="Limited Liability Partnership (LLP)">Limited Liability Partnership (LLP)</SelectItem>
+                                            <SelectItem value="Private Limited Company">Private Limited Company</SelectItem>
+                                            <SelectItem value="Public Limited Company">Public Limited Company</SelectItem>
+                                            <SelectItem value="Foreign Company">Foreign Company</SelectItem>
+                                            <SelectItem value="Multinational Company (MNC)">Multinational Company (MNC)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
 
@@ -324,25 +343,6 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
                                             <Input id="license-number" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} disabled={isSubmitting} />
                                         </div>
                                         <FileInput id="license-file" onFileChange={handleFileChange(setLicenseFile)} disabled={isSubmitting} file={licenseFile} currentFileUrl={existingDetails?.licenseFileUrl} />
-                                    </div>
-                                     <div className="grid sm:grid-cols-2 gap-4">
-                                         <div className="grid gap-2">
-                                            <Label htmlFor="company-type">Company Type</Label>
-                                            <Select value={companyType} onValueChange={setCompanyType} disabled={isSubmitting}>
-                                                <SelectTrigger id="company-type">
-                                                    <SelectValue placeholder="Select type" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Sole Proprietorship">Sole Proprietorship</SelectItem>
-                                                    <SelectItem value="Partnership">Partnership</SelectItem>
-                                                    <SelectItem value="Limited Liability Partnership (LLP)">Limited Liability Partnership (LLP)</SelectItem>
-                                                    <SelectItem value="Private Limited Company">Private Limited Company</SelectItem>
-                                                    <SelectItem value="Public Limited Company">Public Limited Company</SelectItem>
-                                                    <SelectItem value="Foreign Company">Foreign Company</SelectItem>
-                                                    <SelectItem value="Multinational Company (MNC)">Multinational Company (MNC)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
                                     </div>
                                 </div>
                             </>

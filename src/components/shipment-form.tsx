@@ -17,7 +17,7 @@ import {
   FOREIGN_SEA_PORTS,
   ATTACHMENT_TYPES,
   EQUIPMENT_TYPES,
-  CARGO_TYPES,
+  CARGO_TYPES_BY_MODE,
   PACKAGE_TYPES,
 } from "@/lib/constants";
 

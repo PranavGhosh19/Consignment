@@ -333,9 +333,13 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
                                                     <SelectValue placeholder="Select type" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="individual">Individual</SelectItem>
-                                                    <SelectItem value="company">Company</SelectItem>
-                                                    <SelectItem value="overseas">Overseas</SelectItem>
+                                                    <SelectItem value="Sole Proprietorship">Sole Proprietorship</SelectItem>
+                                                    <SelectItem value="Partnership">Partnership</SelectItem>
+                                                    <SelectItem value="Limited Liability Partnership (LLP)">Limited Liability Partnership (LLP)</SelectItem>
+                                                    <SelectItem value="Private Limited Company">Private Limited Company</SelectItem>
+                                                    <SelectItem value="Public Limited Company">Public Limited Company</SelectItem>
+                                                    <SelectItem value="Foreign Company">Foreign Company</SelectItem>
+                                                    <SelectItem value="Multinational Company (MNC)">Multinational Company (MNC)</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -376,5 +380,3 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
         </>
     );
 }
-
-    

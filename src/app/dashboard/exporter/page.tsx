@@ -426,7 +426,7 @@ function ExporterDashboardPage() {
   }
   
   const indianPortOptions = useMemo(() => {
-    return INDIAN_SEA_PORTS.map(port => ({ value: port, label: port }));
+    return FOREIGN_SEA_PORTS.map(port => ({ value: port, label: port }));
   }, []);
   
   const foreignPortOptions = useMemo(() => {
@@ -682,7 +682,7 @@ function ExporterDashboardPage() {
                                     options={indianPortOptions}
                                     value={portOfLoading}
                                     onChange={setPortOfLoading}
-                                    placeholder="Search Indian ports..."
+                                    placeholder="Search ports..."
                                     searchPlaceholder="Search ports..."
                                     noResultsMessage="No ports found."
                                 />
@@ -897,3 +897,5 @@ function ExporterDashboardPage() {
     </>
   );
 }
+
+    

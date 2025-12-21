@@ -60,12 +60,12 @@ export function NotificationBell() {
   }, [user]);
 
   const handleNotificationClick = async (notification: Notification) => {
-    if (notification.link) {
-      router.push(notification.link);
-    }
     if (!notification.isRead) {
       const notifRef = doc(db, "notifications", notification.id);
       await updateDoc(notifRef, { isRead: true });
+    }
+    if (notification.link) {
+      router.push(notification.link);
     }
   };
 
@@ -109,6 +109,14 @@ export function NotificationBell() {
             <Info className="h-4 w-4" />
             No new notifications
           </DropdownMenuItem>
+        )}
+         {notifications.length > 0 && (
+            <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/dashboard/notifications')} className="justify-center">
+                    View All Notifications
+                </DropdownMenuItem>
+            </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

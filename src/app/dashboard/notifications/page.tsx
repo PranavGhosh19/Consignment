@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, query, DocumentData, orderBy, doc, getDoc, onSnapshot, where, Timestamp, writeBatch } from 'firebase/firestore';
+import { collection, query, DocumentData, orderBy, doc, getDoc, onSnapshot, where, Timestamp, writeBatch, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -83,7 +83,11 @@ export default function NotificationsPage() {
       }
   };
   
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.isRead) {
+        const notifRef = doc(db, "notifications", notification.id);
+        await updateDoc(notifRef, { isRead: true });
+    }
     if (notification.link) {
       router.push(notification.link);
     }

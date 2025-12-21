@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator, Anchor, MapPin, Receipt } from "lucide-react";
+import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator, Anchor, MapPin, Receipt, User as UserIcon } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -754,6 +754,35 @@ function ExporterDashboardPage() {
                       </div>
                   </CardContent>
                 </Card>
+
+                <Card className="bg-secondary">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><UserIcon className="h-5 w-5 text-primary" />Buyer's / Seller's Information</CardTitle>
+                    <CardDescription>Details of the overseas buyer.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid md:grid-cols-2 gap-6">
+                      <div className="grid gap-2">
+                        <Label>Company Name</Label>
+                        <Input placeholder="Buyer's company name" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Country</Label>
+                        <Input placeholder="Country" />
+                      </div>
+                      <div className="grid gap-2 md:col-span-2">
+                        <Label>Address</Label>
+                        <Textarea placeholder="Full address" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Email</Label>
+                        <Input type="email" placeholder="Buyer's email" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Phone</Label>
+                        <Input type="tel" placeholder="Buyer's phone" />
+                      </div>
+                  </CardContent>
+                </Card>
                 
                 <Card className="bg-secondary">
                     <CardHeader><CardTitle>Additional Information</CardTitle></CardHeader>
@@ -850,5 +879,3 @@ function ExporterDashboardPage() {
     </>
   );
 }
-
-    

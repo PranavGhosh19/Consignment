@@ -1,12 +1,20 @@
 export const SHIPMENT_TYPES = ["EXPORT", "IMPORT", "COASTAL MOVEMENT"] as const;
 
 export const MODES_OF_SHIPMENT = [
+    "Air Cargo",
     "Sea – FCL (Full Container Load)",
     "Sea – LCL (Less than Container Load)",
-    "Air Cargo",
-    "Land – FTL (Full Truck Load)",
-    "Land – LTL (Less than Truck Load)"
+    "Sea – Break Bulk",
+    "Courier / Express Cargo",
 ] as const;
+
+export const CARGO_TYPES_BY_MODE = {
+    "Air Cargo": ["General Cargo", "Perishable", "Live Animals", "HAZMAT"],
+    "Sea – FCL (Full Container Load)": ["General Cargo", "Bulk (Dry)", "Bulk (Liquid)", "Reefer / Temperature-Controlled", "HAZMAT", "Oversized / Out-of-Gauge", "Project Cargo"],
+    "Sea – LCL (Less than Container Load)": ["General Cargo", "HAZMAT"],
+    "Sea – Break Bulk": ["General Cargo", "Bulk (Dry)", "Oversized / Out-of-Gauge", "Project Cargo"],
+    "Courier / Express Cargo": ["General Cargo", "Documents"],
+};
 
 export const DIMENSION_UNITS = ["CMS", "FEET", "MM", "METRE"] as const;
 
@@ -156,7 +164,7 @@ export const EQUIPMENT_TYPES = [
 ] as const;
 
 export const PACKAGE_TYPES = [
-    "BAGS", "BALES", "BARRELS", "BOXES", "BUNDLES", "CAGES", "CANISTERS", "CANS", "CARTONS", "CASES", "COILS", "CRATES", "CYLINDERS", "DRUMS", "PALLETS", "PIECES", "REELS", "ROLLS", "SKIDS", "UNITS", "OTHER"
+    "PALLET", "PALLETS", "BOX", "BOXES", "UNIT", "UNITS", "CASE", "CASES", "INTERMEDIATE BULK CONTAINERS", "BALES", "PACKET", "PACKETS"
 ] as const;
 
 export const CARGO_TYPES = [

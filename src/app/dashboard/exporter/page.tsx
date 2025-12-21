@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Send, Pencil, Clock, ShieldAlert } from "lucide-react";
+import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +40,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { CbmCalculatorDialog } from "@/components/cbm-calculator-dialog";
+import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS } from "@/lib/constants";
+
 
 const PageSkeleton = () => (
     <div className="container py-6 md:py-10">
@@ -50,46 +53,6 @@ const PageSkeleton = () => (
         <Skeleton className="h-64 w-full" />
     </div>
 );
-
-const airCargoTypes = [
-  { value: "General Cargo", label: "General Cargo" },
-  { value: "Perishable Goods", label: "Perishable Goods" },
-  { value: "Live Animals", label: "Live Animals" },
-  { value: "HAZMAT / Dangerous", label: "HAZMAT / Dangerous" },
-];
-
-const lclCargoTypes = [
-  { value: "General Cargo", label: "General Cargo" },
-  { value: "HAZMAT / Dangerous", label: "HAZMAT / Dangerous" },
-];
-
-const otherCargoTypes = [
-  { value: "General Cargo", label: "General Cargo" },
-  { value: "Bulk (Dry)", label: "Bulk (Dry)" },
-  { value: "Bulk (Liquid)", label: "Bulk (Liquid)" },
-  { value: "Reefer / Temperature-Controlled", label: "Reefer / Temperature-Controlled" },
-  { value: "HAZMAT / Dangerous", label: "HAZMAT / Dangerous" },
-  { value: "Roll-on/Roll-off (RoRo)", label: "Roll-on/Roll-off (RoRo)" },
-  { value: "Oversized / Out-of-Gauge", label: "Oversized / Out-of-Gauge" },
-  { value: "Project Cargo", label: "Project Cargo" },
-  { value: "Perishable Goods", label: "Perishable Goods" },
-  { value: "Live Animals", label: "Live Animals" },
-];
-
-const packageTypes = [
-    { value: "PALLET", label: "PALLET" },
-    { value: "PALLETS", label: "PALLETS" },
-    { value: "BOX", label: "BOX" },
-    { value: "BOXES", label: "BOXES" },
-    { value: "UNIT", label: "UNIT" },
-    { value: "UNITS", label: "UNITS" },
-    { value: "CASE", label: "CASE" },
-    { value: "CASES", label: "CASES" },
-    { value: "INTERMEDIATE BULK CONTAINERS", label: "INTERMEDIATE BULK CONTAINERS" },
-    { value: "BALES", label: "BALES" },
-    { value: "PACKET", label: "PACKET" },
-    { value: "PACKETS", label: "PACKETS" },
-];
 
 
 export default function ExporterDashboardPageWrapper() {
@@ -120,6 +83,9 @@ function ExporterDashboardPage() {
   const [dimensionW, setDimensionW] = useState("");
   const [dimensionH, setDimensionH] = useState("");
   const [dimensionUnit, setDimensionUnit] = useState("CMS");
+  const [incoterm, setIncoterm] = useState("");
+  const [numberOfPackages, setNumberOfPackages] = useState("");
+  const [equipmentType, setEquipmentType] = useState("");
   const [departureDate, setDepartureDate] = useState<Date>();
   const [deliveryDeadline, setDeliveryDeadline] = useState<Date>();
   const [portOfLoading, setPortOfLoading] = useState("");
@@ -131,37 +97,48 @@ function ExporterDashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [isCbmDialogOpen, setIsCbmDialogOpen] = useState(false);
   const [goLiveDate, setGoLiveDate] = useState<Date | undefined>();
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+
+  const isFCL = modeOfShipment === "Sea – FCL (Full Container Load)";
   
   const cargoTypeOptions = useMemo(() => {
-    if (modeOfShipment === 'Air') {
-        return airCargoTypes;
+    if (modeOfShipment && (CARGO_TYPES_BY_MODE as any)[modeOfShipment]) {
+        return (CARGO_TYPES_BY_MODE as any)[modeOfShipment];
     }
-    if (modeOfShipment === 'Less than Container Load') {
-        return lclCargoTypes;
-    }
-    return otherCargoTypes;
+    return [];
   }, [modeOfShipment]);
 
   const showDimensions = useMemo(() => {
-    if (modeOfShipment === 'Air') {
-      const validCargoTypes = ['General Cargo', 'HAZMAT / Dangerous', 'Perishable Goods'];
-      return validCargoTypes.includes(cargoType);
-    }
-    if (modeOfShipment === 'Less than Container Load') {
-      const validCargoTypes = ['General Cargo', 'HAZMAT / Dangerous'];
-      return validCargoTypes.includes(cargoType);
-    }
-    return false;
+    return (modeOfShipment === "Air Cargo" || modeOfShipment === "Sea – LCL (Less than Container Load)") && ["General Cargo", "HAZMAT", "Perishable"].includes(cargoType);
   }, [modeOfShipment, cargoType]);
+
+  const calculatedCBM = useMemo(() => {
+    const l = parseFloat(dimensionL) || 0;
+    const w = parseFloat(dimensionW) || 0;
+    const h = parseFloat(dimensionH) || 0;
+    const packages = parseInt(numberOfPackages, 10) || 0;
+
+    if (l <= 0 || w <= 0 || h <= 0 || packages <= 0) return 0;
+    
+    let cbmValue = l * w * h * packages;
+    switch (dimensionUnit) {
+        case "CMS": cbmValue /= 1000000; break;
+        case "FEET": cbmValue *= 0.0283168; break;
+        case "MM": cbmValue /= 1000000000; break;
+        case "METRE": break;
+    }
+    return parseFloat(cbmValue.toFixed(4));
+  }, [dimensionL, dimensionW, dimensionH, numberOfPackages, dimensionUnit]);
+
 
   useEffect(() => {
     // Reset cargo type if it's not in the current options
-    if (cargoType && !cargoTypeOptions.find(opt => opt.value === cargoType)) {
+    if (cargoType && !cargoTypeOptions.find((opt: string) => opt === cargoType)) {
         setCargoType("");
     }
   }, [cargoType, cargoTypeOptions]);
@@ -249,6 +226,9 @@ function ExporterDashboardPage() {
                     setDimensionW(data.cargo?.dimensions?.width || "");
                     setDimensionH(data.cargo?.dimensions?.height || "");
                     setDimensionUnit(data.cargo?.dimensions?.unit || "CMS");
+                    setIncoterm(data.incoterm || "");
+                    setNumberOfPackages(data.cargo?.numberOfPackages || "");
+                    setEquipmentType(data.cargo?.equipmentType || "");
                     setDepartureDate(data.departureDate?.toDate());
                     setDeliveryDeadline(data.deliveryDeadline?.toDate());
                     setPortOfLoading(data.origin?.portOfLoading || "");
@@ -295,6 +275,9 @@ function ExporterDashboardPage() {
     setDimensionW("");
     setDimensionH("");
     setDimensionUnit("CMS");
+    setIncoterm("");
+    setNumberOfPackages("");
+    setEquipmentType("");
     setDepartureDate(undefined);
     setDeliveryDeadline(undefined);
     setPortOfLoading("");
@@ -318,8 +301,8 @@ function ExporterDashboardPage() {
       toast({ title: "Error", description: "Please fill out all required fields.", variant: "destructive" });
       return false;
     }
-    if (hsnCode && hsnCode.length < 4) {
-      toast({ title: "Invalid HSN Code", description: "HSN / ITC-HS Code must be at least 4 digits.", variant: "destructive" });
+    if (hsnCode && (hsnCode.length < 6 || hsnCode.length > 8 || !/^\d+$/.test(hsnCode))) {
+      toast({ title: "Invalid HSN Code", description: "HSN / ITC-HS Code must be 6-8 digits.", variant: "destructive" });
       return false;
     }
     if (!user) {
@@ -355,7 +338,10 @@ function ExporterDashboardPage() {
           height: dimensionH,
           unit: dimensionUnit,
         },
+        numberOfPackages: numberOfPackages,
+        equipmentType: equipmentType,
       },
+      incoterm: incoterm,
       departureDate: departureDate ? Timestamp.fromDate(departureDate) : null,
       deliveryDeadline: deliveryDeadline ? Timestamp.fromDate(deliveryDeadline) : null,
       origin: {
@@ -472,6 +458,7 @@ function ExporterDashboardPage() {
   }
 
   return (
+    <>
     <div className="container py-6 md:py-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold font-headline">My Shipments</h1>
@@ -483,11 +470,19 @@ function ExporterDashboardPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-headline">{editingShipmentId ? 'Edit Shipment' : 'New Shipment'}</DialogTitle>
-                <DialogDescription>
-                  Fill out the form below to create or update your shipment request.
-                </DialogDescription>
+              <DialogHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <DialogTitle className="text-2xl font-headline">{editingShipmentId ? 'Edit Shipment' : 'New Shipment'}</DialogTitle>
+                  <DialogDescription>
+                    Fill out the form below to create or update your shipment request.
+                  </DialogDescription>
+                </div>
+                {isFCL && (
+                  <Button variant="outline" size="icon" type="button" onClick={() => setIsCbmDialogOpen(true)}>
+                    <Calculator className="h-4 w-4" />
+                    <span className="sr-only">Open CBM Calculator</span>
+                  </Button>
+                )}
               </DialogHeader>
               <div className="grid gap-6 py-4">
                 <Card className="bg-secondary">
@@ -521,10 +516,9 @@ function ExporterDashboardPage() {
                           <SelectValue placeholder="Select a mode" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Air">Air</SelectItem>
-                          <SelectItem value="Full Container Load">Full Container Load</SelectItem>
-                          <SelectItem value="Less than Container Load">Less than Container Load</SelectItem>
-                          <SelectItem value="Break Bulk">Break Bulk</SelectItem>
+                          {MODES_OF_SHIPMENT.map((mode) => (
+                            <SelectItem key={mode} value={mode}>{mode}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -535,25 +529,44 @@ function ExporterDashboardPage() {
                           <SelectValue placeholder="Select a cargo type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {cargoTypeOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          {cargoTypeOptions.map((option: string) => (
+                            <SelectItem key={option} value={option}>{option}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
+                    {!isFCL && (
+                      <div className="grid gap-2">
+                        <Label htmlFor="package-type">Package Type</Label>
+                        <Select value={packageType} onValueChange={setPackageType} disabled={isSubmitting}>
+                          <SelectTrigger id="package-type">
+                            <SelectValue placeholder="Select a package type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PACKAGE_TYPES.map((option) => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="grid gap-2">
-                      <Label htmlFor="package-type">Package Type</Label>
-                      <Select value={packageType} onValueChange={setPackageType} disabled={isSubmitting}>
-                        <SelectTrigger id="package-type">
-                          <SelectValue placeholder="Select a package type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {packageTypes.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <Label htmlFor="number-of-packages">{isFCL ? "Number of Containers" : "Number of Packages"}</Label>
+                        <Input id="number-of-packages" type="number" placeholder="e.g., 10" value={numberOfPackages} onChange={e => setNumberOfPackages(e.target.value)} disabled={isSubmitting} />
                     </div>
+
+                    {isFCL && (
+                        <div className="grid gap-2">
+                            <Label htmlFor="equipment-type">Equipment Type</Label>
+                            <Select value={equipmentType} onValueChange={setEquipmentType} disabled={isSubmitting}>
+                                <SelectTrigger id="equipment-type"><SelectValue placeholder="Select equipment" /></SelectTrigger>
+                                <SelectContent>
+                                    {PACKAGE_TYPES.map(eq => <SelectItem key={eq} value={eq}>{eq}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
                     <div className="grid gap-2">
                       <Label htmlFor="weight">Total Weight</Label>
                       <div className="flex items-center">
@@ -563,7 +576,7 @@ function ExporterDashboardPage() {
                     </div>
                     {showDimensions && (
                       <div className="grid gap-2 lg:col-span-3">
-                        <Label>Dimensions (L x W x H)</Label>
+                        <Label>Dimensions (per package)</Label>
                         <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
                             <Input placeholder="Length" value={dimensionL} onChange={e => setDimensionL(e.target.value)} disabled={isSubmitting} />
                             <Input placeholder="Width" value={dimensionW} onChange={e => setDimensionW(e.target.value)} disabled={isSubmitting} />
@@ -573,15 +586,24 @@ function ExporterDashboardPage() {
                                   <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                  <SelectItem value="CMS">CMS</SelectItem>
-                                  <SelectItem value="FEET">FEET</SelectItem>
-                                  <SelectItem value="MM">MM</SelectItem>
-                                  <SelectItem value="METRE">METRE</SelectItem>
+                                  {DIMENSION_UNITS.map((unit) => (
+                                    <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                         </div>
+                         {calculatedCBM > 0 && <Badge variant="secondary" className="w-fit">Total CBM: {calculatedCBM}</Badge>}
                       </div>
                     )}
+                     <div className="grid gap-2">
+                        <Label htmlFor="incoterm">Incoterms</Label>
+                        <Select value={incoterm} onValueChange={setIncoterm} disabled={isSubmitting}>
+                            <SelectTrigger id="incoterm"><SelectValue placeholder="Select Incoterm" /></SelectTrigger>
+                            <SelectContent>
+                                {INCOTERMS.map(term => <SelectItem key={term} value={term}>{term}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -649,13 +671,13 @@ function ExporterDashboardPage() {
                 </Card>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={handleOpenScheduleDialog} disabled={isSubmitting} className="w-full sm:w-auto">
-                    <Clock className="mr-2 h-4 w-4" />
-                    Schedule
+                <Button variant="outline" onClick={() => handleSubmit('draft')} disabled={isSubmitting}>
+                    {editingShipmentId ? <Pencil className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+                     {isSubmitting ? 'Saving...' : (editingShipmentId ? 'Save Changes to Draft' : 'Save as Draft')}
                 </Button>
-                <Button type="submit" onClick={() => handleSubmit('draft')} disabled={isSubmitting} className="w-full sm:w-auto">
-                  {editingShipmentId ? <Pencil className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
-                  {isSubmitting ? 'Saving...' : (editingShipmentId ? 'Save Changes' : 'Submit as Draft')}
+                <Button type="button" onClick={handleOpenScheduleDialog} disabled={isSubmitting} className="w-full sm:w-auto">
+                  <Clock className="mr-2 h-4 w-4" />
+                  Schedule
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -729,5 +751,7 @@ function ExporterDashboardPage() {
         )
       )}
     </div>
+    <CbmCalculatorDialog open={isCbmDialogOpen} setOpen={setIsCbmDialogOpen} />
+    </>
   );
 }

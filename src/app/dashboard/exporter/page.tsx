@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator, Anchor, MapPin, Receipt, User as UserIcon } from "lucide-react";
+import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator, Anchor, MapPin, Receipt, User as UserIcon, FileUp } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,8 +40,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { CbmCalculatorDialog } from "@/components/cbm-calculator-dialog";
-import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS, INLAND_CONTAINER_DEPOTS, INDIAN_SEA_PORTS, FOREIGN_SEA_PORTS } from "@/lib/constants";
+import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS, INLAND_CONTAINER_DEPOTS, INDIAN_SEA_PORTS, FOREIGN_SEA_PORTS, ATTACHMENT_TYPES } from "@/lib/constants";
 import { Combobox } from "@/components/ui/combobox";
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 const PageSkeleton = () => (
@@ -783,6 +784,23 @@ function ExporterDashboardPage() {
                       </div>
                   </CardContent>
                 </Card>
+
+                <Card className="bg-secondary">
+                    <CardHeader>
+                        <CardTitle className="font-headline flex items-center gap-2"><FileUp className="h-6 w-6 text-primary" /> Certificate Attachments</CardTitle>
+                        <CardDescription>Select all relevant certificates to be attached. Actual file upload is not yet implemented.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {ATTACHMENT_TYPES.map((item) => (
+                            <div key={item} className="flex items-center space-x-2">
+                                <Checkbox id={`attachment-${item}`} />
+                                <Label htmlFor={`attachment-${item}`} className="font-normal">{item}</Label>
+                            </div>
+                        ))}
+                        </div>
+                    </CardContent>
+                </Card>
                 
                 <Card className="bg-secondary">
                     <CardHeader><CardTitle>Additional Information</CardTitle></CardHeader>
@@ -879,3 +897,5 @@ function ExporterDashboardPage() {
     </>
   );
 }
+
+    

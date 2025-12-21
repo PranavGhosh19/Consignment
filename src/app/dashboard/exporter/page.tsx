@@ -787,7 +787,7 @@ function ExporterDashboardPage() {
 
                 <Card className="bg-secondary">
                     <CardHeader>
-                        <CardTitle className="font-headline flex items-center gap-2"><FileUp className="h-6 w-6 text-primary" /> Certificate Attachments</CardTitle>
+                        <CardTitle className="font-headline flex items-center gap-2"><FileUp className="h-6 w-6 text-primary" /> Certifications Needed</CardTitle>
                         <CardDescription>Select all relevant certificates to be attached. Actual file upload is not yet implemented.</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -897,5 +897,3 @@ function ExporterDashboardPage() {
     </>
   );
 }
-
-    

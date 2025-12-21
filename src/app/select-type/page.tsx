@@ -37,7 +37,7 @@ const exporterTerms = {
     title: "Terms of Bidding – Exporter Agreement",
     content: (
         <div className="space-y-4 text-sm text-muted-foreground text-left">
-            <p>By posting a shipment and accepting bids on this platform, you (the Exporter) agree to the following terms and conditions. These rules are designed to ensure fair usage and protect the interests of all parties using ShipShape.</p>
+            <p>By posting a shipment and accepting bids on this platform, you (the Exporter) agree to the following terms and conditions. These rules are designed to ensure fair usage and protect the interests of all parties using Shipping Battlefield.</p>
             <ol className="list-decimal list-inside space-y-3">
                 <li>
                     <span className="font-bold text-foreground">Bid Acceptance is Binding</span>
@@ -61,14 +61,14 @@ const exporterTerms = {
                 </li>
                  <li>
                     <span className="font-bold text-foreground">Dispute Resolution</span>
-                    <p>ShipShape provides mediation in case of disputes. The platform’s decision will be final and binding for both exporter and vendor. For any disagreement post-bid acceptance, both parties are encouraged to resolve amicably or seek ShipShape’s support.</p>
+                    <p>Shipping Battlefield provides mediation in case of disputes. The platform’s decision will be final and binding for both exporter and vendor. For any disagreement post-bid acceptance, both parties are encouraged to resolve amicably or seek Shipping Battlefield’s support.</p>
                 </li>
                  <li>
                     <span className="font-bold text-foreground">Payment Terms</span>
-                    <p>All payments for shipments must be made exclusively through the platform's integrated payment system. Any off-platform payments (e.g., cash, bank transfers) are a violation of these terms. Shipment Battlefield will not be responsible for any issues, disputes, or losses arising from such transactions.</p>
+                    <p>All payments for shipments must be made exclusively through the platform's integrated payment system. Any off-platform payments (e.g., cash, bank transfers) are a violation of these terms. Shipping Battlefield will not be responsible for any issues, disputes, or losses arising from such transactions.</p>
                 </li>
             </ol>
-            <p className="font-semibold text-foreground pt-2">By clicking "Agree & Continue", you confirm that you understand and agree to these Terms of Bidding and will conduct business fairly on the ShipShape platform.</p>
+            <p className="font-semibold text-foreground pt-2">By clicking "Agree & Continue", you confirm that you understand and agree to these Terms of Bidding and will conduct business fairly on the Shipping Battlefield platform.</p>
         </div>
     )
 };
@@ -77,7 +77,7 @@ const carrierTerms = {
     title: "Terms of Bidding Agreement",
     content: (
          <div className="space-y-4 text-sm text-muted-foreground text-left">
-            <p>By placing a bid on this platform, you (the Vendor) agree to the following terms and conditions. These terms are binding and form part of your participation in the ShipShape bidding system.</p>
+            <p>By placing a bid on this platform, you (the Vendor) agree to the following terms and conditions. These terms are binding and form part of your participation in the Shipping Battlefield bidding system.</p>
             <ol className="list-decimal list-inside space-y-3">
                 <li>
                     <span className="font-bold text-foreground">Commitment to Honor Bids</span>
@@ -89,7 +89,7 @@ const carrierTerms = {
                 </li>
                 <li>
                     <span className="font-bold text-foreground">Penalties for Non-Compliance</span>
-                    <p>ShipShape reserves the right to impose any or all of the following for non-compliance: Strike 1: Written warning and flag on your vendor profile; Strike 2: Temporary suspension from bidding (7–30 days); Strike 3: Permanent ban from the platform. ShipShape also reserves the right to deduct penalty fees (if applicable) from your wallet or deposits held by the platform.</p>
+                    <p>Shipping Battlefield reserves the right to impose any or all of the following for non-compliance: Strike 1: Written warning and flag on your vendor profile; Strike 2: Temporary suspension from bidding (7–30 days); Strike 3: Permanent ban from the platform. Shipping Battlefield also reserves the right to deduct penalty fees (if applicable) from your wallet or deposits held by the platform.</p>
                 </li>
                  <li>
                     <span className="font-bold text-foreground">Bid Authenticity</span>
@@ -97,11 +97,11 @@ const carrierTerms = {
                 </li>
                  <li>
                     <span className="font-bold text-foreground">Bid Locking</span>
-                    <p>Once a bid is accepted, it is locked and cannot be modified or retracted by the vendor without written approval from the exporter and ShipShape support.</p>
+                    <p>Once a bid is accepted, it is locked and cannot be modified or retracted by the vendor without written approval from the exporter and Shipping Battlefield support.</p>
                 </li>
                  <li>
                     <span className="font-bold text-foreground">Dispute Resolution</span>
-                    <p>In case of a dispute, ShipShape will mediate between the exporter and vendor. The decision of the platform in such cases shall be final and binding.</p>
+                    <p>In case of a dispute, Shipping Battlefield will mediate between the exporter and vendor. The decision of the platform in such cases shall be final and binding.</p>
                 </li>
                  <li>
                     <span className="font-bold text-foreground">Platform Integrity</span>

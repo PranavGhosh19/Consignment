@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator, Anchor, MapPin } from "lucide-react";
+import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator, Anchor, MapPin, Receipt } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -730,6 +730,32 @@ function ExporterDashboardPage() {
                 </div>
               
                 <Card className="bg-secondary">
+                  <CardHeader><CardTitle className="flex items-center gap-2"><Receipt className="h-5 w-5 text-primary" /> Documentation</CardTitle></CardHeader>
+                  <CardContent className="grid md:grid-cols-2 gap-6">
+                      <div className="grid gap-4">
+                          <div className="grid gap-2">
+                              <Label htmlFor="invoice-number">Export Invoice Number</Label>
+                              <Input id="invoice-number" placeholder="e.g., EXP-001/23-24" />
+                          </div>
+                          <div className="grid gap-2">
+                              <Label htmlFor="invoice-upload">Invoice Upload</Label>
+                              <Input id="invoice-upload" type="file" />
+                          </div>
+                      </div>
+                      <div className="grid gap-4">
+                          <div className="grid gap-2">
+                              <Label htmlFor="packing-list-number">Packing List Number</Label>
+                              <Input id="packing-list-number" placeholder="e.g., PKL-001/23-24" />
+                          </div>
+                          <div className="grid gap-2">
+                              <Label htmlFor="packing-list-upload">Packing List Upload</Label>
+                              <Input id="packing-list-upload" type="file" />
+                          </div>
+                      </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-secondary">
                     <CardHeader><CardTitle>Additional Information</CardTitle></CardHeader>
                     <CardContent>
                         <div className="grid gap-2">
@@ -824,3 +850,5 @@ function ExporterDashboardPage() {
     </>
   );
 }
+
+    

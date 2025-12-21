@@ -37,7 +37,7 @@ export default function PostShipmentsPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4">
-                <ShipmentForm onFormSubmit={() => setIsDialogOpen(false)} />
+                <ShipmentForm />
               </div>
           </DialogContent>
         </Dialog>

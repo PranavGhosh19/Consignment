@@ -17,8 +17,8 @@ import {
   FOREIGN_SEA_PORTS,
   ATTACHMENT_TYPES,
   EQUIPMENT_TYPES,
+  CARGO_TYPES,
   PACKAGE_TYPES,
-  CARGO_TYPES
 } from "@/lib/constants";
 
 import { Button } from "@/components/ui/button";
@@ -213,7 +213,7 @@ const formSchema = z
 type ShipmentFormValues = z.infer<typeof formSchema>;
 
 
-export function ShipmentForm({ onFormSubmit }: { onFormSubmit: () => void }) {
+export function ShipmentForm() {
   const { toast } = useToast();
   
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
@@ -324,7 +324,6 @@ export function ShipmentForm({ onFormSubmit }: { onFormSubmit: () => void }) {
     });
     setIsScheduleDialogOpen(false);
     form.reset();
-    onFormSubmit();
   }
 
   const handleSaveDraft = () => {
@@ -336,7 +335,6 @@ export function ShipmentForm({ onFormSubmit }: { onFormSubmit: () => void }) {
         description: "Your shipment request has been saved as a draft.",
       });
       form.reset();
-      onFormSubmit();
     });
   };
 
@@ -360,10 +358,12 @@ export function ShipmentForm({ onFormSubmit }: { onFormSubmit: () => void }) {
                 <CardTitle className="font-headline flex items-center gap-2"><Package className="h-6 w-6 text-primary" /> Shipment Information</CardTitle>
                 <CardDescription>Enter the core details of your shipment.</CardDescription>
               </div>
-              <Button variant="outline" size="icon" type="button" onClick={() => setIsCbmDialogOpen(true)}>
+              {isFCL && (
+                <Button variant="outline" size="icon" type="button" onClick={() => setIsCbmDialogOpen(true)}>
                   <Calculator className="h-4 w-4" />
                   <span className="sr-only">Open CBM Calculator</span>
-              </Button>
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <ShipmentDetailsSection form={form} />

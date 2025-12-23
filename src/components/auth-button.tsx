@@ -25,7 +25,7 @@ import { Separator } from "./ui/separator";
 
 const exporterNavLinks = [
   { href: "/dashboard/exporter", label: "My Shipments" },
-  { href: "/dashboard/exporter/post-shipments", label: "Post Shipments" },
+  
 ];
 
 const carrierNavLinks = [
@@ -349,3 +349,6 @@ export function MobileMenu() {
         </div>
     );
 }
+
+
+    

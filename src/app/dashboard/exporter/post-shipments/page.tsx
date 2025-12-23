@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 
 export default function PostShipmentsPage() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(true);
 
   return (
     <div className="container py-6 md:py-10">
@@ -50,3 +50,5 @@ export default function PostShipmentsPage() {
     </div>
   );
 }
+
+    

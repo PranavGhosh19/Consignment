@@ -545,6 +545,10 @@ function ExporterDashboardPage() {
     return FOREIGN_SEA_PORTS.map(port => ({ value: port, label: port }));
   }, []);
 
+  const allPortOptions = useMemo(() => {
+    return [...INDIAN_SEA_PORTS, ...FOREIGN_SEA_PORTS].sort().map(port => ({ value: port, label: port }));
+  }, []);
+
 
   const VerificationStatus = () => {
     const status = userData?.verificationStatus;
@@ -793,7 +797,7 @@ function ExporterDashboardPage() {
                             <div className="grid gap-2">
                                 <Label htmlFor="port-of-loading">Port of Loading</Label>
                                 <Combobox
-                                    options={allPortsOptions}
+                                    options={allPortOptions}
                                     value={portOfLoading}
                                     onChange={setPortOfLoading}
                                     placeholder="Search ports..."
@@ -1029,5 +1033,6 @@ function ExporterDashboardPage() {
     </>
   );
 }
+
 
     

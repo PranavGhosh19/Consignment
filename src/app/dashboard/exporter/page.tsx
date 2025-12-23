@@ -546,7 +546,8 @@ function ExporterDashboardPage() {
   }, []);
 
   const allPortOptions = useMemo(() => {
-    return [...INDIAN_SEA_PORTS, ...FOREIGN_SEA_PORTS].sort().map(port => ({ value: port, label: port }));
+    const indianPorts = ["Mundra, Gujarat", "Nhava Sheva (JNPT), Maharashtra", "Chennai, Tamil Nadu"];
+    return [...indianPorts, ...FOREIGN_SEA_PORTS].sort().map(port => ({ value: port, label: port }));
   }, []);
 
 
@@ -780,7 +781,7 @@ function ExporterDashboardPage() {
                             <div className="grid gap-2">
                                 <Label htmlFor="place-of-receipt">Place of Receipt</Label>
                                 <Combobox
-                                    options={allPortsOptions}
+                                    options={allPortOptions}
                                     value={placeOfReceipt}
                                     onChange={setPlaceOfReceipt}
                                     placeholder="Search ports..."
@@ -828,7 +829,7 @@ function ExporterDashboardPage() {
                              <div className="grid gap-2">
                                 <Label htmlFor="final-place-of-delivery">Final Place of Delivery</Label>
                                 <Combobox
-                                    options={allPortsOptions}
+                                    options={allPortOptions}
                                     value={finalPlaceOfDelivery}
                                     onChange={setFinalPlaceOfDelivery}
                                     placeholder="Search ports..."
@@ -1033,6 +1034,5 @@ function ExporterDashboardPage() {
     </>
   );
 }
-
 
     

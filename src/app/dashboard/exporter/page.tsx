@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator, Anchor, MapPin, Receipt, User as UserIcon, FileUp } from "lucide-react";
+import { PlusCircle, Send, Pencil, Clock, ShieldAlert, Calculator, Anchor, MapPin, Receipt, User as UserIcon, FileUp, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,9 +40,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { CbmCalculatorDialog } from "@/components/cbm-calculator-dialog";
-import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS, INLAND_CONTAINER_DEPOTS, FOREIGN_SEA_PORTS, ATTACHMENT_TYPES } from "@/lib/constants";
+import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS, FOREIGN_SEA_PORTS, ATTACHMENT_TYPES } from "@/lib/constants";
 import { Combobox } from "@/components/ui/combobox";
 import { Checkbox } from "@/components/ui/checkbox";
+
+const allPortsOptions = FOREIGN_SEA_PORTS.map(port => ({ value: port, label: port }));
 
 
 const PageSkeleton = () => (
@@ -454,16 +456,90 @@ function ExporterDashboardPage() {
 
   const handleConfirmSchedule = () => {
     if (goLiveDate) {
-        const goLiveTimestamp = Timestamp.fromDate(goLiveDate);
-        handleSubmit('scheduled', goLiveTimestamp);
+        initiatePayment();
     } else {
         toast({title: "Error", description: "Please select a date and time to go live.", variant: "destructive"})
     }
   }
   
-  const allPortsOptions = useMemo(() => {
-    return FOREIGN_SEA_PORTS.map(port => ({ value: port, label: port }));
-  }, []);
+  const handlePaymentSuccess = () => {
+    if (goLiveDate) {
+      const goLiveTimestamp = Timestamp.fromDate(goLiveDate);
+      handleSubmit('scheduled', goLiveTimestamp);
+    }
+  }
+
+  const initiatePayment = async () => {
+    if (!user || !userData) {
+      toast({ title: "Error", description: "You must be logged in to register.", variant: "destructive" });
+      return;
+    }
+    
+    setIsSubmitting(true); // Re-use isSubmitting for processing state
+    const amount = 1000; // 1000 Rupees
+
+    try {
+        const res = await fetch('/api/razorpay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: amount * 100, // Amount in paise
+                currency: "INR",
+                notes: {
+                    userId: user.uid,
+                    action: "shipment-listing-fee"
+                }
+            }),
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.details || 'Failed to create Razorpay order.');
+        }
+        
+        const order = await res.json();
+
+        const options = {
+            key: "rzp_test_RuMOD23vC1ZlS8", 
+            amount: order.amount,
+            currency: order.currency,
+            name: "Shipment Listing Fee",
+            description: `Fee to list shipment: ${productName}`,
+            order_id: order.id,
+            handler: function (response: any) {
+                // Payment is successful, now schedule the shipment
+                handlePaymentSuccess();
+            },
+            prefill: {
+                name: userData.name,
+                email: userData.email,
+            },
+            theme: {
+                color: "#2563EB"
+            }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+            toast({
+                title: "Payment Failed",
+                description: `Error: ${response.error.description}`,
+                variant: "destructive"
+            });
+            setIsSubmitting(false); // Stop processing indicator on failure
+        });
+        rzp.open();
+        
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        toast({
+            title: "Error",
+            description: `Could not initiate payment. ${errorMessage}`,
+            variant: "destructive",
+        });
+        setIsSubmitting(false);
+    }
+  };
   
   const foreignPortOptions = useMemo(() => {
     return FOREIGN_SEA_PORTS.map(port => ({ value: port, label: port }));
@@ -699,12 +775,14 @@ function ExporterDashboardPage() {
                         <CardContent className="grid gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="place-of-receipt">Place of Receipt</Label>
-                                <Select value={placeOfReceipt} onValueChange={setPlaceOfReceipt} disabled={isSubmitting}>
-                                    <SelectTrigger id="place-of-receipt"><SelectValue placeholder="Select an Inland Container Depot" /></SelectTrigger>
-                                    <SelectContent>
-                                        {INLAND_CONTAINER_DEPOTS.map(depot => <SelectItem key={depot} value={depot}>{depot}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox
+                                    options={allPortsOptions}
+                                    value={placeOfReceipt}
+                                    onChange={setPlaceOfReceipt}
+                                    placeholder="Search ports..."
+                                    searchPlaceholder="Search ports..."
+                                    noResultsMessage="No ports found."
+                                />
                             </div>
                             {placeOfReceipt === 'Other' && (
                                 <div className="grid gap-2">
@@ -745,12 +823,14 @@ function ExporterDashboardPage() {
                             </div>
                              <div className="grid gap-2">
                                 <Label htmlFor="final-place-of-delivery">Final Place of Delivery</Label>
-                                <Select value={finalPlaceOfDelivery} onValueChange={setFinalPlaceOfDelivery} disabled={isSubmitting}>
-                                    <SelectTrigger id="final-place-of-delivery"><SelectValue placeholder="Select an Inland Container Depot" /></SelectTrigger>
-                                    <SelectContent>
-                                        {INLAND_CONTAINER_DEPOTS.map(depot => <SelectItem key={depot} value={depot}>{depot}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox
+                                    options={allPortsOptions}
+                                    value={finalPlaceOfDelivery}
+                                    onChange={setFinalPlaceOfDelivery}
+                                    placeholder="Search ports..."
+                                    searchPlaceholder="Search ports..."
+                                    noResultsMessage="No ports found."
+                                />
                             </div>
                             {finalPlaceOfDelivery === 'Other' && (
                                 <div className="grid gap-2">
@@ -880,10 +960,10 @@ function ExporterDashboardPage() {
             <AlertDialogHeader>
             <AlertDialogTitle>Schedule Go-Live Time</AlertDialogTitle>
             <AlertDialogDescription>
-                Select the exact date and time you want this shipment to go live for bidding.
+                Select the exact date and time you want this shipment to go live for bidding. A listing fee is required.
             </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="py-4">
+            <div className="py-4 space-y-4">
                 <DateTimePicker
                     date={goLiveDate}
                     setDate={setGoLiveDate}
@@ -891,11 +971,17 @@ function ExporterDashboardPage() {
                         date < new Date(new Date().setHours(0, 0, 0, 0))
                     }
                 />
+                 <Card className="bg-secondary">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <p className="font-semibold">Shipment Listing Fee</p>
+                        <p className="font-bold text-lg">₹1000</p>
+                    </CardContent>
+                </Card>
             </div>
             <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setGoLiveDate(undefined)}>Cancel</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => setGoLiveDate(undefined)} disabled={isSubmitting}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmSchedule} disabled={!goLiveDate || isSubmitting}>
-                    {isSubmitting ? 'Scheduling...' : 'Confirm Schedule'}
+                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</> : 'Pay & Schedule'}
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
@@ -943,4 +1029,3 @@ function ExporterDashboardPage() {
     </>
   );
 }
-

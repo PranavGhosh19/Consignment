@@ -11,6 +11,7 @@
 import {setGlobalOptions} from "firebase-functions/v2";
 import {
   onDocumentWritten,
+  onDocumentCreated,
 } from "firebase-functions/v2/firestore";
 import {onRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
@@ -37,6 +38,26 @@ const tasksClient = new CloudTasksClient();
 setGlobalOptions({region: "us-central1", maxInstances: 10});
 
 /**
+ * Creates a notification document in Firestore.
+ * @param {admin.firestore.DocumentData} notification The notification object.
+ */
+async function createNotification(notification: admin.firestore.DocumentData) {
+  try {
+    await db.collection("notifications").add({
+      ...notification,
+      isRead: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    logger.log(`Notification created for ${notification.recipientId}`);
+  } catch (error) {
+    logger.error(
+      `Error creating notification for ${notification.recipientId}:`,
+      error
+    );
+  }
+}
+
+/**
  * Creates or updates a Cloud Task to trigger a shipment go-live event.
  * This function is triggered whenever a document in the 'shipments'
  * collection is written to.
@@ -59,6 +80,19 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
           }
         });
     }
+    
+    // --- Status Change Notifications (Awarded) ---
+    if (beforeData?.status !== "awarded" && afterData?.status === "awarded") {
+        if (afterData.winningCarrierId && afterData.productName) {
+            await createNotification({
+                recipientId: afterData.winningCarrierId,
+                message: "Congratulations! You've won the bid for the " +
+                    `'${afterData.productName}' shipment.`,
+                link: `/dashboard/carrier/registered-shipment/${shipmentId}`,
+            });
+        }
+    }
+
 
     // --- Task Creation Logic ---
     // If not 'scheduled' or no go-live time, do nothing.
@@ -115,6 +149,36 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
       logger.error(`Error creating task for shipment ${shipmentId}:`, error);
     }
   });
+  
+/**
+ * Creates a notification when a new bid is placed on a shipment.
+ */
+export const onBidCreate = onDocumentCreated("shipments/{shipmentId}/bids/{bidId}", async (event) => {
+    const shipmentId = event.params.shipmentId;
+    const bidData = event.data?.data();
+
+    if (!bidData) {
+        logger.log("No bid data found, cannot create notification.");
+        return;
+    }
+
+    try {
+        const shipmentDoc = await db.collection("shipments").doc(shipmentId).get();
+        if (shipmentDoc.exists) {
+            const shipmentData = shipmentDoc.data();
+            if (shipmentData && shipmentData.exporterId) {
+                 await createNotification({
+                    recipientId: shipmentData.exporterId,
+                    message: `You have a new bid of $${bidData.bidAmount} ` +
+                        `on your '${shipmentData.productName}' shipment.`,
+                    link: `/dashboard/shipment/${shipmentId}`,
+                });
+            }
+        }
+    } catch (error) {
+        logger.error(`Error fetching shipment ${shipmentId} for new bid notification:`, error);
+    }
+});
 
 
 /**
@@ -142,9 +206,27 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
     const shipmentData = doc.data();
     // Only update if the shipment is still in the 'scheduled' state.
     if (shipmentData?.status === "scheduled") {
-      await shipmentRef.update({status: "live"});
-      logger.log("Set shipment", shipmentId, "to 'live' via Cloud Task.");
-      res.status(200).send("OK");
+        await shipmentRef.update({status: "live"});
+        logger.log("Set shipment", shipmentId, "to 'live' via Cloud Task.");
+
+        // --- Notify Registered Carriers ---
+        const registrationsRef = shipmentRef.collection("register");
+        const registrationsSnap = await registrationsRef.get();
+        if (!registrationsSnap.empty) {
+            const notifications = registrationsSnap.docs.map((regDoc) => {
+                const carrierId = regDoc.id;
+                return createNotification({
+                    recipientId: carrierId,
+                    message: `The shipment '${shipmentData.productName}' is ` +
+                        "now live for bidding!",
+                    link: `/dashboard/carrier/shipment/${shipmentId}`,
+                });
+            });
+            await Promise.all(notifications);
+            logger.log(`Sent ${notifications.length} go-live notifications for `+
+                `shipment ${shipmentId}.`);
+        }
+        res.status(200).send("OK");
     } else {
       logger.log(`Shipment ${shipmentId} not 'scheduled'. No action taken.`);
       res.status(200).send("No action needed.");
@@ -193,10 +275,3 @@ export const minuteShipmentSweeper =
         logger.error("Error running minute shipment sweeper:", error);
       }
     });
-
-    
-
-    
-
-
-

@@ -87,6 +87,12 @@ service cloud.firestore {
           (userStatus(request.auth.uid) == 'unsubmitted' || userStatus(request.auth.uid) == 'rejected');
       }
     }
+    
+    // ───── NOTIFICATIONS COLLECTION ─────
+    match /notifications/{notificationId} {
+      allow read, update, delete: if request.auth.uid != null && resource.data.recipientId == request.auth.uid;
+      allow create: if request.auth.uid != null;
+    }
 
     // ───── SHIPMENTS COLLECTION ─────
     match /shipments/{shipmentId} {

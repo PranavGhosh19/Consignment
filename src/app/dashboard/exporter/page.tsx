@@ -475,7 +475,7 @@ function ExporterDashboardPage() {
       return;
     }
     
-    setIsSubmitting(true); // Re-use isSubmitting for processing state
+    setIsSubmitting(true);
     const amount = 1000; // 1000 Rupees
 
     try {
@@ -526,7 +526,7 @@ function ExporterDashboardPage() {
                 description: `Error: ${response.error.description}`,
                 variant: "destructive"
             });
-            setIsSubmitting(false); // Stop processing indicator on failure
+            setIsSubmitting(false);
         });
         rzp.open();
         
@@ -1034,5 +1034,3 @@ function ExporterDashboardPage() {
     </>
   );
 }
-
-    

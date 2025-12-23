@@ -9,7 +9,7 @@ import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/firestore";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Truck, Gavel, Ship, Bell } from "lucide-react";
+import { LayoutDashboard, Truck, Gavel, Ship, Bell, PlusCircle } from "lucide-react";
 
 type UserType = "carrier" | "exporter" | "employee" | null;
 

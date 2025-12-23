@@ -21,8 +21,8 @@ const fontPtSans = PT_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Shipping Battlefield",
-  description: "The Battlefield for Modern Shipping",
+  title: "ShipCargo",
+  description: "The Global Marketplace for Freight",
 };
 
 export default function RootLayout({
@@ -31,8 +31,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${fontPoppins.variable} ${fontPtSans.variable}`}>
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
       </head>
       <body>
         <ThemeProvider

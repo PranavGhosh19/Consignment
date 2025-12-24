@@ -357,7 +357,7 @@ function ExporterDashboardPage() {
     }
   }
 
-  const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft', goLiveTimestamp?: Timestamp | null, paymentId?: string) => {
+  const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft', goLiveTimestamp?: Timestamp | null, payment?: object) => {
     if (!handleValidation() || !user) return;
 
     setIsSubmitting(true);
@@ -410,15 +410,15 @@ function ExporterDashboardPage() {
       specialInstructions,
       status: status,
       ...(goLiveTimestamp && { goLiveAt: goLiveTimestamp }),
-      ...(paymentId && { listingPaymentId: paymentId })
+      ...(payment && { listingPayment: payment })
     };
     
     try {
       if (editingShipmentId) {
         const shipmentDocRef = doc(db, "shipments", editingShipmentId);
-        // When editing, we might not have a new paymentId, so don't overwrite it
-        if (!paymentId) {
-          delete shipmentPayload.listingPaymentId;
+        // When editing, we might not have a new payment, so don't overwrite it
+        if (!payment) {
+          delete shipmentPayload.listingPayment;
         }
         await updateDoc(shipmentDocRef, shipmentPayload);
         toast({ title: "Success", description: "Shipment updated." });
@@ -467,8 +467,8 @@ function ExporterDashboardPage() {
 
     const editingShipment = products.find(p => p.id === editingShipmentId);
     
-    // If editing a shipment that already has a payment ID, skip payment
-    if (editingShipment && editingShipment.listingPaymentId) {
+    // If editing a shipment that already has a payment, skip payment
+    if (editingShipment && editingShipment.listingPayment) {
       const goLiveTimestamp = Timestamp.fromDate(goLiveDate);
       handleSubmit('scheduled', goLiveTimestamp);
     } else {
@@ -479,7 +479,14 @@ function ExporterDashboardPage() {
   const handlePaymentSuccess = (paymentId: string) => {
     if (goLiveDate) {
       const goLiveTimestamp = Timestamp.fromDate(goLiveDate);
-      handleSubmit('scheduled', goLiveTimestamp, paymentId);
+      const paymentData = {
+          id: paymentId,
+          amount: 1000,
+          currency: "INR",
+          paidAt: Timestamp.now(),
+          provider: "razorpay"
+      };
+      handleSubmit('scheduled', goLiveTimestamp, paymentData);
     }
   }
 
@@ -615,7 +622,7 @@ function ExporterDashboardPage() {
   }
   
   const editingShipment = products.find(p => p.id === editingShipmentId);
-  const isAlreadyPaid = !!(editingShipment && editingShipment.listingPaymentId);
+  const isAlreadyPaid = !!(editingShipment && editingShipment.listingPayment);
 
   return (
     <>

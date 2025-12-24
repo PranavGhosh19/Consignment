@@ -9,12 +9,12 @@ import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -613,6 +613,9 @@ function ExporterDashboardPage() {
         return 'outline';
     }
   }
+  
+  const editingShipment = products.find(p => p.id === editingShipmentId);
+  const isAlreadyPaid = !!(editingShipment && editingShipment.listingPaymentId);
 
   return (
     <>
@@ -979,7 +982,8 @@ function ExporterDashboardPage() {
             <AlertDialogHeader>
             <AlertDialogTitle>Schedule Go-Live Time</AlertDialogTitle>
             <AlertDialogDescription>
-                Select the exact date and time you want this shipment to go live for bidding. A listing fee is required.
+                Select the exact date and time you want this shipment to go live for bidding.
+                {isAlreadyPaid ? "" : " A listing fee is required."}
             </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4 space-y-4">
@@ -990,17 +994,19 @@ function ExporterDashboardPage() {
                         date < new Date(new Date().setHours(0, 0, 0, 0))
                     }
                 />
-                 <Card className="bg-secondary">
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <p className="font-semibold">Shipment Listing Fee</p>
-                        <p className="font-bold text-lg">₹1000</p>
-                    </CardContent>
-                </Card>
+                 {!isAlreadyPaid && (
+                    <Card className="bg-secondary">
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <p className="font-semibold">Shipment Listing Fee</p>
+                            <p className="font-bold text-lg">₹1000</p>
+                        </CardContent>
+                    </Card>
+                 )}
             </div>
             <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setGoLiveDate(undefined)} disabled={isSubmitting}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmSchedule} disabled={!goLiveDate || isSubmitting}>
-                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</> : 'Pay & Schedule'}
+                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</> : (isAlreadyPaid ? 'Update Schedule' : 'Pay & Schedule')}
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
@@ -1048,5 +1054,3 @@ function ExporterDashboardPage() {
     </>
   );
 }
-
-    

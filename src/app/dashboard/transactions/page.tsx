@@ -27,6 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { CreditCard } from "lucide-react";
 import { format } from "date-fns";
 
+/* ---------------- TYPES ---------------- */
+
 type Transaction = {
   id: string;
   type: "listing" | "registration";
@@ -35,6 +37,8 @@ type Transaction = {
   productName: string;
   paidAt: any; // Firestore Timestamp
 };
+
+/* ---------------- SKELETON ---------------- */
 
 const PageSkeleton = () => (
   <div className="container py-6 md:py-10">
@@ -45,6 +49,8 @@ const PageSkeleton = () => (
   </div>
 );
 
+/* ---------------- PAGE ---------------- */
+
 export default function TransactionsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -54,6 +60,7 @@ export default function TransactionsPage() {
   const { toast } = useToast();
 
   /* ---------------- AUTH ---------------- */
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -66,6 +73,7 @@ export default function TransactionsPage() {
   }, [router]);
 
   /* ---------------- FETCH TRANSACTIONS ---------------- */
+
   useEffect(() => {
     if (!user) return;
 
@@ -84,19 +92,24 @@ export default function TransactionsPage() {
           const q = query(
             collection(db, "shipments"),
             where("exporterId", "==", user.uid),
-            where("listingPaymentId", "!=", null)
+            where("listingPayment.id", "!=", null)
           );
 
           const snap = await getDocs(q);
 
-          fetched = snap.docs.map((docSnap) => ({
-            id: docSnap.data().listingPaymentId,
-            type: "listing",
-            amount: 1000,
-            shipmentId: docSnap.id,
-            productName: docSnap.data().productName,
-            paidAt: docSnap.data().createdAt,
-          }));
+          fetched = snap.docs.map((docSnap) => {
+            const data = docSnap.data();
+            const payment = data.listingPayment;
+
+            return {
+              id: payment.id,
+              type: "listing",
+              amount: payment.amount,
+              shipmentId: docSnap.id,
+              productName: data.productName,
+              paidAt: payment.paidAt,
+            };
+          });
         }
 
         /* -------- CARRIER -------- */
@@ -124,7 +137,7 @@ export default function TransactionsPage() {
               return {
                 id: regData.paymentId,
                 type: "registration",
-                amount: 10,
+                amount: regData.amount ?? 10,
                 shipmentId,
                 productName: shipmentDoc.data().productName,
                 paidAt: regData.registeredAt,
@@ -135,6 +148,7 @@ export default function TransactionsPage() {
           fetched = results.filter(Boolean) as Transaction[];
         }
 
+        /* -------- SORT BY PAYMENT TIME -------- */
         fetched.sort(
           (a, b) => b.paidAt.toDate().getTime() - a.paidAt.toDate().getTime()
         );
@@ -155,7 +169,8 @@ export default function TransactionsPage() {
     fetchTransactions();
   }, [user, toast]);
 
-  /* ---------------- REDIRECT HANDLER ---------------- */
+  /* ---------------- ROW CLICK REDIRECT ---------------- */
+
   const handleRowClick = (tx: Transaction) => {
     if (tx.type === "registration") {
       router.push(
@@ -167,6 +182,8 @@ export default function TransactionsPage() {
   };
 
   if (loading) return <PageSkeleton />;
+
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="container py-6 md:py-10">
@@ -185,7 +202,9 @@ export default function TransactionsPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Shipment</TableHead>
-                <TableHead className="text-right">Amount (INR)</TableHead>
+                <TableHead className="text-right">
+                  Amount (INR)
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -196,14 +215,14 @@ export default function TransactionsPage() {
                   className="cursor-pointer"
                 >
                   <TableCell className="font-medium">
-                    {tx.paidAt
-                      ? format(tx.paidAt.toDate(), "dd MMM, yyyy")
-                      : "N/A"}
+                    {format(tx.paidAt.toDate(), "dd MMM, yyyy")}
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant={
-                        tx.type === "listing" ? "default" : "secondary"
+                        tx.type === "listing"
+                          ? "default"
+                          : "secondary"
                       }
                       className="capitalize"
                     >

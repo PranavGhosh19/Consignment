@@ -21,7 +21,7 @@ const fontPtSans = PT_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "ShipCargo",
+  title: "Shipping Battlefield",
   description: "The Global Marketplace for Freight",
 };
 

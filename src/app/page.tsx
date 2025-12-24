@@ -52,7 +52,7 @@ export default function Home() {
                 The Global Marketplace for Freight
                 </h1>
                 <p className="mx-auto max-w-[800px] text-muted-foreground md:text-xl">
-                Shipping Battlefield is the premier online platform where exporters and freight carriers
+                ShipCargo is the premier online platform where exporters and freight carriers
                 connect, compete, and collaborate. Get the best rates for your shipments through our
                 dynamic, real-time bidding system.
                 </p>
@@ -69,7 +69,7 @@ export default function Home() {
                 </Button>
             </div>
             <Link href="/how-it-works" className="text-sm underline underline-offset-4 hover:text-primary">
-                How Shipping Battlefield Works
+                How ShipCargo Works
             </Link>
           </div>
         </div>

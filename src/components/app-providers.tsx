@@ -59,7 +59,7 @@ const Header = () => {
               className="flex items-center gap-2 font-bold text-lg font-headline justify-center sm:justify-start"
             >
               <LogoIcon />
-              <span className="font-bold text-base sm:text-xl">Shipping Battlefield</span>
+              <span className="font-bold text-base sm:text-xl">ShipCargo</span>
             </Link>
           </div>
 
@@ -84,7 +84,7 @@ const Footer = () => (
   <footer className="py-6 md:px-8 md:py-0 border-t pb-24 sm:pb-6">
     <div className="container relative flex h-12 items-center justify-center">
       <p className="text-center text-sm text-muted-foreground">
-        &copy; 2025 Shipping Battlefield. All rights reserved.
+        &copy; 2025 ShipCargo. All rights reserved.
       </p>
       <div className="absolute right-6 md:right-8 hidden sm:block">
         <Clock />

@@ -416,6 +416,10 @@ function ExporterDashboardPage() {
     try {
       if (editingShipmentId) {
         const shipmentDocRef = doc(db, "shipments", editingShipmentId);
+        // When editing, we might not have a new paymentId, so don't overwrite it
+        if (!paymentId) {
+          delete shipmentPayload.listingPaymentId;
+        }
         await updateDoc(shipmentDocRef, shipmentPayload);
         toast({ title: "Success", description: "Shipment updated." });
       } else {
@@ -456,12 +460,21 @@ function ExporterDashboardPage() {
   };
 
   const handleConfirmSchedule = () => {
-    if (goLiveDate) {
-        initiatePayment();
-    } else {
-        toast({title: "Error", description: "Please select a date and time to go live.", variant: "destructive"})
+    if (!goLiveDate) {
+      toast({ title: "Error", description: "Please select a date and time to go live.", variant: "destructive" });
+      return;
     }
-  }
+
+    const editingShipment = products.find(p => p.id === editingShipmentId);
+    
+    // If editing a shipment that already has a payment ID, skip payment
+    if (editingShipment && editingShipment.listingPaymentId) {
+      const goLiveTimestamp = Timestamp.fromDate(goLiveDate);
+      handleSubmit('scheduled', goLiveTimestamp);
+    } else {
+      initiatePayment();
+    }
+  };
   
   const handlePaymentSuccess = (paymentId: string) => {
     if (goLiveDate) {
@@ -1035,3 +1048,5 @@ function ExporterDashboardPage() {
     </>
   );
 }
+
+    

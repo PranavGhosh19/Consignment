@@ -102,11 +102,22 @@ service cloud.firestore {
                     && isExporter(request.auth.uid)
                     && request.resource.data.exporterId == request.auth.uid;
 
-      // READ / LIST
-      allow get, list: if request.auth.uid != null && (
+      // READ
+      allow get: if request.auth.uid != null && (
         isEmployee(request.auth.uid) ||
         (isExporter(request.auth.uid) && resource.data.exporterId == request.auth.uid) ||
         isCarrier(request.auth.uid)
+      );
+
+      // LIST
+      allow list: if request.auth.uid != null && (
+        isEmployee(request.auth.uid) ||
+        isCarrier(request.auth.uid) ||
+        (
+          isExporter(request.auth.uid) &&
+          request.query.where.exporterId == request.auth.uid &&
+          request.query.where.listingPaymentId != null
+        )
       );
 
       // UPDATE

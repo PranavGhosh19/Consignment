@@ -14,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -357,7 +356,7 @@ function ExporterDashboardPage() {
     }
   }
 
-  const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft', goLiveTimestamp?: Timestamp | null) => {
+  const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft', goLiveTimestamp?: Timestamp | null, paymentId?: string) => {
     if (!handleValidation() || !user) return;
 
     setIsSubmitting(true);
@@ -409,7 +408,8 @@ function ExporterDashboardPage() {
       certificationsNeeded: attachments,
       specialInstructions,
       status: status,
-      ...(goLiveTimestamp && { goLiveAt: goLiveTimestamp })
+      ...(goLiveTimestamp && { goLiveAt: goLiveTimestamp }),
+      ...(paymentId && { listingPaymentId: paymentId })
     };
     
     try {
@@ -462,10 +462,10 @@ function ExporterDashboardPage() {
     }
   }
   
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (paymentId: string) => {
     if (goLiveDate) {
       const goLiveTimestamp = Timestamp.fromDate(goLiveDate);
-      handleSubmit('scheduled', goLiveTimestamp);
+      handleSubmit('scheduled', goLiveTimestamp, paymentId);
     }
   }
 
@@ -508,7 +508,7 @@ function ExporterDashboardPage() {
             order_id: order.id,
             handler: function (response: any) {
                 // Payment is successful, now schedule the shipment
-                handlePaymentSuccess();
+                handlePaymentSuccess(response.razorpay_payment_id);
             },
             prefill: {
                 name: userData.name,

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User as UserIcon, LogOut, Settings, LifeBuoy, Menu, Shield, Users, FileText, Search, ShieldCheck, Bell } from "lucide-react";
+import { User as UserIcon, LogOut, Settings, LifeBuoy, Menu, Shield, Users, FileText, Search, ShieldCheck, Bell, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "./ui/skeleton";
@@ -218,6 +217,12 @@ export function MobileNavLinks() {
 
                 <div className="mt-auto flex flex-col gap-3 text-lg font-medium">
                     <Separator />
+                     <button
+                        onClick={() => handleLinkClick('/dashboard/transactions')}
+                        className="transition-colors hover:text-primary text-left text-muted-foreground flex items-center"
+                    >
+                         <CreditCard className="mr-2 h-5 w-5" /> Transactions
+                    </button>
                     <button
                         onClick={() => handleLinkClick('/settings')}
                         className="transition-colors hover:text-primary text-left text-muted-foreground flex items-center"
@@ -296,6 +301,10 @@ export function AuthButton() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push('/dashboard/transactions')}>
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Transactions</span>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>

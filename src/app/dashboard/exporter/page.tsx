@@ -9,6 +9,7 @@ import { auth, db } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogTrigger,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -1034,5 +1035,3 @@ function ExporterDashboardPage() {
     </>
   );
 }
-
-    

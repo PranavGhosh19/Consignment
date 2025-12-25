@@ -67,7 +67,7 @@ export default function ExporterDashboardPage() {
             <div className="flex justify-between items-center mb-8">
                 <Skeleton className="h-10 w-64" />
             </div>
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+             <div className="w-full max-w-xs">
                 <Skeleton className="h-28" />
             </div>
         </div>
@@ -80,7 +80,7 @@ export default function ExporterDashboardPage() {
             <h1 className="text-2xl sm:text-3xl font-bold font-headline">Welcome, {userData?.name || 'Exporter'}</h1>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="w-full max-w-xs">
             <StatCard title="Total Shipments" value={shipmentCount} icon={Ship} />
         </div>
     </div>

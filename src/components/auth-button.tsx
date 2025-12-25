@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -23,8 +24,8 @@ import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Separator } from "./ui/separator";
 
 const exporterNavLinks = [
-  { href: "/dashboard/exporter", label: "My Shipments" },
-  
+  { href: "/dashboard/exporter", label: "Dashboard" },
+  { href: "/dashboard/exporter/my-shipments", label: "My Shipments" },
 ];
 
 const carrierNavLinks = [
@@ -358,6 +359,3 @@ export function MobileMenu() {
         </div>
     );
 }
-
-
-    

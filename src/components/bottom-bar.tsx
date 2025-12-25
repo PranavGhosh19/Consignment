@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -56,12 +56,18 @@ const CarrierBottomNav = () => {
 const ExporterBottomNav = () => {
     const pathname = usePathname();
     const exporterLinks = [
-        { href: "/dashboard/exporter", label: "My Shipments", icon: Ship },
+        { href: "/dashboard/exporter", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/dashboard/exporter/my-shipments", label: "My Shipments", icon: Ship },
     ];
     return (
         <div className="flex h-full items-center justify-evenly gap-2">
             {exporterLinks.map(link => {
-                const isActive = pathname.startsWith(link.href);
+                let isActive = false;
+                if (link.href === "/dashboard/exporter") {
+                    isActive = pathname === link.href;
+                } else {
+                    isActive = pathname.startsWith(link.href);
+                }
                 return (
                     <NavItem 
                         key={link.href}

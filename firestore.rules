@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -133,17 +134,7 @@ service cloud.firestore {
               request.resource.data.exporterId == resource.data.exporterId &&
               request.resource.data.createdAt == resource.data.createdAt
             ) ||
-
-            // ①a Exporter scheduled → live (set bidding window)
-            (
-              resource.data.status == 'scheduled' &&
-              request.resource.data.status == 'live' &&
-              request.resource.data.exporterId == resource.data.exporterId &&
-              request.resource.data.createdAt == resource.data.createdAt &&
-              request.resource.data.goLiveAt is timestamp &&
-              request.resource.data.biddingCloseAt is timestamp
-            ) ||
-
+            
             // ② Exporter awarding a live/reviewing shipment
             (
               (resource.data.status == 'live' || resource.data.status == 'reviewing') &&

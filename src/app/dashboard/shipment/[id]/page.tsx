@@ -252,11 +252,9 @@ export default function ShipmentDetailPage() {
     setIsSubmitting(true);
     try {
       const shipmentDocRef = doc(db, "shipments", shipmentId);
-      const closeTime = new Date(Date.now() + 3 * 60 * 1000);
       await updateDoc(shipmentDocRef, { 
         status: 'live',
         goLiveAt: Timestamp.now(), // Set go-live time to now
-        biddingCloseAt: Timestamp.fromDate(closeTime),
       });
       toast({ title: "Success!", description: "The shipment is now live for bidding." });
     } catch (error) {
@@ -395,7 +393,7 @@ export default function ShipmentDetailPage() {
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canDelete = isOwner && shipment.status === 'draft';
   const canAcceptBid = (isOwner || isEmployee) && (shipment.status === 'live' || shipment.status === 'bidding_closed');
-  const canGoLive = isEmployee && shipment.status === 'scheduled';
+  const canGoLive = (isOwner || isEmployee) && shipment.status === 'scheduled';
   const canViewDocuments = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
   const canInvite = (isOwner || isEmployee) && shipment.status === 'scheduled';
   const canMarkAsDelivered = isOwner && shipment.status === 'awarded';
@@ -811,5 +809,3 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
-
-    

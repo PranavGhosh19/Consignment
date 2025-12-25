@@ -28,8 +28,7 @@ const db = admin.firestore();
 // -----------------------------------------------------------------------------
 const PROJECT_ID = "cargoflow-j35du";
 const QUEUE_LOCATION = "us-central1";
-const GO_LIVE_QUEUE_ID = "shipment-go-live-queue";
-const CLOSE_BIDDING_QUEUE_ID = "shipment-close-bidding-queue";
+const QUEUE_ID = "shipment-go-live-queue";
 // Service account must have Cloud Tasks Enqueuer role
 const SERVICE_ACCOUNT_EMAIL =
     `cloud-tasks-invoker@${PROJECT_ID}.iam.gserviceaccount.com`;
@@ -135,7 +134,7 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
       const queuePath = tasksClient.queuePath(
         PROJECT_ID,
         QUEUE_LOCATION,
-        GO_LIVE_QUEUE_ID
+        QUEUE_ID
       );
       const [response] = await tasksClient.createTask({
         parent: queuePath,
@@ -207,38 +206,8 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
     const shipmentData = doc.data();
     // Only update if the shipment is still in the 'scheduled' state.
     if (shipmentData?.status === "scheduled") {
-        const closeTime = new Date(Date.now() + 3 * 60 * 1000);
-        await shipmentRef.update({
-            status: "live",
-            biddingCloseAt: admin.firestore.Timestamp.fromDate(closeTime),
-        });
+        await shipmentRef.update({status: "live"});
         logger.log("Set shipment", shipmentId, "to 'live' via Cloud Task.");
-
-        // --- Schedule Bidding Close Task (3 minutes from now) ---
-        const closeTask: protos.google.cloud.tasks.v2.ITask = {
-          httpRequest: {
-            httpMethod: "POST",
-            url:
-            `https://${QUEUE_LOCATION}-${PROJECT_ID}.cloudfunctions.net/` +
-            "executeShipmentBiddingClose",
-            headers: {"Content-Type": "application/json"},
-            body: Buffer.from(JSON.stringify({shipmentId})).toString("base64"),
-            oidcToken: {
-              serviceAccountEmail: SERVICE_ACCOUNT_EMAIL,
-            },
-          },
-          scheduleTime: {
-            seconds: Math.floor(closeTime.getTime() / 1000),
-          },
-        };
-        const queuePath = tasksClient.queuePath(
-          PROJECT_ID,
-          QUEUE_LOCATION,
-          CLOSE_BIDDING_QUEUE_ID
-        );
-        await tasksClient.createTask({parent: queuePath, task: closeTask});
-        logger.log(`Scheduled bidding close task for shipment ${shipmentId}.`);
-
 
         // --- Notify Registered Carriers ---
         const registrationsRef = shipmentRef.collection("register");
@@ -264,48 +233,6 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
     }
   } catch (error) {
     logger.error(`Error executing go-live for shipment ${shipmentId}:`, error);
-    res.status(500).send("Internal Server Error");
-  }
-});
-
-
-/**
- * The secure HTTP endpoint called by Cloud Tasks to close bidding on a shipment.
- */
-export const executeShipmentBiddingClose = onRequest(async (req, res) => {
-  const {shipmentId} = req.body;
-
-  if (!shipmentId) {
-    logger.error("HTTP request missing shipmentId in body");
-    res.status(400).send("Bad Request: Missing shipmentId");
-    return;
-  }
-
-  try {
-    const shipmentRef = db.collection("shipments").doc(shipmentId);
-    const doc = await shipmentRef.get();
-
-    if (!doc.exists) {
-      logger.warn(`Shipment ${shipmentId} not found for closing bids.`);
-      res.status(404).send("Not Found");
-      return;
-    }
-
-    const shipmentData = doc.data();
-
-    // Only close bidding if the shipment is currently 'live'.
-    if (shipmentData?.status === "live") {
-      await shipmentRef.update({status: "bidding_closed"});
-      logger.log(`Closed bidding for shipment ${shipmentId}.`);
-      res.status(200).send("OK");
-    } else {
-      logger.log(
-        `Shipment ${shipmentId} was not 'live'. No action taken.`
-      );
-      res.status(200).send("No action needed.");
-    }
-  } catch (error) {
-    logger.error(`Error closing bids for shipment ${shipmentId}:`, error);
     res.status(500).send("Internal Server Error");
   }
 });
@@ -347,43 +274,5 @@ export const minuteShipmentSweeper =
         logger.log(`Successfully updated ${snapshot.size} overdue shipments.`);
       } catch (error) {
         logger.error("Error running minute shipment sweeper:", error);
-      }
-    });
-
-/**
- * A sweeper function that runs every minute to close bidding on live
- * shipments that were missed by the primary Cloud Task.
- */
-export const liveShipmentSweeper =
-  onSchedule({region: "us-central1", schedule: "every 1 minutes"},
-    async () => {
-      logger.log("Running live shipment sweeper function.");
-      const now = admin.firestore.Timestamp.now();
-
-      try {
-        const query = db
-          .collection("shipments")
-          .where("status", "==", "live")
-          .where("biddingCloseAt", "<=", now);
-
-        const snapshot = await query.get();
-
-        if (snapshot.empty) {
-          logger.log("No overdue live shipments found to close.");
-          return;
-        }
-
-        const batch = db.batch();
-        snapshot.docs.forEach((doc) => {
-          logger.log(
-            `Sweeper: Found overdue live shipment ${doc.id}. Closing bidding.`
-          );
-          batch.update(doc.ref, {status: "bidding_closed"});
-        });
-
-        await batch.commit();
-        logger.log(`Successfully closed bidding for ${snapshot.size} overdue shipments.`);
-      } catch (error) {
-        logger.error("Error running live shipment sweeper:", error);
       }
     });

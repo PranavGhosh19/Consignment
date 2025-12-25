@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -112,11 +111,8 @@ service cloud.firestore {
       // LIST
       allow list: if request.auth.uid != null && (
         isEmployee(request.auth.uid) ||
-        isCarrier(request.auth.uid) ||
-        (
-          isExporter(request.auth.uid) &&
-          request.query.where.exporterId == request.auth.uid
-        )
+        isExporter(request.auth.uid) ||
+        isCarrier(request.auth.uid)
       );
 
       // UPDATE
@@ -131,18 +127,26 @@ service cloud.firestore {
           resource.data.exporterId == request.auth.uid &&
           (
 
-            // ① Exporter editing draft / scheduled
+            // ① Exporter editing draft
             (
-              (resource.data.status == 'draft' || resource.data.status == 'scheduled') &&
+              resource.data.status == 'draft' &&
               request.resource.data.exporterId == resource.data.exporterId &&
-              request.resource.data.createdAt == resource.data.createdAt &&
-              // Cannot change biddingCloseAt directly
-              request.resource.data.biddingCloseAt == resource.data.biddingCloseAt
+              request.resource.data.createdAt == resource.data.createdAt
             ) ||
 
-            // ② Exporter awarding a live or bidding_closed shipment
+            // ①a Exporter scheduled → live (set bidding window)
             (
-              (resource.data.status == 'live' || resource.data.status == 'bidding_closed') &&
+              resource.data.status == 'scheduled' &&
+              request.resource.data.status == 'live' &&
+              request.resource.data.exporterId == resource.data.exporterId &&
+              request.resource.data.createdAt == resource.data.createdAt &&
+              request.resource.data.goLiveAt is timestamp &&
+              request.resource.data.biddingCloseAt is timestamp
+            ) ||
+
+            // ② Exporter awarding a live/reviewing shipment
+            (
+              (resource.data.status == 'live' || resource.data.status == 'reviewing') &&
               request.resource.data.status == 'awarded' &&
               request.resource.data.winningBidId != null &&
               request.resource.data.winningCarrierId != null &&
@@ -150,7 +154,7 @@ service cloud.firestore {
               request.resource.data.createdAt == resource.data.createdAt
             ) ||
 
-            // ③ Exporter updating ONLY their POC fields on awarded shipment
+            // ③ Exporter updating ONLY POC fields on awarded shipment
             (
               resource.data.status == 'awarded' &&
               request.resource.data.keys().hasAll([
@@ -239,7 +243,7 @@ service cloud.firestore {
           (isExporter(request.auth.uid) &&
            getShipment(shipmentId).data.exporterId == request.auth.uid) ||
           (isCarrier(request.auth.uid) &&
-           (getShipment(shipmentId).data.status == 'live' || getShipment(shipmentId).data.status == 'bidding_closed'))
+          (getShipment(shipmentId).data.status == 'live' || getShipment(shipmentId).data.status == 'reviewing'))
         );
 
         allow create: if request.auth.uid != null &&

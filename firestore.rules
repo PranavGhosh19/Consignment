@@ -115,8 +115,7 @@ service cloud.firestore {
         isCarrier(request.auth.uid) ||
         (
           isExporter(request.auth.uid) &&
-          request.query.where.exporterId == request.auth.uid &&
-          request.query.where.listingPaymentId != null
+          request.query.where.exporterId == request.auth.uid
         )
       );
 
@@ -136,7 +135,9 @@ service cloud.firestore {
             (
               (resource.data.status == 'draft' || resource.data.status == 'scheduled') &&
               request.resource.data.exporterId == resource.data.exporterId &&
-              request.resource.data.createdAt == resource.data.createdAt
+              request.resource.data.createdAt == resource.data.createdAt &&
+              // Cannot change biddingCloseAt directly
+              request.resource.data.biddingCloseAt == resource.data.biddingCloseAt
             ) ||
 
             // ② Exporter awarding a live or bidding_closed shipment

@@ -207,11 +207,14 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
     const shipmentData = doc.data();
     // Only update if the shipment is still in the 'scheduled' state.
     if (shipmentData?.status === "scheduled") {
-        await shipmentRef.update({status: "live"});
+        const closeTime = new Date(Date.now() + 3 * 60 * 1000);
+        await shipmentRef.update({
+            status: "live",
+            biddingCloseAt: admin.firestore.Timestamp.fromDate(closeTime),
+        });
         logger.log("Set shipment", shipmentId, "to 'live' via Cloud Task.");
 
         // --- Schedule Bidding Close Task (3 minutes from now) ---
-        const closeTime = new Date(Date.now() + 3 * 60 * 1000);
         const closeTask: protos.google.cloud.tasks.v2.ITask = {
           httpRequest: {
             httpMethod: "POST",
@@ -344,5 +347,43 @@ export const minuteShipmentSweeper =
         logger.log(`Successfully updated ${snapshot.size} overdue shipments.`);
       } catch (error) {
         logger.error("Error running minute shipment sweeper:", error);
+      }
+    });
+
+/**
+ * A sweeper function that runs every minute to close bidding on live
+ * shipments that were missed by the primary Cloud Task.
+ */
+export const liveShipmentSweeper =
+  onSchedule({region: "us-central1", schedule: "every 1 minutes"},
+    async () => {
+      logger.log("Running live shipment sweeper function.");
+      const now = admin.firestore.Timestamp.now();
+
+      try {
+        const query = db
+          .collection("shipments")
+          .where("status", "==", "live")
+          .where("biddingCloseAt", "<=", now);
+
+        const snapshot = await query.get();
+
+        if (snapshot.empty) {
+          logger.log("No overdue live shipments found to close.");
+          return;
+        }
+
+        const batch = db.batch();
+        snapshot.docs.forEach((doc) => {
+          logger.log(
+            `Sweeper: Found overdue live shipment ${doc.id}. Closing bidding.`
+          );
+          batch.update(doc.ref, {status: "bidding_closed"});
+        });
+
+        await batch.commit();
+        logger.log(`Successfully closed bidding for ${snapshot.size} overdue shipments.`);
+      } catch (error) {
+        logger.error("Error running live shipment sweeper:", error);
       }
     });

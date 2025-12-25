@@ -392,7 +392,7 @@ export default function ShipmentDetailPage() {
   
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canDelete = isOwner && shipment.status === 'draft';
-  const canAcceptBid = (isOwner && shipment.status === 'live') || (isEmployee && shipment.status === 'live');
+  const canAcceptBid = (isOwner || isEmployee) && (shipment.status === 'live' || shipment.status === 'bidding_closed');
   const canGoLive = isEmployee && shipment.status === 'scheduled';
   const canViewDocuments = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
   const canInvite = (isOwner || isEmployee) && shipment.status === 'scheduled';
@@ -411,6 +411,8 @@ export default function ShipmentDetailPage() {
             return { text: "Scheduled", description: "This shipment is scheduled to go live." };
         case 'live':
             return { text: "Accepting Bids", description: "This shipment is live for carriers to bid on." };
+        case 'bidding_closed':
+            return { text: "Bidding Closed", description: "Review bids and award the shipment to a carrier." };
         case 'awarded':
              if (isOwner) {
                 return { text: "Congratulations! You have Awarded", description: `to ${shipment.winningCarrierName || 'a carrier'}.` };

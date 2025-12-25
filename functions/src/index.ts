@@ -28,7 +28,8 @@ const db = admin.firestore();
 // -----------------------------------------------------------------------------
 const PROJECT_ID = "cargoflow-j35du";
 const QUEUE_LOCATION = "us-central1";
-const QUEUE_ID = "shipment-go-live-queue";
+const GO_LIVE_QUEUE_ID = "shipment-go-live-queue";
+const CLOSE_BIDDING_QUEUE_ID = "shipment-close-bidding-queue";
 // Service account must have Cloud Tasks Enqueuer role
 const SERVICE_ACCOUNT_EMAIL =
     `cloud-tasks-invoker@${PROJECT_ID}.iam.gserviceaccount.com`;
@@ -134,7 +135,7 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
       const queuePath = tasksClient.queuePath(
         PROJECT_ID,
         QUEUE_LOCATION,
-        QUEUE_ID
+        GO_LIVE_QUEUE_ID
       );
       const [response] = await tasksClient.createTask({
         parent: queuePath,
@@ -209,6 +210,33 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
         await shipmentRef.update({status: "live"});
         logger.log("Set shipment", shipmentId, "to 'live' via Cloud Task.");
 
+        // --- Schedule Bidding Close Task (3 minutes from now) ---
+        const closeTime = new Date(Date.now() + 3 * 60 * 1000);
+        const closeTask: protos.google.cloud.tasks.v2.ITask = {
+          httpRequest: {
+            httpMethod: "POST",
+            url:
+            `https://${QUEUE_LOCATION}-${PROJECT_ID}.cloudfunctions.net/` +
+            "executeShipmentBiddingClose",
+            headers: {"Content-Type": "application/json"},
+            body: Buffer.from(JSON.stringify({shipmentId})).toString("base64"),
+            oidcToken: {
+              serviceAccountEmail: SERVICE_ACCOUNT_EMAIL,
+            },
+          },
+          scheduleTime: {
+            seconds: Math.floor(closeTime.getTime() / 1000),
+          },
+        };
+        const queuePath = tasksClient.queuePath(
+          PROJECT_ID,
+          QUEUE_LOCATION,
+          CLOSE_BIDDING_QUEUE_ID
+        );
+        await tasksClient.createTask({parent: queuePath, task: closeTask});
+        logger.log(`Scheduled bidding close task for shipment ${shipmentId}.`);
+
+
         // --- Notify Registered Carriers ---
         const registrationsRef = shipmentRef.collection("register");
         const registrationsSnap = await registrationsRef.get();
@@ -236,6 +264,49 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
+
+/**
+ * The secure HTTP endpoint called by Cloud Tasks to close bidding on a shipment.
+ */
+export const executeShipmentBiddingClose = onRequest(async (req, res) => {
+  const {shipmentId} = req.body;
+
+  if (!shipmentId) {
+    logger.error("HTTP request missing shipmentId in body");
+    res.status(400).send("Bad Request: Missing shipmentId");
+    return;
+  }
+
+  try {
+    const shipmentRef = db.collection("shipments").doc(shipmentId);
+    const doc = await shipmentRef.get();
+
+    if (!doc.exists) {
+      logger.warn(`Shipment ${shipmentId} not found for closing bids.`);
+      res.status(404).send("Not Found");
+      return;
+    }
+
+    const shipmentData = doc.data();
+
+    // Only close bidding if the shipment is currently 'live'.
+    if (shipmentData?.status === "live") {
+      await shipmentRef.update({status: "bidding_closed"});
+      logger.log(`Closed bidding for shipment ${shipmentId}.`);
+      res.status(200).send("OK");
+    } else {
+      logger.log(
+        `Shipment ${shipmentId} was not 'live'. No action taken.`
+      );
+      res.status(200).send("No action needed.");
+    }
+  } catch (error) {
+    logger.error(`Error closing bids for shipment ${shipmentId}:`, error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 
 /**
  * A sweeper function that runs every minute as a safety net. It finds any

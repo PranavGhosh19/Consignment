@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -58,7 +59,7 @@ export default function CarrierShipmentDetailPage() {
     unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
        if (docSnap.exists()) {
         const shipmentData = docSnap.data();
-        if (shipmentData.status !== 'live') {
+        if (shipmentData.status !== 'live' && shipmentData.status !== 'bidding_closed') {
             toast({ title: "Info", description: "Bidding for this shipment is closed.", variant: "default" });
             router.push("/dashboard/carrier");
         }
@@ -242,8 +243,13 @@ export default function CarrierShipmentDetailPage() {
         <div className="space-y-6 lg:sticky lg:top-24">
             <Card className="bg-white dark:bg-card">
               <CardHeader>
-                <CardTitle>Live Bidding</CardTitle>
-                <CardDescription>Place your bid for this shipment. ({userBidCount} of 3 bids placed)</CardDescription>
+                <CardTitle>{shipment.status === 'live' ? "Live Bidding" : "Bidding Closed"}</CardTitle>
+                <CardDescription>
+                    {shipment.status === 'live' 
+                        ? `Place your bid. (${userBidCount} of 3 bids placed)`
+                        : "The bidding window for this shipment has closed."
+                    }
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
@@ -262,11 +268,11 @@ export default function CarrierShipmentDetailPage() {
                     )}
                 </div>
 
-                {atBidLimit ? (
+                {atBidLimit && shipment.status === 'live' ? (
                      <div className="text-center text-muted-foreground border-dashed border-2 p-4 rounded-md">
                         You have reached your bid limit for this shipment.
                     </div>
-                ) : (
+                ) : shipment.status === 'live' && (
                     <>
                         <div className="grid gap-2">
                             <Label htmlFor="bid-amount">Your Bid Amount (USD)</Label>
@@ -288,6 +294,11 @@ export default function CarrierShipmentDetailPage() {
                             {isSubmitting ? 'Placing Bid...' : 'Place Bid'}
                         </Button>
                     </>
+                )}
+                 {shipment.status === 'bidding_closed' && (
+                     <div className="text-center text-muted-foreground border-dashed border-2 p-4 rounded-md">
+                       Bidding is closed. The exporter is now reviewing the bids.
+                    </div>
                 )}
               </CardContent>
             </Card>

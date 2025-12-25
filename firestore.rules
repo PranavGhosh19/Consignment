@@ -139,9 +139,9 @@ service cloud.firestore {
               request.resource.data.createdAt == resource.data.createdAt
             ) ||
 
-            // ② Exporter awarding a live shipment
+            // ② Exporter awarding a live or bidding_closed shipment
             (
-              resource.data.status == 'live' &&
+              (resource.data.status == 'live' || resource.data.status == 'bidding_closed') &&
               request.resource.data.status == 'awarded' &&
               request.resource.data.winningBidId != null &&
               request.resource.data.winningCarrierId != null &&
@@ -238,7 +238,7 @@ service cloud.firestore {
           (isExporter(request.auth.uid) &&
            getShipment(shipmentId).data.exporterId == request.auth.uid) ||
           (isCarrier(request.auth.uid) &&
-           getShipment(shipmentId).data.status == 'live')
+           (getShipment(shipmentId).data.status == 'live' || getShipment(shipmentId).data.status == 'bidding_closed'))
         );
 
         allow create: if request.auth.uid != null &&

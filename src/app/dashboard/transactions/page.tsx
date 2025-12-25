@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import {
@@ -24,8 +25,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard } from "lucide-react";
-import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CreditCard, Calendar as CalendarIcon, X } from "lucide-react";
+import { format, isSameDay } from "date-fns";
+import { cn } from "@/lib/utils";
 
 /* ---------------- TYPES ---------------- */
 
@@ -55,6 +60,7 @@ export default function TransactionsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState<Date | undefined>();
 
   const router = useRouter();
   const { toast } = useToast();
@@ -169,6 +175,11 @@ export default function TransactionsPage() {
     fetchTransactions();
   }, [user, toast]);
 
+  const filteredTransactions = useMemo(() => {
+    if (!dateFilter) return transactions;
+    return transactions.filter(tx => isSameDay(tx.paidAt.toDate(), dateFilter));
+  }, [transactions, dateFilter]);
+
   /* ---------------- ROW CLICK REDIRECT ---------------- */
 
   const handleRowClick = (tx: Transaction) => {
@@ -187,14 +198,47 @@ export default function TransactionsPage() {
 
   return (
     <div className="container py-6 md:py-10">
-      <h1 className="text-2xl sm:text-3xl font-bold font-headline">
-        Transaction History
-      </h1>
-      <p className="text-muted-foreground mb-8">
-        A record of all your payments on the platform.
-      </p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+                <h1 className="text-2xl sm:text-3xl font-bold font-headline">
+                    Transaction History
+                </h1>
+                <p className="text-muted-foreground">
+                    A record of all your payments on the platform.
+                </p>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                        variant={"outline"}
+                        className={cn(
+                            "w-full sm:w-[280px] justify-start text-left font-normal",
+                            !dateFilter && "text-muted-foreground"
+                        )}
+                        >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateFilter ? format(dateFilter, "PPP") : <span>Filter by date</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={dateFilter}
+                            onSelect={setDateFilter}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+                 {dateFilter && (
+                    <Button variant="ghost" size="icon" onClick={() => setDateFilter(undefined)}>
+                        <X className="h-4 w-4" />
+                    </Button>
+                )}
+            </div>
+        </div>
 
-      {transactions.length ? (
+      {filteredTransactions.length > 0 ? (
         <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
@@ -208,7 +252,7 @@ export default function TransactionsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((tx) => (
+              {filteredTransactions.map((tx) => (
                 <TableRow
                   key={tx.id}
                   onClick={() => handleRowClick(tx)}
@@ -247,7 +291,7 @@ export default function TransactionsPage() {
             No Transactions Found
           </h2>
           <p className="text-muted-foreground">
-            Your payment history will appear here.
+             {dateFilter ? "No transactions found for the selected date." : "Your payment history will appear here."}
           </p>
         </div>
       )}

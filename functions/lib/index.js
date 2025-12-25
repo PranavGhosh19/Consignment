@@ -23,15 +23,25 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.minuteShipmentSweeper = exports.executeShipmentGoLive = exports.onBidCreate = exports.onShipmentWrite = void 0;
+exports.reviewingSweeper = exports.closeBiddingAndReview = exports.minuteShipmentSweeper = exports.executeShipmentGoLive = exports.onBidCreate = exports.onShipmentWrite = void 0;
 const v2_1 = require("firebase-functions/v2");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
@@ -47,7 +57,8 @@ const db = admin.firestore();
 // -----------------------------------------------------------------------------
 const PROJECT_ID = "cargoflow-j35du";
 const QUEUE_LOCATION = "us-central1";
-const QUEUE_ID = "shipment-go-live-queue";
+const GO_LIVE_QUEUE_ID = "shipment-go-live-queue";
+const CLOSE_BIDDING_QUEUE_ID = "shipment-go-live-queue";
 // Service account must have Cloud Tasks Enqueuer role
 const SERVICE_ACCOUNT_EMAIL = `cloud-tasks-invoker@${PROJECT_ID}.iam.gserviceaccount.com`;
 const tasksClient = new tasks_1.CloudTasksClient();
@@ -55,15 +66,11 @@ const tasksClient = new tasks_1.CloudTasksClient();
 (0, v2_1.setGlobalOptions)({ region: "us-central1", maxInstances: 10 });
 /**
  * Creates a notification document in Firestore.
- * @param {Notification} notification The notification object.
+ * @param {admin.firestore.DocumentData} notification The notification object.
  */
 async function createNotification(notification) {
     try {
-        await db.collection("notifications").add({
-            ...notification,
-            isRead: false,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        await db.collection("notifications").add(Object.assign(Object.assign({}, notification), { isRead: false, createdAt: admin.firestore.FieldValue.serverTimestamp() }));
         logger.log(`Notification created for ${notification.recipientId}`);
     }
     catch (error) {
@@ -76,12 +83,13 @@ async function createNotification(notification) {
  * collection is written to.
  */
 exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmentId}", async (event) => {
+    var _a, _b;
     const shipmentId = event.params.shipmentId;
-    const beforeData = event.data?.before.data();
-    const afterData = event.data?.after.data();
+    const beforeData = (_a = event.data) === null || _a === void 0 ? void 0 : _a.before.data();
+    const afterData = (_b = event.data) === null || _b === void 0 ? void 0 : _b.after.data();
     // --- Task Deletion Logic ---
     // If a task was scheduled for the previous version, delete it.
-    if (beforeData?.goLiveTaskName) {
+    if (beforeData === null || beforeData === void 0 ? void 0 : beforeData.goLiveTaskName) {
         logger.log("Deleting previous task:", beforeData.goLiveTaskName);
         await tasksClient.deleteTask({ name: beforeData.goLiveTaskName })
             .catch((err) => {
@@ -91,8 +99,21 @@ exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmen
             }
         });
     }
+    // --- Automatically set biddingCloseAt if goLiveAt exists ---
+    if (afterData && afterData.goLiveAt) {
+        const goLiveAtDate = afterData.goLiveAt.toDate();
+        const needsBiddingCloseUpdate = !afterData.biddingCloseAt ||
+            ((beforeData === null || beforeData === void 0 ? void 0 : beforeData.goLiveAt) && beforeData.goLiveAt.toMillis() !== afterData.goLiveAt.toMillis());
+        if (needsBiddingCloseUpdate) {
+            const biddingCloseAt = new Date(goLiveAtDate.getTime() + 3 * 60 * 1000); // 3 minutes later
+            await db.collection("shipments").doc(shipmentId).update({
+                biddingCloseAt: admin.firestore.Timestamp.fromDate(biddingCloseAt),
+            });
+            logger.log(`Auto-updated biddingCloseAt for shipment ${shipmentId}`);
+        }
+    }
     // --- Status Change Notifications (Awarded) ---
-    if (beforeData?.status !== "awarded" && afterData?.status === "awarded") {
+    if ((beforeData === null || beforeData === void 0 ? void 0 : beforeData.status) !== "awarded" && (afterData === null || afterData === void 0 ? void 0 : afterData.status) === "awarded") {
         if (afterData.winningCarrierId && afterData.productName) {
             await createNotification({
                 recipientId: afterData.winningCarrierId,
@@ -132,7 +153,7 @@ exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmen
         },
     };
     try {
-        const queuePath = tasksClient.queuePath(PROJECT_ID, QUEUE_LOCATION, QUEUE_ID);
+        const queuePath = tasksClient.queuePath(PROJECT_ID, QUEUE_LOCATION, GO_LIVE_QUEUE_ID);
         const [response] = await tasksClient.createTask({
             parent: queuePath,
             task,
@@ -150,15 +171,15 @@ exports.onShipmentWrite = (0, firestore_1.onDocumentWritten)("shipments/{shipmen
  * Creates a notification when a new bid is placed on a shipment.
  */
 exports.onBidCreate = (0, firestore_1.onDocumentCreated)("shipments/{shipmentId}/bids/{bidId}", async (event) => {
+    var _a;
     const shipmentId = event.params.shipmentId;
-    const bidData = event.data?.data();
+    const bidData = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!bidData) {
         logger.log("No bid data found, cannot create notification.");
         return;
     }
     try {
-        const shipmentDoc = await db.collection("shipments").doc(shipmentId)
-            .get();
+        const shipmentDoc = await db.collection("shipments").doc(shipmentId).get();
         if (shipmentDoc.exists) {
             const shipmentData = shipmentDoc.data();
             if (shipmentData && shipmentData.exporterId) {
@@ -195,8 +216,12 @@ exports.executeShipmentGoLive = (0, https_1.onRequest)(async (req, res) => {
         }
         const shipmentData = doc.data();
         // Only update if the shipment is still in the 'scheduled' state.
-        if (shipmentData?.status === "scheduled") {
-            await shipmentRef.update({ status: "live" });
+        if ((shipmentData === null || shipmentData === void 0 ? void 0 : shipmentData.status) === "scheduled") {
+            const biddingCloseAt = new Date(Date.now() + 3 * 60 * 1000);
+            await shipmentRef.update({
+                status: "live",
+                biddingCloseAt: admin.firestore.Timestamp.fromDate(biddingCloseAt),
+            });
             logger.log("Set shipment", shipmentId, "to 'live' via Cloud Task.");
             // --- Notify Registered Carriers ---
             const registrationsRef = shipmentRef.collection("register");
@@ -215,6 +240,20 @@ exports.executeShipmentGoLive = (0, https_1.onRequest)(async (req, res) => {
                 logger.log(`Sent ${notifications.length} go-live notifications for ` +
                     `shipment ${shipmentId}.`);
             }
+            // --- Schedule Bidding Close Task ---
+            const closeTask = {
+                httpRequest: {
+                    httpMethod: "POST",
+                    url: `https://${QUEUE_LOCATION}-${PROJECT_ID}.cloudfunctions.net/closeBiddingAndReview`,
+                    headers: { "Content-Type": "application/json" },
+                    body: Buffer.from(JSON.stringify({ shipmentId })).toString("base64"),
+                    oidcToken: { serviceAccountEmail: SERVICE_ACCOUNT_EMAIL },
+                },
+                scheduleTime: { seconds: Math.floor(biddingCloseAt.getTime() / 1000) },
+            };
+            const queuePath = tasksClient.queuePath(PROJECT_ID, QUEUE_LOCATION, CLOSE_BIDDING_QUEUE_ID);
+            const [response] = await tasksClient.createTask({ parent: queuePath, task: closeTask });
+            logger.log(`Created bidding close task ${response.name} for shipment ${shipmentId}`);
             res.status(200).send("OK");
         }
         else {
@@ -255,6 +294,69 @@ exports.minuteShipmentSweeper = (0, scheduler_1.onSchedule)({ region: "us-centra
     }
     catch (error) {
         logger.error("Error running minute shipment sweeper:", error);
+    }
+});
+/**
+ * The secure HTTP endpoint called by Cloud Tasks to set a shipment to 'reviewing'.
+ */
+exports.closeBiddingAndReview = (0, https_1.onRequest)(async (req, res) => {
+    const { shipmentId } = req.body;
+    if (!shipmentId) {
+        logger.error("HTTP request missing shipmentId in body");
+        res.status(400).send("Bad Request: Missing shipmentId");
+        return;
+    }
+    try {
+        const shipmentRef = db.collection("shipments").doc(shipmentId);
+        const doc = await shipmentRef.get();
+        if (!doc.exists) {
+            logger.warn(`Shipment ${shipmentId} not found for closing bidding.`);
+            res.status(404).send("Not Found");
+            return;
+        }
+        const shipmentData = doc.data();
+        if ((shipmentData === null || shipmentData === void 0 ? void 0 : shipmentData.status) === "live") {
+            await shipmentRef.update({ status: "reviewing" });
+            logger.log(`Set shipment ${shipmentId} to 'reviewing'.`);
+            res.status(200).send("OK");
+        }
+        else {
+            logger.log(`Shipment ${shipmentId} not 'live'. No action taken.`);
+            res.status(200).send("No action needed.");
+        }
+    }
+    catch (error) {
+        logger.error(`Error closing bidding for shipment ${shipmentId}:`, error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+/**
+ * A sweeper function that runs every minute to close bidding on shipments
+ * where the biddingCloseAt time has passed.
+ */
+exports.reviewingSweeper = (0, scheduler_1.onSchedule)({ region: "us-central1", schedule: "every 1 minutes" }, async () => {
+    logger.log("Running reviewing sweeper function.");
+    const now = admin.firestore.Timestamp.now();
+    try {
+        const query = db
+            .collection("shipments")
+            .where("status", "==", "live")
+            .where("biddingCloseAt", "<=", now);
+        const snapshot = await query.get();
+        if (snapshot.empty) {
+            logger.log("No overdue live shipments found.");
+            return;
+        }
+        const batch = db.batch();
+        snapshot.docs.forEach((doc) => {
+            logger.log(`Sweeper: Found overdue live shipment ${doc.id}. Setting to reviewing.`);
+            batch.update(doc.ref, { status: "reviewing" });
+        });
+        await batch.commit();
+        logger.log(`Successfully updated ${snapshot.size} overdue live shipments.`);
+    }
+    catch (error) {
+        logger.error("Error running reviewing sweeper:", error);
     }
 });
 //# sourceMappingURL=index.js.map

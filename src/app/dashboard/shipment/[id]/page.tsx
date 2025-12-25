@@ -265,22 +265,24 @@ export default function ShipmentDetailPage() {
     if (!shipmentId) return;
     setIsSubmitting(true);
     try {
-      const shipmentDocRef = doc(db, "shipments", shipmentId);
-      const goLiveAt = Timestamp.now();
-      const biddingCloseAt = Timestamp.fromDate(new Date(goLiveAt.toMillis() + 3 * 60 * 1000));
-      await updateDoc(shipmentDocRef, { 
-        status: 'live',
-        goLiveAt: goLiveAt,
-        biddingCloseAt: biddingCloseAt
-      });
-      toast({ title: "Success!", description: "The shipment is now live for bidding." });
+        const shipmentDocRef = doc(db, "shipments", shipmentId);
+        const goLiveAt = Timestamp.now();
+        // The backend function `onShipmentWrite` will auto-set biddingCloseAt.
+        // We set it here to satisfy security rules and provide immediate frontend feedback.
+        const biddingCloseAt = Timestamp.fromDate(new Date(goLiveAt.toMillis() + 3 * 60 * 1000)); 
+        await updateDoc(shipmentDocRef, {
+            status: 'live',
+            goLiveAt: goLiveAt,
+            biddingCloseAt: biddingCloseAt
+        });
+        toast({ title: "Success!", description: "The shipment is now live for bidding." });
     } catch (error) {
-      console.error("Error setting shipment to live: ", error);
-      toast({ title: "Error", description: "Could not set the shipment to live.", variant: "destructive" });
+        console.error("Error setting shipment to live: ", error);
+        toast({ title: "Error", description: "Could not set the shipment to live.", variant: "destructive" });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
-  }
+}
 
   const handleDeleteShipment = async () => {
     if (!shipmentId) return;
@@ -410,7 +412,6 @@ export default function ShipmentDetailPage() {
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canDelete = isOwner && shipment.status === 'draft';
   const canAcceptBid = (isOwner || isEmployee) && (shipment.status === 'live' || shipment.status === 'reviewing');
-  const canGoLive = (isOwner || isEmployee) && shipment.status === 'scheduled';
   const canViewDocuments = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
   const canInvite = (isOwner || isEmployee) && shipment.status === 'scheduled';
   const canMarkAsDelivered = isOwner && shipment.status === 'awarded';
@@ -637,11 +638,6 @@ export default function ShipmentDetailPage() {
                                 </div>
                             )}
                         
-                            {canGoLive && (
-                                <Button onClick={handleGoLive} disabled={isSubmitting} className="w-full mt-4">
-                                    <Rocket className="mr-2 h-4 w-4" /> Go Live Now
-                                </Button>
-                            )}
                             {canViewDocuments && (
                                 <Button onClick={() => router.push(`/dashboard/shipment/${shipmentId}/documents`)} className="w-full mt-4">
                                 <FileText className="mr-2 h-4 w-4" />

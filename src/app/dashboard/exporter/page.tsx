@@ -51,7 +51,9 @@ export default function ExporterDashboardPage() {
 
   return (
     <div className="container py-6 md:py-10">
-        
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <h1 className="text-2xl sm:text-3xl font-bold font-headline">Welcome, {userData?.name || 'Exporter'}</h1>
+        </div>
     </div>
   );
 }

@@ -252,9 +252,11 @@ export default function ShipmentDetailPage() {
     setIsSubmitting(true);
     try {
       const shipmentDocRef = doc(db, "shipments", shipmentId);
+      const closeTime = new Date(Date.now() + 3 * 60 * 1000);
       await updateDoc(shipmentDocRef, { 
         status: 'live',
-        goLiveAt: Timestamp.now() // Set go-live time to now
+        goLiveAt: Timestamp.now(), // Set go-live time to now
+        biddingCloseAt: Timestamp.fromDate(closeTime),
       });
       toast({ title: "Success!", description: "The shipment is now live for bidding." });
     } catch (error) {
@@ -809,3 +811,5 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
+
+    

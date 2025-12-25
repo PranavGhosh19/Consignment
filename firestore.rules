@@ -66,7 +66,8 @@ service cloud.firestore {
     }
     
     function isFunctionServiceAccount() {
-      return request.auth.token.email == "866863583313-compute@developer.gserviceaccount.com";
+      // Allowlist the service account used by Cloud Functions
+      return request.auth.token.email == "firebase-adminsdk-j35du@cargoflow-j35du.iam.gserviceaccount.com" || request.auth.token.email == "866863583313-compute@developer.gserviceaccount.com";
     }
 
     // ───── USERS COLLECTION ─────
@@ -133,9 +134,19 @@ service cloud.firestore {
           resource.data.exporterId == request.auth.uid &&
           (
 
-            // ① Exporter editing draft
+            // ① Exporter editing draft/scheduled
             (
-              resource.data.status == 'draft' &&
+              (resource.data.status == 'draft' || resource.data.status == 'scheduled') &&
+              request.resource.data.exporterId == resource.data.exporterId &&
+              request.resource.data.createdAt == resource.data.createdAt
+            ) ||
+            
+            // ①b Exporter setting scheduled -> live (WITH bidding window)
+            (
+              resource.data.status == 'scheduled' &&
+              request.resource.data.status == 'live' &&
+              request.resource.data.goLiveAt is timestamp &&
+              request.resource.data.biddingCloseAt is timestamp &&
               request.resource.data.exporterId == resource.data.exporterId &&
               request.resource.data.createdAt == resource.data.createdAt
             ) ||

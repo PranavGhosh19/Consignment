@@ -73,7 +73,9 @@ export default function ShipmentDetailPage() {
   const [loadingCarriers, setLoadingCarriers] = useState(false);
   const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-
+  
+  // Countdown state
+  const [timeLeft, setTimeLeft] = useState<number>(0);
 
   const router = useRouter();
   const params = useParams();
@@ -107,7 +109,6 @@ export default function ShipmentDetailPage() {
         const shipmentData = docSnap.data();
         
         // This check is primarily for initial page load authorization.
-        // More granular access control is handled by the `can...` variables below.
         setShipment({ id: docSnap.id, ...shipmentData });
         if (shipmentData.status === 'delivered') {
           setIsMarkedAsDelivered(true);
@@ -196,6 +197,19 @@ export default function ShipmentDetailPage() {
     return () => unsubscribeRegister();
   }, [shipmentId, userType]);
   
+  // Countdown for bidding close
+  useEffect(() => {
+    if (shipment?.status !== 'live' || !shipment?.biddingCloseAt) {
+      setTimeLeft(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      const diff = shipment.biddingCloseAt.toDate().getTime() - Date.now();
+      setTimeLeft(diff > 0 ? diff : 0);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [shipment?.biddingCloseAt, shipment?.status]);
+  
   const fetchAllCarriers = useCallback(async () => {
     setLoadingCarriers(true);
     const carriersQuery = query(
@@ -252,9 +266,12 @@ export default function ShipmentDetailPage() {
     setIsSubmitting(true);
     try {
       const shipmentDocRef = doc(db, "shipments", shipmentId);
+      const goLiveAt = Timestamp.now();
+      const biddingCloseAt = Timestamp.fromDate(new Date(goLiveAt.toMillis() + 3 * 60 * 1000));
       await updateDoc(shipmentDocRef, { 
         status: 'live',
-        goLiveAt: Timestamp.now(), // Set go-live time to now
+        goLiveAt: goLiveAt,
+        biddingCloseAt: biddingCloseAt
       });
       toast({ title: "Success!", description: "The shipment is now live for bidding." });
     } catch (error) {
@@ -392,7 +409,7 @@ export default function ShipmentDetailPage() {
   
   const canEdit = isOwner && (shipment.status === 'draft' || shipment.status === 'scheduled');
   const canDelete = isOwner && shipment.status === 'draft';
-  const canAcceptBid = (isOwner || isEmployee) && (shipment.status === 'live' || shipment.status === 'bidding_closed');
+  const canAcceptBid = (isOwner || isEmployee) && (shipment.status === 'live' || shipment.status === 'reviewing');
   const canGoLive = (isOwner || isEmployee) && shipment.status === 'scheduled';
   const canViewDocuments = (isOwner || isEmployee || isWinningCarrier) && shipment.status === 'awarded';
   const canInvite = (isOwner || isEmployee) && shipment.status === 'scheduled';
@@ -411,8 +428,8 @@ export default function ShipmentDetailPage() {
             return { text: "Scheduled", description: "This shipment is scheduled to go live." };
         case 'live':
             return { text: "Accepting Bids", description: "This shipment is live for carriers to bid on." };
-        case 'bidding_closed':
-            return { text: "Bidding Closed", description: "Review bids and award the shipment to a carrier." };
+        case 'reviewing':
+            return { text: "Reviewing Bids", description: "Bidding is closed. Review bids and award the shipment to a carrier." };
         case 'awarded':
              if (isOwner) {
                 return { text: "Congratulations! You have Awarded", description: `to ${shipment.winningCarrierName || 'a carrier'}.` };
@@ -430,6 +447,10 @@ export default function ShipmentDetailPage() {
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
 
   const filteredCarriers = allCarriers.filter(c => c.name.toLowerCase().includes(carrierSearchTerm.toLowerCase()));
+
+  const countdownText = timeLeft > 0
+    ? `${Math.floor(timeLeft / 1000 / 60)}m ${Math.floor((timeLeft / 1000) % 60)}s`
+    : "Bidding closed";
 
   return (
     <div className="container py-6 md:py-10">
@@ -608,10 +629,17 @@ export default function ShipmentDetailPage() {
                             ) : (
                                 <p className="text-2xl font-bold font-headline text-accent-foreground capitalize">{statusInfo.text}</p>
                             )}
+
+                            {shipment.status === 'live' && shipment.biddingCloseAt && (
+                                <div className="mt-4 text-center">
+                                    <p className="text-sm text-muted-foreground">Bidding closes in:</p>
+                                    <p className="text-2xl font-bold font-mono text-destructive">{countdownText}</p>
+                                </div>
+                            )}
                         
                             {canGoLive && (
                                 <Button onClick={handleGoLive} disabled={isSubmitting} className="w-full mt-4">
-                                    <Rocket className="mr-2 h-4 w-4" /> Go Live
+                                    <Rocket className="mr-2 h-4 w-4" /> Go Live Now
                                 </Button>
                             )}
                             {canViewDocuments && (

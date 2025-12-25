@@ -1,4 +1,5 @@
 
+
 {
   "indexes": [
     {
@@ -25,6 +26,20 @@
         },
         {
           "fieldPath": "goLiveAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "shipments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "biddingCloseAt",
           "order": "ASCENDING"
         }
       ]

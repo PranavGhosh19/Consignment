@@ -1,4 +1,5 @@
 
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -63,6 +64,10 @@ service cloud.firestore {
 
       return hasAllKeys && validPath;
     }
+    
+    function isFunctionServiceAccount() {
+      return request.auth.token.email == "866863583313-compute@developer.gserviceaccount.com";
+    }
 
     // ───── USERS COLLECTION ─────
     match /users/{userId} {
@@ -119,8 +124,8 @@ service cloud.firestore {
       // UPDATE
       allow update: if request.auth.uid != null && (
 
-        // Employees can edit anything
-        isEmployee(request.auth.uid) ||
+        // Employees and Service Accounts can edit anything
+        isEmployee(request.auth.uid) || isFunctionServiceAccount() ||
 
         // Exporter updates
         (

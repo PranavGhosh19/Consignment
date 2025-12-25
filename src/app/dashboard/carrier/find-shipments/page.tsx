@@ -67,7 +67,7 @@ export default function FindShipmentsPage() {
         unsubscribeSnapshots = onSnapshot(shipmentsQuery, (snapshot) => {
             const shipmentsList = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter(shipment => shipment.status !== 'live' && shipment.status !== 'awarded');
+                .filter(shipment => shipment.status !== 'live' && shipment.status !== 'awarded' && shipment.status !== 'reviewing');
 
             setShipments(shipmentsList);
             setLoading(false);
@@ -358,5 +358,7 @@ export default function FindShipmentsPage() {
     </div>
   );
 }
+
+    
 
     

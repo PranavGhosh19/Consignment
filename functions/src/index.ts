@@ -83,6 +83,22 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
         });
     }
 
+    // --- Automatically set biddingCloseAt if goLiveAt exists ---
+    if (afterData && afterData.goLiveAt) {
+      const goLiveAtDate = afterData.goLiveAt.toDate();
+      const needsBiddingCloseUpdate = !afterData.biddingCloseAt ||
+        (beforeData?.goLiveAt && beforeData.goLiveAt.toMillis() !== afterData.goLiveAt.toMillis());
+
+      if (needsBiddingCloseUpdate) {
+        const biddingCloseAt = new Date(goLiveAtDate.getTime() + 3 * 60 * 1000); // 3 minutes later
+        await db.collection("shipments").doc(shipmentId).update({
+          biddingCloseAt: admin.firestore.Timestamp.fromDate(biddingCloseAt),
+        });
+        logger.log(`Auto-updated biddingCloseAt for shipment ${shipmentId}`);
+      }
+    }
+
+
     // --- Status Change Notifications (Awarded) ---
     if (beforeData?.status !== "awarded" && afterData?.status === "awarded") {
       if (afterData.winningCarrierId && afterData.productName) {
@@ -229,7 +245,7 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
           });
         });
         await Promise.all(notifications);
-        logger.log(`Sent ${notifications.length} go-live notifications for `+
+        logger.log(`Sent ${notifications.length} go-live notifications for ` +
             `shipment ${shipmentId}.`);
       }
 
@@ -367,5 +383,3 @@ export const reviewingSweeper = onSchedule({region: "us-central1", schedule: "ev
     logger.error("Error running reviewing sweeper:", error);
   }
 });
-
-    

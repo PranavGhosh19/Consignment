@@ -27,7 +27,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CreditCard, Calendar as CalendarIcon, X } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -177,8 +187,15 @@ export default function TransactionsPage() {
 
   const filteredTransactions = useMemo(() => {
     if (!dateFilter) return transactions;
-    return transactions.filter(tx => isSameDay(tx.paidAt.toDate(), dateFilter));
+    return transactions.filter((tx) =>
+      isSameDay(tx.paidAt.toDate(), dateFilter)
+    );
   }, [transactions, dateFilter]);
+  
+  const totalAmount = useMemo(() => {
+      if (!dateFilter) return 0;
+      return filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+  }, [filteredTransactions, dateFilter]);
 
   /* ---------------- ROW CLICK REDIRECT ---------------- */
 
@@ -198,45 +215,69 @@ export default function TransactionsPage() {
 
   return (
     <div className="container py-6 md:py-10">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-            <div>
-                <h1 className="text-2xl sm:text-3xl font-bold font-headline">
-                    Transaction History
-                </h1>
-                <p className="text-muted-foreground">
-                    A record of all your payments on the platform.
-                </p>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                        variant={"outline"}
-                        className={cn(
-                            "w-full sm:w-[280px] justify-start text-left font-normal",
-                            !dateFilter && "text-muted-foreground"
-                        )}
-                        >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateFilter ? format(dateFilter, "PPP") : <span>Filter by date</span>}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={dateFilter}
-                            onSelect={setDateFilter}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
-                 {dateFilter && (
-                    <Button variant="ghost" size="icon" onClick={() => setDateFilter(undefined)}>
-                        <X className="h-4 w-4" />
-                    </Button>
-                )}
-            </div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold font-headline">
+            Transaction History
+          </h1>
+          <p className="text-muted-foreground">
+            A record of all your payments on the platform.
+          </p>
         </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full sm:w-[280px] justify-start text-left font-normal",
+                  !dateFilter && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateFilter ? (
+                  format(dateFilter, "PPP")
+                ) : (
+                  <span>Filter by date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={dateFilter}
+                onSelect={setDateFilter}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          {dateFilter && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDateFilter(undefined)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      {dateFilter && (
+        <Card className="mb-8">
+            <CardHeader>
+                <CardTitle>Filtered Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-3xl font-bold font-mono">
+                    ₹{totalAmount.toLocaleString()}
+                </p>
+                 <p className="text-sm text-muted-foreground">
+                    Total amount spent on {format(dateFilter, "PPP")}
+                </p>
+            </CardContent>
+        </Card>
+      )}
 
       {filteredTransactions.length > 0 ? (
         <div className="border rounded-lg overflow-x-auto">
@@ -246,9 +287,7 @@ export default function TransactionsPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Shipment</TableHead>
-                <TableHead className="text-right">
-                  Amount (INR)
-                </TableHead>
+                <TableHead className="text-right">Amount (INR)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -264,9 +303,7 @@ export default function TransactionsPage() {
                   <TableCell>
                     <Badge
                       variant={
-                        tx.type === "listing"
-                          ? "default"
-                          : "secondary"
+                        tx.type === "listing" ? "default" : "secondary"
                       }
                       className="capitalize"
                     >
@@ -291,7 +328,9 @@ export default function TransactionsPage() {
             No Transactions Found
           </h2>
           <p className="text-muted-foreground">
-             {dateFilter ? "No transactions found for the selected date." : "Your payment history will appear here."}
+            {dateFilter
+              ? "No transactions found for the selected date."
+              : "Your payment history will appear here."}
           </p>
         </div>
       )}

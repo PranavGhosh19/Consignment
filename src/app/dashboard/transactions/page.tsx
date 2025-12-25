@@ -266,7 +266,7 @@ export default function TransactionsPage() {
       {dateFilter && (
         <Card className="mb-8">
             <CardHeader>
-                <CardTitle>Filtered Total</CardTitle>
+                <CardTitle>Grand Total</CardTitle>
             </CardHeader>
             <CardContent>
                 <p className="text-3xl font-bold font-mono">

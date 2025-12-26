@@ -28,7 +28,7 @@ interface Shipment {
   hsnCode?: string;
   modeOfShipment?: string;
   origin?: { portOfLoading: string; zipCode?: string };
-  destination: { portOfDelivery: string; zipCode?: string };
+  destination: { portOfDischarge: string; zipCode?: string };
   departureDate?: Timestamp;
   deliveryDeadline: Timestamp | null;
   cargo?: {
@@ -199,7 +199,7 @@ export function RecentActivities() {
                         return (
                             <TableRow key={shipment.id} className="cursor-pointer" onClick={() => handleRowClick(shipment)}>
                                 <TableCell className="font-medium">{shipment.productName || 'N/A'}</TableCell>
-                                <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDelivery || 'N/A'}</TableCell>
+                                <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDischarge || 'N/A'}</TableCell>
                                 <TableCell className="hidden lg:table-cell">{shipment.deliveryDeadline ? format(shipment.deliveryDeadline.toDate(), "PP") : 'N/A'}</TableCell>
                                  <TableCell className="text-center">
                                     <Badge variant={statusInfo.variant} className={cn("capitalize", { "animate-blink bg-green-500/80": shipment.status === 'live' })}>

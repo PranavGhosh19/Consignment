@@ -49,6 +49,7 @@ type Transaction = {
   type: "listing" | "registration";
   amount: number;
   shipmentId: string;
+  shipmentPublicId: string;
   productName: string;
   paidAt: any; // Firestore Timestamp
 };
@@ -122,6 +123,7 @@ export default function TransactionsPage() {
               type: "listing",
               amount: payment.amount,
               shipmentId: docSnap.id,
+              shipmentPublicId: data.publicId,
               productName: data.productName,
               paidAt: payment.paidAt,
             };
@@ -149,13 +151,15 @@ export default function TransactionsPage() {
               );
 
               if (!shipmentDoc.exists()) return null;
+              const shipmentData = shipmentDoc.data();
 
               return {
                 id: regData.paymentId,
                 type: "registration",
                 amount: regData.amount ?? 10,
                 shipmentId,
-                productName: shipmentDoc.data().productName,
+                shipmentPublicId: shipmentData.publicId,
+                productName: shipmentData.productName,
                 paidAt: regData.registeredAt,
               } as Transaction;
             })
@@ -202,10 +206,10 @@ export default function TransactionsPage() {
   const handleRowClick = (tx: Transaction) => {
     if (tx.type === "registration") {
       router.push(
-        `/dashboard/carrier/registered-shipment/${tx.shipmentId}`
+        `/dashboard/carrier/registered-shipment/${tx.shipmentPublicId}`
       );
     } else {
-      router.push(`/dashboard/shipment/${tx.shipmentId}`);
+      router.push(`/dashboard/shipment/${tx.shipmentPublicId}`);
     }
   };
 

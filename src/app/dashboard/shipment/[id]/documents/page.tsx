@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, DocumentData, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, setDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, DocumentData, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, setDoc, deleteDoc, where } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +40,7 @@ export default function ShipmentDocumentsPage() {
   const [userData, setUserData] = useState<DocumentData | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
   const [shipment, setShipment] = useState<DocumentData | null>(null);
+  const [shipmentInternalId, setShipmentInternalId] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export default function ShipmentDocumentsPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
-  const shipmentId = params.id as string;
+  const publicId = params.id as string;
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
@@ -83,27 +84,31 @@ export default function ShipmentDocumentsPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!user || !userType || !shipmentId) return;
+    if (!user || !userType || !publicId) return;
     
     let unsubShipment: () => void = () => {};
     let unsubContacts: () => void = () => {};
 
     const setupListeners = async () => {
         setLoading(true);
-        const shipmentDocRef = doc(db, "shipments", shipmentId);
+        const shipmentQuery = query(collection(db, "shipments"), where("publicId", "==", publicId));
         
-        unsubShipment = onSnapshot(shipmentDocRef, (docSnap) => {
-            if (docSnap.exists()) {
+        unsubShipment = onSnapshot(shipmentQuery, (snapshot) => {
+            if (!snapshot.empty) {
+                const docSnap = snapshot.docs[0];
                 const shipmentData = docSnap.data();
+                const shipmentInternalId = docSnap.id;
+                setShipmentInternalId(shipmentInternalId);
+
                 const isOwner = shipmentData.exporterId === user.uid;
                 const isWinningCarrier = shipmentData.winningCarrierId === user.uid;
                 const isEmployee = userType === 'employee';
 
                 if (shipmentData.status === 'awarded' && (isOwner || isWinningCarrier || isEmployee)) {
-                    setShipment({ id: docSnap.id, ...shipmentData });
+                    setShipment({ id: shipmentInternalId, ...shipmentData });
 
                     // Listen for Contacts Info
-                    const contactsDocRef = doc(db, "shipments", shipmentId, "documents", `${shipmentId}-contacts`);
+                    const contactsDocRef = doc(db, "shipments", shipmentInternalId, "documents", `${shipmentInternalId}-contacts`);
                     unsubContacts = onSnapshot(contactsDocRef, (contactSnap) => {
                         if (contactSnap.exists()) {
                             const contactData = contactSnap.data();
@@ -126,7 +131,7 @@ export default function ShipmentDocumentsPage() {
             }
              setLoading(false);
         }, async (error) => {
-            const permissionError = new FirestorePermissionError({ path: shipmentDocRef.path, operation: 'get' } satisfies SecurityRuleContext);
+            const permissionError = new FirestorePermissionError({ path: `/shipments?publicId=${publicId}`, operation: 'list' } satisfies SecurityRuleContext);
             errorEmitter.emit('permission-error', permissionError);
             setLoading(false);
         });
@@ -139,26 +144,26 @@ export default function ShipmentDocumentsPage() {
         if (unsubContacts) unsubContacts();
     }
 
-  }, [user, userType, shipmentId, router, toast]);
+  }, [user, userType, publicId, router, toast]);
 
     useEffect(() => {
-        if (!shipmentId) return;
+        if (!shipmentInternalId) return;
 
-        const documentsQuery = query(collection(db, "shipments", shipmentId, "documents"), orderBy("uploadedAt", "desc"));
+        const documentsQuery = query(collection(db, "shipments", shipmentInternalId, "documents"), orderBy("uploadedAt", "desc"));
         const unsubscribe = onSnapshot(documentsQuery, (querySnapshot) => {
             const docsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setDocuments(docsData.filter(d => d.id !== `${shipmentId}-contacts`));
+            setDocuments(docsData.filter(d => d.id !== `${shipmentInternalId}-contacts`));
         }, async (error) => {
-             const permissionError = new FirestorePermissionError({ path: `shipments/${shipmentId}/documents`, operation: 'list' } satisfies SecurityRuleContext);
+             const permissionError = new FirestorePermissionError({ path: `shipments/${shipmentInternalId}/documents`, operation: 'list' } satisfies SecurityRuleContext);
             errorEmitter.emit('permission-error', permissionError);
         });
 
         return () => unsubscribe();
-    }, [shipmentId, toast]);
+    }, [shipmentInternalId, toast]);
 
 
   const handlePocUpdate = (pocUserType: 'exporter' | 'carrier') => {
-    if (!shipment || !user) return;
+    if (!shipmentInternalId || !user) return;
 
     let dataToUpdate;
     let pocStateSetter: React.Dispatch<React.SetStateAction<boolean>>;
@@ -175,7 +180,7 @@ export default function ShipmentDocumentsPage() {
     }
 
     pocStateSetter(true);
-    const contactDocRef = doc(db, "shipments", shipment.id, "documents", `${shipment.id}-contacts`);
+    const contactDocRef = doc(db, "shipments", shipmentInternalId, "documents", `${shipmentInternalId}-contacts`);
     
     setDoc(contactDocRef, dataToUpdate, { merge: true }).then(() => {
         toast({ title: "Success", description: successMessage });
@@ -196,20 +201,20 @@ export default function ShipmentDocumentsPage() {
         toast({ title: "Missing file", description: "Please select a file to upload.", variant: "destructive"});
         return;
     }
-    if (!user || !userData || !shipment) return;
+    if (!user || !userData || !shipmentInternalId) return;
 
     const finalDocumentName = documentName || fileToUpload.name;
 
     setIsUploading(true);
 
     try {
-        const storagePath = `shipments/${shipment.id}/contacts/${user.uid}/${Date.now()}_${fileToUpload.name}`;
+        const storagePath = `shipments/${shipmentInternalId}/contacts/${user.uid}/${Date.now()}_${fileToUpload.name}`;
         const storageRef = ref(storage, storagePath);
 
         const uploadResult = await uploadBytes(storageRef, fileToUpload);
         const downloadUrl = await getDownloadURL(uploadResult.ref);
 
-        const documentsRef = collection(db, "shipments", shipment.id, "documents");
+        const documentsRef = collection(db, "shipments", shipmentInternalId, "documents");
         const newDocumentPayload = {
             name: finalDocumentName,
             url: downloadUrl,
@@ -246,7 +251,7 @@ export default function ShipmentDocumentsPage() {
   };
 
     const handleDeleteDocument = async (document: DocumentData) => {
-        if (!shipmentId || !document.path) return;
+        if (!shipmentInternalId || !document.path) return;
         setDeletingDocId(document.id);
         try {
             // Delete from Storage
@@ -254,7 +259,7 @@ export default function ShipmentDocumentsPage() {
             await deleteObject(fileRef);
 
             // Delete from Firestore
-            const docRef = doc(db, "shipments", shipmentId, "documents", document.id);
+            const docRef = doc(db, "shipments", shipmentInternalId, "documents", document.id);
             await deleteDoc(docRef);
 
             toast({ title: "Success", description: "Document deleted." });
@@ -269,9 +274,9 @@ export default function ShipmentDocumentsPage() {
 
   const handleBackNavigation = () => {
     if (userType === 'carrier') {
-        router.push(`/dashboard/carrier/registered-shipment/${shipmentId}`);
+        router.push(`/dashboard/carrier/registered-shipment/${publicId}`);
     } else {
-        router.push(`/dashboard/shipment/${shipmentId}`);
+        router.push(`/dashboard/shipment/${publicId}`);
     }
   }
 

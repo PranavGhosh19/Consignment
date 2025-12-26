@@ -99,7 +99,7 @@ export default function FindShipmentsPage() {
 
   const handleRowClick = (shipment: DocumentData) => {
     if (shipment.status === 'live') {
-      router.push(`/dashboard/carrier/shipment/${shipment.id}`);
+      router.push(`/dashboard/carrier/shipment/${shipment.publicId}`);
     } else {
       handleOpenBidDialog(shipment);
     }

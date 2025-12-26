@@ -226,16 +226,13 @@ function MyShipmentsPage() {
     if (editId && user) {
         const fetchAndSetShipment = async () => {
             try {
-                const shipmentDocRef = doc(db, 'shipments', editId);
-                const docSnap = await getDoc(shipmentDocRef);
-                if (docSnap.exists()) {
+                const q = query(collection(db, 'shipments'), where('publicId', '==', editId), where('exporterId', '==', user.uid));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const docSnap = querySnapshot.docs[0];
                     const data = docSnap.data();
-                    if (data.exporterId !== user.uid) {
-                         toast({ title: "Error", description: "You are not authorized to edit this shipment.", variant: "destructive" });
-                         router.push('/dashboard/exporter/my-shipments');
-                         return;
-                    }
-
+                    
                     setShipmentType(data.shipmentType || "");
                     setProductName(data.productName || "");
                     setHsnCode(data.hsnCode || "");
@@ -270,10 +267,10 @@ function MyShipmentsPage() {
                     setAttachments(data.certificationsNeeded || []);
                     setSpecialInstructions(data.specialInstructions || "");
                     
-                    setEditingShipmentId(editId);
+                    setEditingShipmentId(docSnap.id);
                     setOpen(true);
                 } else {
-                    toast({ title: "Error", description: "Shipment to edit not found.", variant: "destructive" });
+                    toast({ title: "Error", description: "Shipment to edit not found or you don't have permission.", variant: "destructive" });
                     router.push('/dashboard/exporter/my-shipments');
                 }
             } catch (error) {
@@ -370,6 +367,15 @@ function MyShipmentsPage() {
         setIsScheduleDialogOpen(true);
     }
   }
+  
+  const generatePublicId = () => {
+    const chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789';
+    let result = 'SHIP-';
+    for (let i = 0; i < 5; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
 
   const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft', goLiveTimestamp?: Timestamp | null, payment?: object) => {
     if (!handleValidation() || !user) return;
@@ -452,6 +458,7 @@ function MyShipmentsPage() {
 
         await addDoc(collection(db, 'shipments'), {
           ...shipmentPayload,
+          publicId: generatePublicId(),
           exporterId: user.uid,
           exporterName: exporterName,
           createdAt: Timestamp.now(),
@@ -1047,7 +1054,7 @@ function MyShipmentsPage() {
             </TableHeader>
             <TableBody>
               {products.map((product) => (
-                <TableRow key={product.id} onClick={() => router.push(`/dashboard/shipment/${product.id}`)} className="cursor-pointer">
+                <TableRow key={product.id} onClick={() => router.push(`/dashboard/shipment/${product.publicId}`)} className="cursor-pointer">
                   <TableCell className="font-medium">{product.productName || 'N/A'}</TableCell>
                   <TableCell className="hidden md:table-cell">{product.destination?.portOfDischarge || 'N/A'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{product.departureDate ? format(product.departureDate.toDate(), "PP") : 'N/A'}</TableCell>

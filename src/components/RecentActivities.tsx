@@ -22,6 +22,7 @@ interface Bid {
 
 interface Shipment {
   id: string;
+  publicId: string;
   productName: string;
   exporterName?: string;
   shipmentType?: string;
@@ -137,9 +138,9 @@ export function RecentActivities() {
 
   const handleRowClick = (shipment: Shipment) => {
     if (shipment.status === 'live') {
-      router.push(`/dashboard/carrier/shipment/${shipment.id}`);
+      router.push(`/dashboard/carrier/shipment/${shipment.publicId}`);
     } else {
-      router.push(`/dashboard/carrier/registered-shipment/${shipment.id}`);
+      router.push(`/dashboard/carrier/registered-shipment/${shipment.publicId}`);
     }
   };
 

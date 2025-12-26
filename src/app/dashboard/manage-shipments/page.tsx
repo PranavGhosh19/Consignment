@@ -134,8 +134,8 @@ export default function ManageShipmentsPage() {
     }
   };
 
-  const handleRowClick = (shipmentId: string) => {
-    router.push(`/dashboard/shipment/${shipmentId}`);
+  const handleRowClick = (publicId: string) => {
+    router.push(`/dashboard/shipment/${publicId}`);
   };
 
   const clearFilters = () => {
@@ -274,7 +274,7 @@ export default function ManageShipmentsPage() {
             </TableHeader>
             <TableBody>
               {filteredShipments.map((shipment) => (
-                <TableRow key={shipment.id} onClick={() => handleRowClick(shipment.id)} className="cursor-pointer">
+                <TableRow key={shipment.id} onClick={() => handleRowClick(shipment.publicId)} className="cursor-pointer">
                   <TableCell className="font-medium">{shipment.productName || 'N/A'}</TableCell>
                   <TableCell>{shipment.exporterName || 'N/A'}</TableCell>
                   <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDischarge || 'N/A'}</TableCell>

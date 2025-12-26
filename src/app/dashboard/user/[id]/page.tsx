@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, DocumentData } from "firebase/firestore";
+import { doc, getDoc, DocumentData, collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -60,16 +60,23 @@ export default function UserProfilePage() {
         const fetchUser = async () => {
             setLoading(true);
             try {
-                const userDocRef = doc(db, "users", userId);
-                const companyDetailsRef = doc(db, "users", userId, "companyDetails", userId);
+                let userQuery;
+                // Check if userId could be a publicId
+                if (userId.startsWith('SHIP-')) {
+                   console.warn("Attempting to load user profile with a shipment ID. This is not supported.");
+                   toast({ title: "Invalid ID", description: "Cannot load a user profile with a shipment ID.", variant: "destructive" });
+                   router.push("/dashboard/user-management");
+                   return;
+                } else {
+                    userQuery = doc(db, "users", userId);
+                }
                 
-                const [userDoc, companyDetailsDoc] = await Promise.all([
-                    getDoc(userDocRef),
-                    getDoc(companyDetailsRef)
-                ]);
+                const userDoc = await getDoc(userQuery);
 
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
+                    const companyDetailsRef = doc(db, "users", userDoc.id, "companyDetails", userDoc.id);
+                    const companyDetailsDoc = await getDoc(companyDetailsRef);
                     const companyDetails = companyDetailsDoc.exists() ? companyDetailsDoc.data() : null;
                     setUser({ id: userDoc.id, ...userData, companyDetails });
                 } else {

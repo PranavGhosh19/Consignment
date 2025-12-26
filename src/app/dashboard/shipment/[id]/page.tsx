@@ -53,6 +53,7 @@ export default function ShipmentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
   const [shipment, setShipment] = useState<DocumentData | null>(null);
+  const [shipmentInternalId, setShipmentInternalId] = useState<string | null>(null);
   const [bids, setBids] = useState<DocumentData[]>([]);
   const [registeredCarriers, setRegisteredCarriers] = useState<RegisteredCarrier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +81,7 @@ export default function ShipmentDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
-  const shipmentId = params.id as string;
+  const publicId = params.id as string;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -101,56 +102,57 @@ export default function ShipmentDetailPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!user || !shipmentId) return;
+    if (!user || !publicId) return;
 
-    const shipmentDocRef = doc(db, "shipments", shipmentId);
-    const unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
-       if (docSnap.exists()) {
+    const shipmentQuery = query(collection(db, "shipments"), where("publicId", "==", publicId));
+    const unsubscribeShipment = onSnapshot(shipmentQuery, (snapshot) => {
+       if (!snapshot.empty) {
+        const docSnap = snapshot.docs[0];
         const shipmentData = docSnap.data();
         
-        // This check is primarily for initial page load authorization.
         setShipment({ id: docSnap.id, ...shipmentData });
+        setShipmentInternalId(docSnap.id);
+
         if (shipmentData.status === 'delivered') {
           setIsMarkedAsDelivered(true);
         }
 
+        // Listen for feedback only after we have the internal ID
+        const feedbackQuery = query(collection(db, "shipments", docSnap.id, "feedback"));
+        const unsubscribeFeedback = onSnapshot(feedbackQuery, (querySnapshot) => {
+          if (!querySnapshot.empty) {
+            const feedbackDoc = querySnapshot.docs[0];
+            setFeedbackData(feedbackDoc.data());
+          } else {
+            setFeedbackData(null);
+          }
+        });
+        setLoading(false);
+        // We need to manage this inner subscription as well
+        return () => unsubscribeFeedback();
       } else {
         toast({ title: "Error", description: "Shipment not found.", variant: "destructive" });
         router.push("/dashboard");
       }
-      setLoading(false);
     }, (error) => {
         console.error("Error fetching shipment: ", error);
         toast({ title: "Error", description: "Failed to fetch shipment details.", variant: "destructive" });
         setLoading(false);
     });
     
-    // Listen for feedback
-    const feedbackQuery = query(collection(db, "shipments", shipmentId, "feedback"));
-    const unsubscribeFeedback = onSnapshot(feedbackQuery, (querySnapshot) => {
-      if (!querySnapshot.empty) {
-        // For this app, we'll just show the first feedback document found.
-        const feedbackDoc = querySnapshot.docs[0];
-        setFeedbackData(feedbackDoc.data());
-      } else {
-        setFeedbackData(null);
-      }
-    });
-
     return () => {
       unsubscribeShipment();
-      unsubscribeFeedback();
     };
 
-  }, [user, shipmentId, router, toast]);
+  }, [user, publicId, router, toast]);
 
   useEffect(() => {
-    if (!shipmentId || shipment?.status === 'draft') {
+    if (!shipmentInternalId || shipment?.status === 'draft') {
         setBids([]);
         return;
     };
 
-    const bidsQuery = query(collection(db, "shipments", shipmentId, "bids"), orderBy("createdAt", "desc"));
+    const bidsQuery = query(collection(db, "shipments", shipmentInternalId, "bids"), orderBy("createdAt", "desc"));
     
     const unsubscribeBids = onSnapshot(bidsQuery, (querySnapshot) => {
       const bidsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -161,11 +163,11 @@ export default function ShipmentDetailPage() {
     });
 
     return () => unsubscribeBids();
-  }, [shipmentId, shipment?.status, toast]);
+  }, [shipmentInternalId, shipment?.status, toast]);
   
   useEffect(() => {
-    if (!shipmentId || userType !== 'employee') {
-        const registerQuery = query(collection(db, "shipments", shipmentId, "register"));
+    if (!shipmentInternalId || userType !== 'employee') {
+        const registerQuery = query(collection(db, "shipments", shipmentInternalId, "register"));
         const unsubscribeRegister = onSnapshot(registerQuery, (querySnapshot) => {
              setRegisteredCarriers(querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as RegisteredCarrier)));
         });
@@ -173,7 +175,7 @@ export default function ShipmentDetailPage() {
     }
     
     // For employees, fetch the names as well
-    const registerQuery = query(collection(db, "shipments", shipmentId, "register"));
+    const registerQuery = query(collection(db, "shipments", shipmentInternalId, "register"));
     const unsubscribeRegister = onSnapshot(registerQuery, async (querySnapshot) => {
       const carrierPromises = querySnapshot.docs.map(async (regDoc) => {
         const carrierId = regDoc.id;
@@ -195,7 +197,7 @@ export default function ShipmentDetailPage() {
     });
 
     return () => unsubscribeRegister();
-  }, [shipmentId, userType]);
+  }, [shipmentInternalId, userType]);
   
   // Countdown for bidding close
   useEffect(() => {
@@ -241,10 +243,10 @@ export default function ShipmentDetailPage() {
 
 
   const handleAcceptBid = async (bid: DocumentData) => {
-    if (!shipmentId) return;
+    if (!shipmentInternalId) return;
     setIsSubmitting(true);
     try {
-        const shipmentDocRef = doc(db, "shipments", shipmentId);
+        const shipmentDocRef = doc(db, "shipments", shipmentInternalId);
         await updateDoc(shipmentDocRef, { 
             status: 'awarded',
             winningBidId: bid.id,
@@ -262,10 +264,10 @@ export default function ShipmentDetailPage() {
   }
 
   const handleGoLive = async () => {
-    if (!shipmentId) return;
+    if (!shipmentInternalId) return;
     setIsSubmitting(true);
     try {
-        const shipmentDocRef = doc(db, "shipments", shipmentId);
+        const shipmentDocRef = doc(db, "shipments", shipmentInternalId);
         const goLiveAt = Timestamp.now();
         // The backend function `onShipmentWrite` will auto-set biddingCloseAt.
         // We set it here to satisfy security rules and provide immediate frontend feedback.
@@ -285,13 +287,13 @@ export default function ShipmentDetailPage() {
 }
 
   const handleDeleteShipment = async () => {
-    if (!shipmentId) return;
+    if (!shipmentInternalId) return;
     setIsSubmitting(true);
     try {
-      const shipmentDocRef = doc(db, "shipments", shipmentId);
+      const shipmentDocRef = doc(db, "shipments", shipmentInternalId);
       await deleteDoc(shipmentDocRef);
       toast({ title: "Success", description: "Shipment has been deleted." });
-      router.push('/dashboard/exporter');
+      router.push('/dashboard/exporter/my-shipments');
     } catch (error) {
       console.error("Error deleting shipment: ", error);
       toast({ title: "Error", description: "Could not delete the shipment.", variant: "destructive" });
@@ -303,7 +305,7 @@ export default function ShipmentDetailPage() {
 
   const handleBackNavigation = () => {
     if (userType === 'exporter') {
-      router.push('/dashboard/exporter');
+      router.push('/dashboard/exporter/my-shipments');
     } else if (userType === 'employee') {
       router.push('/dashboard/manage-shipments');
     } else {
@@ -331,9 +333,9 @@ export default function ShipmentDetailPage() {
   }
 
   const handleMarkAsDelivered = async () => {
-    if (!shipmentId) return;
+    if (!shipmentInternalId) return;
     setIsSubmitting(true);
-    const shipmentDocRef = doc(db, "shipments", shipmentId);
+    const shipmentDocRef = doc(db, "shipments", shipmentInternalId);
     const payload = { status: 'delivered' };
     
     updateDoc(shipmentDocRef, payload)
@@ -359,10 +361,10 @@ export default function ShipmentDetailPage() {
         toast({ title: "Please provide a rating", variant: "destructive" });
         return;
     }
-    if (!user || !shipmentId) return;
+    if (!user || !shipmentInternalId) return;
 
     setIsSubmittingFeedback(true);
-    const feedbackDocRef = doc(db, "shipments", shipmentId, "feedback", user.uid);
+    const feedbackDocRef = doc(db, "shipments", shipmentInternalId, "feedback", user.uid);
     const payload = {
       rating,
       feedback,
@@ -486,7 +488,7 @@ export default function ShipmentDetailPage() {
                 </AlertDialog>
               )}
               {canEdit && (
-                  <Button variant="outline" onClick={() => router.push(`/dashboard/exporter/my-shipments?edit=${shipmentId}`)}>
+                  <Button variant="outline" onClick={() => router.push(`/dashboard/exporter/my-shipments?edit=${publicId}`)}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit Shipment
                   </Button>
@@ -639,7 +641,7 @@ export default function ShipmentDetailPage() {
                             )}
                         
                             {canViewDocuments && (
-                                <Button onClick={() => router.push(`/dashboard/shipment/${shipmentId}/documents`)} className="w-full mt-4">
+                                <Button onClick={() => router.push(`/dashboard/shipment/${publicId}/documents`)} className="w-full mt-4">
                                 <FileText className="mr-2 h-4 w-4" />
                                 View Documents
                                 </Button>

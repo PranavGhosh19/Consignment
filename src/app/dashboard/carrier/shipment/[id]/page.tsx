@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, addDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, addDoc, Timestamp, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,7 @@ export default function CarrierShipmentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [carrierName, setCarrierName] = useState<string>("");
   const [shipment, setShipment] = useState<DocumentData | null>(null);
+  const [shipmentInternalId, setShipmentInternalId] = useState<string | null>(null);
   const [bids, setBids] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,7 +31,7 @@ export default function CarrierShipmentDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
-  const shipmentId = params.id as string;
+  const publicId = params.id as string;
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
@@ -51,19 +52,22 @@ export default function CarrierShipmentDetailPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!user || !shipmentId) return;
+    if (!user || !publicId) return;
     
     let unsubscribeShipment: () => void = () => {};
+    
+    const shipmentQuery = query(collection(db, "shipments"), where("publicId", "==", publicId));
 
-    const shipmentDocRef = doc(db, "shipments", shipmentId);
-    unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
-       if (docSnap.exists()) {
+    unsubscribeShipment = onSnapshot(shipmentQuery, (snapshot) => {
+       if (!snapshot.empty) {
+        const docSnap = snapshot.docs[0];
         const shipmentData = docSnap.data();
         if (shipmentData.status !== 'live' && shipmentData.status !== 'bidding_closed') {
             toast({ title: "Info", description: "Bidding for this shipment is closed.", variant: "default" });
-            router.push("/dashboard/carrier");
+            router.push(`/dashboard/carrier/registered-shipment/${publicId}`);
         }
         setShipment({ id: docSnap.id, ...shipmentData });
+        setShipmentInternalId(docSnap.id);
       } else {
         toast({ title: "Error", description: "Shipment not found.", variant: "destructive" });
         router.push("/dashboard/carrier");
@@ -78,13 +82,13 @@ export default function CarrierShipmentDetailPage() {
     return () => {
         unsubscribeShipment();
     };
-  }, [user, shipmentId, router, toast]);
+  }, [user, publicId, router, toast]);
 
   useEffect(() => {
-    if (!shipmentId) return;
+    if (!shipmentInternalId) return;
 
     let unsubscribeBids: () => void = () => {};
-    const bidsQuery = query(collection(db, "shipments", shipmentId, "bids"), orderBy("bidAmount", "asc"));
+    const bidsQuery = query(collection(db, "shipments", shipmentInternalId, "bids"), orderBy("bidAmount", "asc"));
     
     unsubscribeBids = onSnapshot(bidsQuery, (querySnapshot) => {
       const bidsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -97,7 +101,7 @@ export default function CarrierShipmentDetailPage() {
     return () => {
         unsubscribeBids();
     };
-  }, [shipmentId, toast]);
+  }, [shipmentInternalId, toast]);
   
   const { userBidRank, isL1, userBidCount } = useMemo(() => {
     if (!user || bids.length === 0) {
@@ -135,7 +139,7 @@ export default function CarrierShipmentDetailPage() {
 
 
   const handlePlaceBid = async () => {
-    if (!user || !shipmentId || !bidAmount) {
+    if (!user || !shipmentInternalId || !bidAmount) {
       toast({ title: "Error", description: "Please enter a bid amount.", variant: "destructive" });
       return;
     }
@@ -157,7 +161,7 @@ export default function CarrierShipmentDetailPage() {
     }
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "shipments", shipmentId, "bids"), {
+      await addDoc(collection(db, "shipments", shipmentInternalId, "bids"), {
         carrierId: user.uid,
         carrierName: carrierName,
         bidAmount: newBidAmount,

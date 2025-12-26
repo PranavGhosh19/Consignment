@@ -74,8 +74,8 @@ export default function LiveTomorrowPage() {
     };
   }, [user, toast]);
   
-  const handleRowClick = (shipmentId: string) => {
-    router.push(`/dashboard/shipment/${shipmentId}`);
+  const handleRowClick = (publicId: string) => {
+    router.push(`/dashboard/shipment/${publicId}`);
   };
 
   if (loading) {
@@ -112,7 +112,7 @@ export default function LiveTomorrowPage() {
             </TableHeader>
             <TableBody>
               {shipments.map((shipment) => (
-                <TableRow key={shipment.id} onClick={() => handleRowClick(shipment.id)} className="cursor-pointer">
+                <TableRow key={shipment.id} onClick={() => handleRowClick(shipment.publicId)} className="cursor-pointer">
                   <TableCell className="font-medium">{shipment.productName || 'N/A'}</TableCell>
                   <TableCell>{shipment.exporterName || 'N/A'}</TableCell>
                   <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDelivery || 'N/A'}</TableCell>

@@ -130,8 +130,10 @@ export default function MyBidsPage() {
 
     if (shipment.status === 'live') {
         // This requires fetching all bids for the shipment to compare. For simplicity here, we mark as active.
-        // A more complex implementation could pass lowestBid info.
         return { text: 'Live', variant: 'default' };
+    }
+     if (shipment.status === 'reviewing') {
+        return { text: 'Reviewing', variant: 'secondary' };
     }
     
     return { text: shipment.status, variant: 'secondary' };
@@ -148,11 +150,11 @@ export default function MyBidsPage() {
     });
   }, [bidsWithShipments, currentTab]);
 
-  const handleRowClick = (shipmentId: string, status: string) => {
-    if (status === 'live') {
-        router.push(`/dashboard/carrier/shipment/${shipmentId}`);
+  const handleRowClick = (shipment: DocumentData) => {
+    if (shipment.status === 'live') {
+        router.push(`/dashboard/carrier/shipment/${shipment.publicId}`);
     } else {
-        router.push(`/dashboard/shipment/${shipmentId}`);
+        router.push(`/dashboard/shipment/${shipment.publicId}`);
     }
   };
 

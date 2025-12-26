@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, addDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, addDoc, Timestamp, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,7 +23,7 @@ export default function RegisteredShipmentDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
-  const shipmentId = params.id as string;
+  const shipmentId = params.id as string; // This is now publicId
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
@@ -47,15 +47,17 @@ export default function RegisteredShipmentDetailPage() {
     
     let unsubscribeShipment: () => void = () => {};
     let unsubscribeFeedback: (() => void) | null = null;
+    
+    const shipmentQuery = query(collection(db, "shipments"), where("publicId", "==", shipmentId));
 
-    const shipmentDocRef = doc(db, "shipments", shipmentId);
-    unsubscribeShipment = onSnapshot(shipmentDocRef, (docSnap) => {
-       if (docSnap.exists()) {
+    unsubscribeShipment = onSnapshot(shipmentQuery, (snapshot) => {
+       if (!snapshot.empty) {
+        const docSnap = snapshot.docs[0];
         const shipmentData = docSnap.data();
         // A carrier should only see this page for scheduled, awarded, or delivered shipments.
         // If it's live, they should be on the bidding page.
         if (shipmentData.status === 'live') {
-            router.replace(`/dashboard/carrier/shipment/${shipmentId}`);
+            router.replace(`/dashboard/carrier/shipment/${shipmentData.publicId}`);
             return;
         }
 
@@ -63,7 +65,7 @@ export default function RegisteredShipmentDetailPage() {
 
         if (shipmentData.status === 'delivered') {
           // Listen for feedback only when delivered
-          const feedbackQuery = query(collection(db, "shipments", shipmentId, "feedback"));
+          const feedbackQuery = query(collection(db, "shipments", docSnap.id, "feedback"));
           unsubscribeFeedback = onSnapshot(feedbackQuery, (querySnapshot) => {
             if (!querySnapshot.empty) {
               setFeedbackData(querySnapshot.docs[0].data());
@@ -220,7 +222,7 @@ export default function RegisteredShipmentDetailPage() {
                     <p className="text-center text-sm text-muted-foreground">You will be notified when this shipment goes live for bidding.</p>
                 )}
                 {shipment.status === 'awarded' && isWinningCarrier && (
-                    <Button className="w-full" onClick={() => router.push(`/dashboard/shipment/${shipment.id}/documents`)}>
+                    <Button className="w-full" onClick={() => router.push(`/dashboard/shipment/${shipment.publicId}/documents`)}>
                         <FileText className="mr-2 h-4 w-4" />
                         View Documents
                     </Button>

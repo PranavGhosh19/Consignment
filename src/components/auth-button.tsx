@@ -80,6 +80,11 @@ export function NavLinks() {
     }
   }
 
+  // If userType is still being determined for an employee, don't render the wrong tabs
+  if (loading && userType === 'employee') {
+      return null;
+  }
+
   const links = getLinks();
 
   return (

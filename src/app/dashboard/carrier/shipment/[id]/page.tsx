@@ -26,6 +26,7 @@ export default function CarrierShipmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bidAmount, setBidAmount] = useState("");
+  const [timeLeft, setTimeLeft] = useState<number>(0);
 
   const router = useRouter();
   const params = useParams();
@@ -102,6 +103,19 @@ export default function CarrierShipmentDetailPage() {
     };
   }, [shipmentInternalId, toast]);
   
+  // Countdown for bidding close
+  useEffect(() => {
+    if (shipment?.status !== 'live' || !shipment?.biddingCloseAt) {
+      setTimeLeft(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      const diff = shipment.biddingCloseAt.toDate().getTime() - Date.now();
+      setTimeLeft(diff > 0 ? diff : 0);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [shipment?.biddingCloseAt, shipment?.status]);
+
   const userBids = useMemo(() => {
     if (!user) return [];
     return bids
@@ -201,7 +215,9 @@ export default function CarrierShipmentDetailPage() {
 
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
   const atBidLimit = userBidCount >= 3;
-
+  const countdownText = timeLeft > 0
+    ? `${Math.floor(timeLeft / 1000 / 60)}m ${Math.floor((timeLeft / 1000) % 60)}s`
+    : "Bidding closed";
 
   return (
     <div className="container py-6 md:py-10">
@@ -277,6 +293,13 @@ export default function CarrierShipmentDetailPage() {
                     )}
                 </div>
 
+                {shipment.status === 'live' && shipment.biddingCloseAt && (
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-muted-foreground">Bidding closes in:</p>
+                    <p className="text-2xl font-bold font-mono text-destructive">{countdownText}</p>
+                  </div>
+                )}
+
                 {atBidLimit && shipment.status === 'live' ? (
                      <div className="text-center text-muted-foreground border-dashed border-2 p-4 rounded-md">
                         You have reached your bid limit for this shipment.
@@ -333,6 +356,3 @@ export default function CarrierShipmentDetailPage() {
     </div>
   );
 }
-
-    
-    

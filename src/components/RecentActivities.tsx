@@ -147,6 +147,8 @@ export function RecentActivities() {
     switch (shipment.status) {
         case 'live':
             return { text: 'Live', variant: 'success' };
+        case 'reviewing':
+            return { text: 'Reviewing', variant: 'secondary' };
         case 'awarded':
             if (shipment.winningCarrierId === user?.uid) {
                 return { text: 'You Won', variant: 'success' };

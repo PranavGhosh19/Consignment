@@ -184,7 +184,7 @@ export default function ShipmentDetailPage() {
 
         return {
             id: carrierId,
-            legalName: userDoc.exists() ? userDoc.data().companyDetails?.legalName : "Unknown Carrier",
+            legalName: userDoc.exists() ? userDoc.data().name : "Unknown Carrier",
             registeredAt: registrationData.registeredAt
         };
       });

@@ -23,7 +23,7 @@ export default function RegisteredShipmentDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
-  const shipmentId = params.id as string; // This is now publicId
+  const publicId = params.id as string; 
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
@@ -43,12 +43,12 @@ export default function RegisteredShipmentDetailPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!user || !shipmentId) return;
+    if (!user || !publicId) return;
     
     let unsubscribeShipment: () => void = () => {};
     let unsubscribeFeedback: (() => void) | null = null;
     
-    const shipmentQuery = query(collection(db, "shipments"), where("publicId", "==", shipmentId));
+    const shipmentQuery = query(collection(db, "shipments"), where("publicId", "==", publicId));
 
     unsubscribeShipment = onSnapshot(shipmentQuery, (snapshot) => {
        if (!snapshot.empty) {
@@ -93,7 +93,7 @@ export default function RegisteredShipmentDetailPage() {
         }
     };
 
-  }, [user, shipmentId, router, toast]);
+  }, [user, publicId, router, toast]);
 
   if (loading || !shipment) {
     return (
@@ -222,7 +222,7 @@ export default function RegisteredShipmentDetailPage() {
                     <p className="text-center text-sm text-muted-foreground">You will be notified when this shipment goes live for bidding.</p>
                 )}
                 {shipment.status === 'awarded' && isWinningCarrier && (
-                    <Button className="w-full" onClick={() => router.push(`/dashboard/shipment/${shipment.publicId}/documents`)}>
+                    <Button className="w-full" onClick={() => router.push(`/dashboard/shipment/${publicId}/documents`)}>
                         <FileText className="mr-2 h-4 w-4" />
                         View Documents
                     </Button>
@@ -262,7 +262,3 @@ export default function RegisteredShipmentDetailPage() {
     </div>
   );
 }
-
-    
-
-    

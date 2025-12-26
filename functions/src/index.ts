@@ -106,7 +106,7 @@ export const onShipmentWrite = onDocumentWritten("shipments/{shipmentId}",
           recipientId: afterData.winningCarrierId,
           message: "Congratulations! You've won the bid for the " +
               `'${afterData.productName}' shipment.`,
-          link: `/dashboard/carrier/registered-shipment/${shipmentId}`,
+          link: `/dashboard/carrier/registered-shipment/${afterData.publicId}`,
         });
       }
     }
@@ -189,7 +189,7 @@ export const onBidCreate = onDocumentCreated("shipments/{shipmentId}/bids/{bidId
           recipientId: shipmentData.exporterId,
           message: `You have a new bid of $${bidData.bidAmount} ` +
               `on your '${shipmentData.productName}' shipment.`,
-          link: `/dashboard/shipment/${shipmentId}`,
+          link: `/dashboard/shipment/${shipmentData.publicId}`,
         });
       }
     }
@@ -241,7 +241,7 @@ export const executeShipmentGoLive = onRequest(async (req, res) => {
             recipientId: carrierId,
             message: `The shipment '${shipmentData.productName}' is ` +
                 "now live for bidding!",
-            link: `/dashboard/carrier/shipment/${shipmentId}`,
+            link: `/dashboard/carrier/shipment/${shipmentData.publicId}`,
           });
         });
         await Promise.all(notifications);

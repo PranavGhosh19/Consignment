@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -103,12 +102,18 @@ export default function CarrierShipmentDetailPage() {
     };
   }, [shipmentInternalId, toast]);
   
+  const userBids = useMemo(() => {
+    if (!user) return [];
+    return bids
+        .filter(b => b.carrierId === user.uid)
+        .sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
+  }, [bids, user]);
+  
   const { userBidRank, isL1, userBidCount } = useMemo(() => {
     if (!user || bids.length === 0) {
       return { userBidRank: null, isL1: false, userBidCount: 0 };
     }
     
-    const userBids = bids.filter(b => b.carrierId === user.uid);
     const count = userBids.length;
 
     if (count === 0) {
@@ -135,7 +140,7 @@ export default function CarrierShipmentDetailPage() {
       isL1: rankIndex === 0,
       userBidCount: count
     };
-  }, [bids, user]);
+  }, [bids, user, userBids]);
 
 
   const handlePlaceBid = async () => {
@@ -222,7 +227,7 @@ export default function CarrierShipmentDetailPage() {
                     </div>
                     <div className="grid md:grid-cols-2 gap-4 border-b pb-6">
                          <div><span className="font-semibold text-muted-foreground block mb-1">Origin Port</span>{shipment.origin?.portOfLoading}</div>
-                         <div><span className="font-semibold text-muted-foreground block mb-1">Destination Port</span>{shipment.destination?.portOfDelivery}</div>
+                         <div><span className="font-semibold text-muted-foreground block mb-1">Destination Port</span>{shipment.destination?.portOfDischarge}</div>
                          {shipment.origin?.zipCode && <div><span className="font-semibold text-muted-foreground block mb-1">Origin Zip</span>{shipment.origin.zipCode}</div>}
                          {shipment.destination?.zipCode && <div><span className="font-semibold text-muted-foreground block mb-1">Destination Zip</span>{shipment.destination.zipCode}</div>}
                     </div>
@@ -306,10 +311,28 @@ export default function CarrierShipmentDetailPage() {
                 )}
               </CardContent>
             </Card>
+            {userBids.length > 0 && (
+                <Card className="bg-white dark:bg-card">
+                    <CardHeader>
+                        <CardTitle>Your Bids</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {userBids.map(bid => (
+                                <li key={bid.id} className="flex justify-between items-center text-sm p-3 bg-secondary rounded-md">
+                                    <span className="font-bold font-mono text-base">${bid.bidAmount.toLocaleString()}</span>
+                                    <span className="text-muted-foreground">{format(bid.createdAt.toDate(), "p, dd MMM")}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+            )}
         </div>
       </div>
     </div>
   );
 }
 
+    
     

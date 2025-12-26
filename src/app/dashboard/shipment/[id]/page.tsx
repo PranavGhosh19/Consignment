@@ -486,7 +486,7 @@ export default function ShipmentDetailPage() {
                 </AlertDialog>
               )}
               {canEdit && (
-                  <Button variant="outline" onClick={() => router.push(`/dashboard/exporter?edit=${shipmentId}`)}>
+                  <Button variant="outline" onClick={() => router.push(`/dashboard/exporter/my-shipments?edit=${shipmentId}`)}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit Shipment
                   </Button>
@@ -833,3 +833,6 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
+
+
+    

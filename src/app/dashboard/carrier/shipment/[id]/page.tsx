@@ -216,7 +216,7 @@ export default function CarrierShipmentDetailPage() {
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
   const atBidLimit = userBidCount >= 3;
   const countdownText = timeLeft > 0
-    ? `${Math.floor(timeLeft / 1000 / 60)}m ${Math.floor((timeLeft / 1000) % 60)}s`
+    ? `${String(Math.floor(timeLeft / 1000 / 60)).padStart(2, '0')}:${String(Math.floor((timeLeft / 1000) % 60)).padStart(2, '0')}`
     : "Bidding closed";
 
   return (
@@ -277,19 +277,22 @@ export default function CarrierShipmentDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex flex-col items-center justify-center p-4 bg-secondary rounded-lg">
+                 <div className="flex flex-col items-center justify-center p-4 bg-[#1D283A] dark:bg-[#1D283A] text-white rounded-lg">
                     <div className="flex items-center gap-2">
-                        <TrendingDown className="h-6 w-6 text-primary" />
-                        <p className="text-sm text-muted-foreground">Current Lowest Bid</p>
+                        <TrendingDown className="h-5 w-5 text-yellow-400" />
+                        <p className="text-sm text-gray-300">Current Lowest Bid</p>
                     </div>
-                    <p className="text-2xl font-bold mt-1">L1</p>
+                    <p className="text-3xl font-bold mt-1">L1</p>
                     {userBidRank ? (
-                        <Badge variant={isL1 ? 'success' : 'outline'} className="mt-2 text-base">
-                            {isL1 ? <Award className="mr-2"/> : <TrendingDown className="mr-2" />}
+                         <div className={cn(
+                            "mt-2 text-base font-semibold text-white px-4 py-1 rounded-full flex items-center gap-2",
+                            isL1 ? 'bg-green-500' : 'bg-gray-600'
+                         )}>
+                            <Award className="h-5 w-5" />
                             Your Rank: {userBidRank}
-                        </Badge>
+                        </div>
                     ) : (
-                         <p className="text-sm text-muted-foreground mt-2">You haven't placed a bid yet.</p>
+                         <p className="text-sm text-gray-400 mt-2">You haven't placed a bid yet.</p>
                     )}
                 </div>
 

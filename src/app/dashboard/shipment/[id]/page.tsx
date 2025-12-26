@@ -166,38 +166,38 @@ export default function ShipmentDetailPage() {
   }, [shipmentInternalId, shipment?.status, toast]);
   
   useEffect(() => {
-    if (!shipmentInternalId || userType !== 'employee') {
-        const registerQuery = query(collection(db, "shipments", shipmentInternalId, "register"));
-        const unsubscribeRegister = onSnapshot(registerQuery, (querySnapshot) => {
-             setRegisteredCarriers(querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as RegisteredCarrier)));
-        });
-        return () => unsubscribeRegister();
-    }
-    
-    // For employees, fetch the names as well
-    const registerQuery = query(collection(db, "shipments", shipmentInternalId, "register"));
-    const unsubscribeRegister = onSnapshot(registerQuery, async (querySnapshot) => {
-      const carrierPromises = querySnapshot.docs.map(async (regDoc) => {
-        const carrierId = regDoc.id;
-        const registrationData = regDoc.data();
-        
-        const userDocRef = doc(db, 'users', carrierId);
-        const userDoc = await getDoc(userDocRef);
+    if (!shipmentInternalId) return;
 
-        return {
-            id: carrierId,
-            legalName: userDoc.exists() ? userDoc.data().name : "Unknown Carrier",
-            registeredAt: registrationData.registeredAt
-        };
-      });
-      const carriers = await Promise.all(carrierPromises);
-      setRegisteredCarriers(carriers as RegisteredCarrier[]);
+    const registerQuery = query(collection(db, "shipments", shipmentInternalId, "register"));
+    
+    const unsubscribeRegister = onSnapshot(registerQuery, async (querySnapshot) => {
+        if (userType === 'employee') {
+            // For employees, fetch the names as well
+            const carrierPromises = querySnapshot.docs.map(async (regDoc) => {
+                const carrierId = regDoc.id;
+                const registrationData = regDoc.data();
+                
+                const userDocRef = doc(db, 'users', carrierId);
+                const userDoc = await getDoc(userDocRef);
+
+                return {
+                    id: carrierId,
+                    legalName: userDoc.exists() ? userDoc.data().name : "Unknown Carrier",
+                    registeredAt: registrationData.registeredAt
+                };
+            });
+            const carriers = await Promise.all(carrierPromises);
+            setRegisteredCarriers(carriers as RegisteredCarrier[]);
+        } else {
+            // For other users, just get the registration data
+            setRegisteredCarriers(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RegisteredCarrier)));
+        }
     }, (error) => {
         console.error("Error fetching registration list: ", error);
     });
 
     return () => unsubscribeRegister();
-  }, [shipmentInternalId, userType]);
+}, [shipmentInternalId, userType]);
   
   // Countdown for bidding close
   useEffect(() => {

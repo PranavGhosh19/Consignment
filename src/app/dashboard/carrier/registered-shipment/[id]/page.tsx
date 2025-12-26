@@ -121,6 +121,8 @@ export default function RegisteredShipmentDetailPage() {
                 return { text: "Registered", description: `Bidding will start on ${format(shipment.goLiveAt.toDate(), "PPp")}` };
             }
             return { text: "Registered", description: "This shipment is scheduled to go live soon." };
+        case 'reviewing':
+            return { text: "Reviewing", description: "The exporter is reviewing the bids." };
         case 'awarded':
              if (isWinningCarrier) {
                 return { text: "You Won!", description: `Congratulations! You have won the bid for this shipment.` };
@@ -258,5 +260,7 @@ export default function RegisteredShipmentDetailPage() {
     </div>
   );
 }
+
+    
 
     

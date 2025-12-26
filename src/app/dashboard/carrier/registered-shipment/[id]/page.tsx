@@ -253,7 +253,7 @@ export default function RegisteredShipmentDetailPage() {
                             {userBids.map(bid => (
                                 <li key={bid.id} className="flex justify-between items-center text-sm p-3 bg-secondary rounded-md">
                                     <span className="font-bold font-mono text-base">${bid.bidAmount.toLocaleString()}</span>
-                                    <span className="text-muted-foreground">{format(bid.createdAt.toDate(), "p, dd MMM")}</span>
+                                    <span className="text-muted-foreground">{format(bid.createdAt.toDate(), "PPpp")}</span>
                                 </li>
                             ))}
                         </ul>

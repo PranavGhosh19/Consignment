@@ -19,7 +19,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { RegisterButton } from "@/components/RegisterButton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function FindShipmentsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -30,7 +29,6 @@ export default function FindShipmentsPage() {
   const [selectedShipment, setSelectedShipment] = useState<DocumentData | null>(null);
   const [bidAmount, setBidAmount] = useState("");
   const [isSubmittingBid, setIsSubmittingBid] = useState(false);
-  const [currentTab, setCurrentTab] = useState("all");
   
   const router = useRouter();
   const { toast } = useToast();
@@ -84,12 +82,6 @@ export default function FindShipmentsPage() {
         unsubscribeSnapshots();
     };
   }, [user, userData, toast]);
-
-  const filteredShipments = useMemo(() => {
-    if (currentTab === 'all') return shipments;
-    return shipments.filter(shipment => shipment.status === currentTab);
-  }, [shipments, currentTab]);
-
 
   const handleOpenBidDialog = (shipment: DocumentData) => {
     setSelectedShipment(shipment);
@@ -175,7 +167,7 @@ export default function FindShipmentsPage() {
         return (
              <div className="border rounded-lg p-12 text-center bg-card dark:bg-card mt-8">
                 <h2 className="text-xl font-semibold mb-2">No shipments found</h2>
-                <p className="text-muted-foreground">There are no shipments that match the current filter.</p>
+                <p className="text-muted-foreground">There are no scheduled shipments available at the moment.</p>
             </div>
         )
     }
@@ -259,22 +251,9 @@ export default function FindShipmentsPage() {
     <div className="container py-6 md:py-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold font-headline">Find Shipments</h1>
-        <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
 
-      {filteredShipments.length > 0 ? (
-        renderTable(filteredShipments)
-      ) : (
-        <div className="border rounded-lg p-12 text-center bg-card dark:bg-card">
-          <h2 className="text-xl font-semibold mb-2">No shipments available right now</h2>
-          <p className="text-muted-foreground">Please check back later for new opportunities.</p>
-        </div>
-      )}
+      {renderTable(shipments)}
 
       <Dialog open={isBidDialogOpen} onOpenChange={setIsBidDialogOpen}>
           <DialogContent className="sm:max-w-2xl">
@@ -357,5 +336,7 @@ export default function FindShipmentsPage() {
     </div>
   );
 }
+
+    
 
     

@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 export default function RegisteredShipmentDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [shipment, setShipment] = useState<DocumentData | null>(null);
+  const [userBids, setUserBids] = useState<DocumentData[]>([]);
   const [feedbackData, setFeedbackData] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,6 +48,7 @@ export default function RegisteredShipmentDetailPage() {
     
     let unsubscribeShipment: () => void = () => {};
     let unsubscribeFeedback: (() => void) | null = null;
+    let unsubscribeBids: (() => void) | null = null;
     
     const shipmentQuery = query(collection(db, "shipments"), where("publicId", "==", publicId));
 
@@ -54,6 +56,8 @@ export default function RegisteredShipmentDetailPage() {
        if (!snapshot.empty) {
         const docSnap = snapshot.docs[0];
         const shipmentData = docSnap.data();
+        const shipmentInternalId = docSnap.id;
+
         // A carrier should only see this page for scheduled, awarded, or delivered shipments.
         // If it's live, they should be on the bidding page.
         if (shipmentData.status === 'live') {
@@ -61,11 +65,22 @@ export default function RegisteredShipmentDetailPage() {
             return;
         }
 
-        setShipment({ id: docSnap.id, ...shipmentData });
+        setShipment({ id: shipmentInternalId, ...shipmentData });
+
+        // Listen for user's bids
+        const bidsQuery = query(
+          collection(db, "shipments", shipmentInternalId, "bids"), 
+          where('carrierId', '==', user.uid),
+          orderBy("createdAt", "desc")
+        );
+        unsubscribeBids = onSnapshot(bidsQuery, (bidsSnapshot) => {
+            setUserBids(bidsSnapshot.docs.map(d => ({id: d.id, ...d.data()})));
+        });
+
 
         if (shipmentData.status === 'delivered') {
           // Listen for feedback only when delivered
-          const feedbackQuery = query(collection(db, "shipments", docSnap.id, "feedback"));
+          const feedbackQuery = query(collection(db, "shipments", shipmentInternalId, "feedback"));
           unsubscribeFeedback = onSnapshot(feedbackQuery, (querySnapshot) => {
             if (!querySnapshot.empty) {
               setFeedbackData(querySnapshot.docs[0].data());
@@ -88,9 +103,8 @@ export default function RegisteredShipmentDetailPage() {
 
     return () => {
         unsubscribeShipment();
-        if (unsubscribeFeedback) {
-          unsubscribeFeedback();
-        }
+        if (unsubscribeFeedback) unsubscribeFeedback();
+        if (unsubscribeBids) unsubscribeBids();
     };
 
   }, [user, publicId, router, toast]);
@@ -166,7 +180,7 @@ export default function RegisteredShipmentDetailPage() {
                     </div>
                     <div className="grid md:grid-cols-2 gap-4 border-b pb-6">
                          <div><span className="font-semibold text-muted-foreground block mb-1">Origin Port</span>{shipment.origin?.portOfLoading}</div>
-                         <div><span className="font-semibold text-muted-foreground block mb-1">Destination Port</span>{shipment.destination?.portOfDelivery}</div>
+                         <div><span className="font-semibold text-muted-foreground block mb-1">Destination Port</span>{shipment.destination?.portOfDischarge}</div>
                          {shipment.origin?.zipCode && <div><span className="font-semibold text-muted-foreground block mb-1">Origin Zip</span>{shipment.origin.zipCode}</div>}
                          {shipment.destination?.zipCode && <div><span className="font-semibold text-muted-foreground block mb-1">Destination Zip</span>{shipment.destination.zipCode}</div>}
                     </div>
@@ -229,6 +243,23 @@ export default function RegisteredShipmentDetailPage() {
                 )}
               </CardContent>
             </Card>
+            {userBids.length > 0 && (
+                <Card className="bg-white dark:bg-card">
+                    <CardHeader>
+                        <CardTitle>Your Bids</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {userBids.map(bid => (
+                                <li key={bid.id} className="flex justify-between items-center text-sm p-3 bg-secondary rounded-md">
+                                    <span className="font-bold font-mono text-base">${bid.bidAmount.toLocaleString()}</span>
+                                    <span className="text-muted-foreground">{format(bid.createdAt.toDate(), "p, dd MMM")}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+            )}
             {shipment.status === 'delivered' && feedbackData && (
               <Card>
                 <CardHeader>

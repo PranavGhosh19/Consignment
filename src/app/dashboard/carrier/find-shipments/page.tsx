@@ -206,7 +206,7 @@ export default function FindShipmentsPage() {
                   <TableCell className="font-medium">{shipment.productName || 'N/A'}</TableCell>
                   <TableCell className="hidden sm:table-cell">{shipment.exporterName || 'N/A'}</TableCell>
                   <TableCell className="hidden md:table-cell">{shipment.origin?.portOfLoading || 'N/A'}</TableCell>
-                  <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDelivery || 'N/A'}</TableCell>
+                  <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDischarge || 'N/A'}</TableCell>
                   <TableCell className="hidden lg:table-cell text-right">{shipment.deliveryDeadline ? format(shipment.deliveryDeadline.toDate(), "dd/MM/yyyy") : 'N/A'}</TableCell>
                   <TableCell className="hidden lg:table-cell text-right">{shipment.goLiveAt ? format(shipment.goLiveAt.toDate(), "dd/MM/yyyy p") : 'N/A'}</TableCell>
                   <TableCell className="text-center">
@@ -296,7 +296,7 @@ export default function FindShipmentsPage() {
                               {selectedShipment.modeOfShipment && <div><span className="font-semibold">Mode: </span>{selectedShipment.modeOfShipment}</div>}
 
                               <div><span className="font-semibold">Origin Port: </span>{selectedShipment.origin?.portOfLoading}</div>
-                              <div><span className="font-semibold">Destination Port: </span>{selectedShipment.destination?.portOfDelivery}</div>
+                              <div><span className="font-semibold">Destination Port: </span>{selectedShipment.destination?.portOfDischarge}</div>
                               {selectedShipment.origin?.zipCode && <div><span className="font-semibold">Origin Zip: </span>{selectedShipment.origin?.zipCode}</div>}
                               {selectedShipment.destination?.zipCode && <div><span className="font-semibold">Destination Zip: </span>{selectedShipment.destination?.zipCode}</div>}
 

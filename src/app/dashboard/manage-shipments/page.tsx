@@ -277,7 +277,7 @@ export default function ManageShipmentsPage() {
                 <TableRow key={shipment.id} onClick={() => handleRowClick(shipment.id)} className="cursor-pointer">
                   <TableCell className="font-medium">{shipment.productName || 'N/A'}</TableCell>
                   <TableCell>{shipment.exporterName || 'N/A'}</TableCell>
-                  <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDelivery || 'N/A'}</TableCell>
+                  <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDischarge || 'N/A'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{shipment.createdAt ? format(shipment.createdAt.toDate(), "dd/MM/yyyy") : 'N/A'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{shipment.goLiveAt ? format(shipment.goLiveAt.toDate(), "dd/MM/yyyy p") : 'N/A'}</TableCell>
                   <TableCell className="text-center">

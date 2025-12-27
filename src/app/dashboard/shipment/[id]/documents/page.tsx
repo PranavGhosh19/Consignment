@@ -337,8 +337,16 @@ export default function ShipmentDocumentsPage() {
                             disabled={!canEditExporterInfo || isSavingExporter}
                         />
                     </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="invoice-upload">Invoice Upload</Label>
+                        <Input id="invoice-upload" type="file" disabled={!canEditExporterInfo} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="packing-list-upload">Packing List Upload</Label>
+                        <Input id="packing-list-upload" type="file" disabled={!canEditExporterInfo} />
+                    </div>
                     {canEditExporterInfo && (
-                        <div className="flex justify-end">
+                        <div className="flex justify-end pt-4">
                             <Button size="sm" onClick={() => handlePocUpdate('exporter')} disabled={isSavingExporter}>
                                 {isSavingExporter && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Save

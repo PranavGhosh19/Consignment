@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError, type SecurityRuleContext } from "@/firebase/errors";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const InfoCardSkeleton = () => (
@@ -59,6 +60,7 @@ export default function ShipmentDocumentsPage() {
   const [documentName, setDocumentName] = useState("");
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [documentType, setDocumentType] = useState("other");
 
   const router = useRouter();
   const params = useParams();
@@ -203,7 +205,11 @@ export default function ShipmentDocumentsPage() {
     }
     if (!user || !userData || !shipmentInternalId) return;
 
-    const finalDocumentName = documentName || fileToUpload.name;
+    let finalDocumentName = documentName || fileToUpload.name;
+    if (userType === 'exporter' && ['invoice', 'packing-list'].includes(documentType)) {
+        finalDocumentName = documentType === 'invoice' ? 'Export Invoice' : 'Packing List';
+    }
+
 
     setIsUploading(true);
 
@@ -215,7 +221,7 @@ export default function ShipmentDocumentsPage() {
         const downloadUrl = await getDownloadURL(uploadResult.ref);
 
         const documentsRef = collection(db, "shipments", shipmentInternalId, "documents");
-        const newDocumentPayload = {
+        const newDocumentPayload: any = {
             name: finalDocumentName,
             url: downloadUrl,
             path: storagePath,
@@ -225,6 +231,10 @@ export default function ShipmentDocumentsPage() {
             uploadedAt: serverTimestamp(),
             fileType: fileToUpload.type,
         };
+
+        if (userType === 'exporter') {
+            newDocumentPayload.documentType = documentType;
+        }
         
         const newDocRef = doc(documentsRef);
         setDoc(newDocRef, newDocumentPayload).catch(async (serverError) => {
@@ -240,6 +250,7 @@ export default function ShipmentDocumentsPage() {
         toast({ title: "Success", description: "Document uploaded successfully." });
         setDocumentName("");
         setFileToUpload(null);
+        setDocumentType("other");
         setIsUploadDialogOpen(false);
 
     } catch (error) {
@@ -337,14 +348,6 @@ export default function ShipmentDocumentsPage() {
                             disabled={!canEditExporterInfo || isSavingExporter}
                         />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="invoice-upload">Invoice Upload</Label>
-                        <Input id="invoice-upload" type="file" disabled={!canEditExporterInfo} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="packing-list-upload">Packing List Upload</Label>
-                        <Input id="packing-list-upload" type="file" disabled={!canEditExporterInfo} />
-                    </div>
                     {canEditExporterInfo && (
                         <div className="flex justify-end pt-4">
                             <Button size="sm" onClick={() => handlePocUpdate('exporter')} disabled={isSavingExporter}>
@@ -414,10 +417,27 @@ export default function ShipmentDocumentsPage() {
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="doc-name">Document Name (optional)</Label>
-                                    <Input id="doc-name" placeholder="Defaults to file name" value={documentName} onChange={e => setDocumentName(e.target.value)} />
-                                </div>
+                                {userType === 'exporter' && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="doc-type">Document Type</Label>
+                                        <Select value={documentType} onValueChange={setDocumentType}>
+                                            <SelectTrigger id="doc-type">
+                                                <SelectValue placeholder="Select type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="invoice">Invoice</SelectItem>
+                                                <SelectItem value="packing-list">Packing List</SelectItem>
+                                                <SelectItem value="other">Other Document</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+                                {documentType === 'other' && (
+                                     <div className="grid gap-2">
+                                        <Label htmlFor="doc-name">Document Name (optional)</Label>
+                                        <Input id="doc-name" placeholder="Defaults to file name" value={documentName} onChange={e => setDocumentName(e.target.value)} />
+                                    </div>
+                                )}
                                 <div className="grid gap-2">
                                     <Label htmlFor="doc-file">File</Label>
                                     <Input id="doc-file" type="file" onChange={e => setFileToUpload(e.target.files ? e.target.files[0] : null)} />

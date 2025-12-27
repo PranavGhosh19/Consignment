@@ -278,11 +278,6 @@ export default function CarrierShipmentDetailPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                  <div className="flex flex-col items-center justify-center p-4 bg-[#1D283A] dark:bg-[#1D283A] text-white rounded-lg">
-                    <div className="flex items-center gap-2">
-                        <TrendingDown className="h-5 w-5 text-yellow-400" />
-                        <p className="text-sm text-gray-300">Current Lowest Bid</p>
-                    </div>
-                    <p className="text-3xl font-bold mt-1">L1</p>
                     {userBidRank ? (
                          <div className={cn(
                             "mt-2 text-base font-semibold text-white px-4 py-1 rounded-full flex items-center gap-2",

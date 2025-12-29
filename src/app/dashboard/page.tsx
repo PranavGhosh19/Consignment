@@ -14,24 +14,31 @@ export default function DashboardRedirectPage() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        if (!user.emailVerified) {
+          router.replace('/verify-email');
+          return;
+        }
+
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         
         if (userDoc.exists() && userDoc.data()?.userType) {
-          const { userType } = userDoc.data();
-          if (userType === 'exporter') {
-            router.replace('/dashboard/exporter');
-          } else if (userType === 'carrier') {
-            router.replace('/dashboard/carrier');
-          } else if (userType === 'employee') {
-            router.replace('/dashboard/employee');
+          const { userType, verificationStatus } = userDoc.data();
+          if (verificationStatus === 'unsubmitted' || verificationStatus === 'rejected') {
+            router.replace('/gst-verification');
           } else {
-            // Fallback for unknown userType
-            router.replace('/login');
+            if (userType === 'exporter') {
+              router.replace('/dashboard/exporter');
+            } else if (userType === 'carrier') {
+              router.replace('/dashboard/carrier');
+            } else if (userType === 'employee') {
+              router.replace('/dashboard/employee');
+            } else {
+              router.replace('/select-type');
+            }
           }
         } else {
-          // If user exists in auth but not in DB or has no type, send to login
-          router.replace('/login');
+          router.replace('/select-type');
         }
       } else {
         router.replace('/login');

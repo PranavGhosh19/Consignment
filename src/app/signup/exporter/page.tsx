@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,14 @@ export default function ExporterSignupPage() {
         verificationStatus: 'unsubmitted',
       });
       
-      router.push("/gst-verification");
+      await sendEmailVerification(user);
+
+      toast({
+          title: "Verification Email Sent",
+          description: "Please check your inbox to verify your email address."
+      });
+
+      router.push("/verify-email");
 
     } catch (error: any) {
       toast({

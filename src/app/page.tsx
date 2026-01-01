@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Zap, Ship, CheckCircle, Anchor, Truck } from "lucide-react";
+import { ArrowRight, Zap, Ship, CheckCircle, Anchor, Truck, TrendingDown, Clock, Globe, Shield } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -146,6 +146,65 @@ export default function Home() {
                   </p>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+      
+       <section className="w-full py-20 md:py-28 bg-secondary">
+        <div className="container px-4 md:px-6">
+          <div className="flex flex-col items-center space-y-4 text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline">
+                  Key Benefits
+              </h2>
+              <p className="max-w-[600px] text-muted-foreground md:text-lg">
+                  Unlock unparalleled efficiency and savings for your logistics operations.
+              </p>
+          </div>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              <Card className="text-center">
+                  <CardHeader>
+                      <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
+                          <TrendingDown className="h-6 w-6" />
+                      </div>
+                      <CardTitle className="text-4xl font-bold">25%</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      <p className="text-muted-foreground">Average reduction in freight costs through our competitive bidding system.</p>
+                  </CardContent>
+              </Card>
+              <Card className="text-center">
+                  <CardHeader>
+                      <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
+                          <Clock className="h-6 w-6" />
+                      </div>
+                      <CardTitle className="text-4xl font-bold">90%</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      <p className="text-muted-foreground">Faster booking times, with most shipments awarded within hours of going live.</p>
+                  </CardContent>
+              </Card>
+              <Card className="text-center">
+                  <CardHeader>
+                      <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
+                          <Globe className="h-6 w-6" />
+                      </div>
+                      <CardTitle className="text-4xl font-bold">1,000+</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      <p className="text-muted-foreground">Access a growing network of vetted and reliable carriers worldwide.</p>
+                  </CardContent>
+              </Card>
+              <Card className="text-center">
+                  <CardHeader>
+                      <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
+                          <Shield className="h-6 w-6" />
+                      </div>
+                      <CardTitle className="text-4xl font-bold">100%</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      <p className="text-muted-foreground">Transparent and secure process, from initial bid to final delivery confirmation.</p>
+                  </CardContent>
+              </Card>
           </div>
         </div>
       </section>

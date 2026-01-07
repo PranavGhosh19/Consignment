@@ -181,20 +181,37 @@ export const onBidCreate = onDocumentCreated("shipments/{shipmentId}/bids/{bidId
   }
 
   try {
-    const shipmentDoc = await db.collection("shipments").doc(shipmentId).get();
+    const shipmentRef = db.collection("shipments").doc(shipmentId);
+    const shipmentDoc = await shipmentRef.get();
     if (shipmentDoc.exists) {
       const shipmentData = shipmentDoc.data();
       if (shipmentData && shipmentData.exporterId) {
+        // Send notification to exporter
         await createNotification({
           recipientId: shipmentData.exporterId,
           message: `You have a new bid of $${bidData.bidAmount} ` +
               `on your '${shipmentData.productName}' shipment.`,
           link: `/dashboard/shipment/${shipmentData.publicId}`,
         });
+
+        // Anti-snipe logic: Extend bidding if bid is in the last 10 seconds.
+        if (shipmentData.biddingCloseAt && shipmentData.status === "live") {
+          const now = Date.now();
+          const biddingCloseTime = shipmentData.biddingCloseAt.toDate().getTime();
+          const tenSecondsInMillis = 10 * 1000;
+
+          if (biddingCloseTime - now < tenSecondsInMillis) {
+            const newBiddingCloseTime = new Date(now + tenSecondsInMillis);
+            await shipmentRef.update({
+              biddingCloseAt: admin.firestore.Timestamp.fromDate(newBiddingCloseTime),
+            });
+            logger.log(`Bidding extended for shipment ${shipmentId} to ${newBiddingCloseTime.toISOString()}`);
+          }
+        }
       }
     }
   } catch (error) {
-    logger.error(`Error fetching shipment ${shipmentId} for new bid notification:`, error);
+    logger.error(`Error processing new bid for shipment ${shipmentId}:`, error);
   }
 });
 

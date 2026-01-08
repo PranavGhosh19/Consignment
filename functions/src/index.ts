@@ -195,19 +195,29 @@ export const onBidCreate = onDocumentCreated("shipments/{shipmentId}/bids/{bidId
         });
 
         // Anti-snipe logic: Extend bidding if bid is in the last 10 seconds.
-        if (shipmentData.biddingCloseAt && shipmentData.status === "live") {
-          const now = Date.now();
-          const biddingCloseTime = shipmentData.biddingCloseAt.toDate().getTime();
-          const tenSecondsInMillis = 10 * 1000;
+        await db.runTransaction(async (tx) => {
+          const snap = await tx.get(shipmentRef);
+          if (!snap.exists) return;
 
-          if (biddingCloseTime - now < tenSecondsInMillis) {
-            const newBiddingCloseTime = new Date(now + tenSecondsInMillis);
-            await shipmentRef.update({
-              biddingCloseAt: admin.firestore.Timestamp.fromDate(newBiddingCloseTime),
+          const data = snap.data();
+          if (!data?.biddingCloseAt || data.status !== "live") return;
+
+          const now = Date.now();
+          const closeTime = data.biddingCloseAt.toDate().getTime();
+
+          if (closeTime - now <= 10_000) {
+            const base = Math.max(closeTime, now);
+            const newClose = new Date(base + 10_000);
+
+            tx.update(shipmentRef, {
+              biddingCloseAt: admin.firestore.Timestamp.fromDate(newClose),
             });
-            logger.log(`Bidding extended for shipment ${shipmentId} to ${newBiddingCloseTime.toISOString()}`);
+
+            logger.log(
+              `Anti-snipe: extended shipment ${shipmentId} to ${newClose.toISOString()}`
+            );
           }
-        }
+        });
       }
     }
   } catch (error) {
@@ -354,6 +364,14 @@ export const closeBiddingAndReview = onRequest(async (req, res) => {
 
     const shipmentData = doc.data();
     if (shipmentData?.status === "live") {
+      const now = Date.now();
+      const closeTime = shipmentData.biddingCloseAt?.toDate().getTime();
+
+      if (closeTime && closeTime > now) {
+        logger.log(`Close task fired early for ${shipmentId}, skipping.`);
+        return res.status(200).send("Too early");
+      }
+
       await shipmentRef.update({status: "reviewing"});
       logger.log(`Set shipment ${shipmentId} to 'reviewing'.`);
       res.status(200).send("OK");

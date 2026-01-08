@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 import Link from "next/link";
 
-const EMPLOYEE_DOMAIN = "@shipcargo.com";
+const EMPLOYEE_DOMAIN = "@shipcargo.in";
 
 export default function EmployeeLoginPage() {
   const router = useRouter();
@@ -104,7 +104,7 @@ export default function EmployeeLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@shipcargo.com"
+                placeholder="you@shipcargo.in"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

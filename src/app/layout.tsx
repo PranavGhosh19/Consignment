@@ -1,5 +1,6 @@
 
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -33,7 +34,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
       </head>
       <body>
         <ThemeProvider
@@ -47,6 +47,11 @@ export default function RootLayout({
             </AppProviders>
             <Toaster />
         </ThemeProvider>
+        <Script
+          id="razorpay-checkout-js"
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );

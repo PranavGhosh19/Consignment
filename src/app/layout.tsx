@@ -22,8 +22,8 @@ const fontPtSans = PT_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "ShipCargo",
-  description: "The Global Marketplace for Freight",
+  title: "ShipCargo | Freight Bidding Platform for Exporters & Carriers",
+  description: "Get competitive freight rates on India's leading shipment bidding platform. Exporters post shipments, and verified carriers bid in real-time. Transparent, efficient, and cost-effective.",
 };
 
 export default function RootLayout({

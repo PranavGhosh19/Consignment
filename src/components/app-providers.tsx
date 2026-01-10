@@ -9,6 +9,7 @@ import { AuthButton, MobileMenu, NavLinks } from "@/components/auth-button";
 import { BottomBar } from "@/components/bottom-bar";
 import { Clock } from "@/components/clock";
 import { FirebaseErrorListener } from "./FirebaseErrorListener";
+import { Linkedin } from "lucide-react";
 
 const LogoIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -81,16 +82,55 @@ const Header = () => {
 }
 
 const Footer = () => (
-  <footer className="py-6 md:px-8 md:py-0 border-t pb-24 sm:pb-6">
-    <div className="container relative flex h-12 items-center justify-center">
-      <p className="text-center text-sm text-muted-foreground">
-        &copy; 2025 ShipCargo. All rights reserved.
-      </p>
-      <div className="absolute right-6 md:right-8 hidden sm:block">
-        <Clock />
-      </div>
-    </div>
-  </footer>
+    <footer className="border-t bg-secondary pb-24 sm:pb-0">
+        <div className="container py-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="md:col-span-1 space-y-4">
+                    <Link href="/" className="flex items-center gap-2 font-bold text-xl font-headline">
+                        <LogoIcon />
+                        <span>ShipCargo</span>
+                    </Link>
+                    <p className="text-sm text-muted-foreground">The global marketplace for freight, connecting exporters and carriers in real-time.</p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:col-span-3 gap-8">
+                    <div className="space-y-3">
+                        <h4 className="font-semibold">Product</h4>
+                        <ul className="space-y-2 text-sm">
+                            <li><Link href="/signup/exporter" className="text-muted-foreground hover:text-primary">For Exporters</Link></li>
+                            <li><Link href="/signup/carrier" className="text-muted-foreground hover:text-primary">For Carriers</Link></li>
+                            <li><Link href="/how-it-works" className="text-muted-foreground hover:text-primary">How It Works</Link></li>
+                        </ul>
+                    </div>
+                    <div className="space-y-3">
+                        <h4 className="font-semibold">Company</h4>
+                        <ul className="space-y-2 text-sm">
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">About Us</Link></li>
+                            <li><Link href="/support" className="text-muted-foreground hover:text-primary">Contact Us</Link></li>
+                        </ul>
+                    </div>
+                     <div className="space-y-3">
+                        <h4 className="font-semibold">Legal</h4>
+                        <ul className="space-y-2 text-sm">
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                    &copy; {new Date().getFullYear()} ShipCargo. All rights reserved.
+                </p>
+                <div className="flex items-center gap-4 mt-4 sm:mt-0">
+                    <Link href="#" className="text-muted-foreground hover:text-primary">
+                        <Linkedin className="h-5 w-5" />
+                        <span className="sr-only">LinkedIn</span>
+                    </Link>
+                    <Clock />
+                </div>
+            </div>
+        </div>
+    </footer>
 );
 
 

@@ -92,7 +92,6 @@ export default function Home() {
                             <HowItWorksStep number={1} title="Post Your Shipment" description="Fill out a simple form with your cargo and route details to get started on our transport bidding platform." />
                             <HowItWorksStep number={2} title="Receive Competitive Bids" description="Verified freight vendors bid for your shipment, helping you get the best market rates." />
                             <HowItWorksStep number={3} title="Compare Freight Bids & Choose" description="Select the best offer based on price, carrier rating, and transit time." />
-                            <HowItWorksStep number={4} title="Track & Close" description="Manage documents and track your shipment until successful delivery." />
                         </ul>
                     </div>
                      <div>
@@ -101,7 +100,6 @@ export default function Home() {
                             <HowItWorksStep number={1} title="Browse the Freight Marketplace" description="Find live shipments that match your available routes and capacity." />
                             <HowItWorksStep number={2} title="Place Bids Instantly" description="Submit your best price. Our carrier bidding for shipments is fair and transparent." />
                             <HowItWorksStep number={3} title="Win More Deals" description="Get notified instantly when your bid is awarded by the exporter." />
-                            <HowItWorksStep number={4} title="Get Paid Faster" description="Complete the delivery and ensure timely payment through a verified process." />
                         </ul>
                     </div>
                 </div>

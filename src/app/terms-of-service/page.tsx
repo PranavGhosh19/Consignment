@@ -75,6 +75,7 @@ export default function TermsOfServicePage() {
                                 <li>Is **not a party** to any agreement between Exporters and Carriers</li>
                             </ul>
                            <p>All contracts formed through bidding are **solely between Users**.</p>
+                           <p className="font-semibold">ShipCargo manages the digital workflow of shipment listing, bidding, and coordination. However, the preparation, packaging, handling, transportation, storage, and delivery of goods are the exclusive responsibility of the respective exporter, carrier, or logistics service provider. ShipCargo does not assume responsibility for the condition, temperature, timing, or safety of any shipment.</p>
                         </Section>
                         
                          <Section title="5. Shipment Listings">

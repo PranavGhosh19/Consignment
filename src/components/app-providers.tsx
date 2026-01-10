@@ -90,7 +90,7 @@ const Footer = () => (
                         <LogoIcon />
                         <span>ShipCargo</span>
                     </Link>
-                    <p className="text-sm text-muted-foreground">The global marketplace for freight, connecting exporters and carriers in real-time.</p>
+                    <p className="text-sm text-muted-foreground">The global freight bidding platform for Indian exporters and logistics vendors who want speed, transparency, and better margins.</p>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:col-span-3 gap-8">
                     <div className="space-y-3">
@@ -111,7 +111,7 @@ const Footer = () => (
                      <div className="space-y-3">
                         <h4 className="font-semibold">Legal</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
+                            <li><Link href="/terms-of-service" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
                             <li><Link href="#" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
                         </ul>
                     </div>

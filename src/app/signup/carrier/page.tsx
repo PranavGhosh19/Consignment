@@ -71,44 +71,45 @@ export default function CarrierSignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center py-12 px-4 bg-primary/10 min-h-[calc(100vh-152px)]">
-      <Card className="mx-auto w-full max-w-md">
+    <div className="flex items-center justify-center py-16 px-4 bg-[#13285A] min-h-[calc(100vh-160px)] relative overflow-hidden">
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#FF5A12]/15 blur-[120px] rounded-full" />
+      <Card className="mx-auto w-full max-w-md border-2 border-[#ECE6DC] bg-[#ECE6DC] text-[#13285A] shadow-2xl rounded-2xl relative z-10">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
-                <Truck className="h-10 w-10 text-primary"/>
+                <Truck className="h-10 w-10 text-[#FF5A12]"/>
             </div>
-          <CardTitle className="text-3xl font-bold font-headline">
+          <CardTitle className="text-3xl font-extrabold font-headline text-[#13285A]">
             Create a Carrier Account
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm font-medium text-[#13285A]/75">
             Fill out the form below to start bidding on shipments.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Company Name</Label>
-              <Input id="name" placeholder="e.g. Speedy Logistics" required value={name} onChange={(e) => setName(e.target.value)} disabled={loading} className="bg-secondary" />
+              <Label htmlFor="name" className="text-xs font-bold text-[#13285A] uppercase tracking-wider">Company Name</Label>
+              <Input id="name" placeholder="e.g. Speedy Logistics" required value={name} onChange={(e) => setName(e.target.value)} disabled={loading} className="bg-white text-[#13285A] border-2 border-[#13285A]/15 focus-visible:ring-2 focus-visible:ring-[#FF5A12] rounded-xl h-12" />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} className="bg-secondary" />
+              <Label htmlFor="email" className="text-xs font-bold text-[#13285A] uppercase tracking-wider">Email Address</Label>
+              <Input id="email" type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} className="bg-white text-[#13285A] border-2 border-[#13285A]/15 focus-visible:ring-2 focus-visible:ring-[#FF5A12] rounded-xl h-12" />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} className="bg-secondary" />
+              <Label htmlFor="password" className="text-xs font-bold text-[#13285A] uppercase tracking-wider">Password</Label>
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} className="bg-white text-[#13285A] border-2 border-[#13285A]/15 focus-visible:ring-2 focus-visible:ring-[#FF5A12] rounded-xl h-12" />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input id="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} disabled={loading} className="bg-secondary" />
+              <Label htmlFor="confirm-password" className="text-xs font-bold text-[#13285A] uppercase tracking-wider">Confirm Password</Label>
+              <Input id="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} disabled={loading} className="bg-white text-[#13285A] border-2 border-[#13285A]/15 focus-visible:ring-2 focus-visible:ring-[#FF5A12] rounded-xl h-12" />
             </div>
-            <Button onClick={handleSignUp} disabled={loading} className="w-full h-12 mt-2 text-lg">
+            <Button onClick={handleSignUp} disabled={loading} className="w-full h-13 mt-2 text-base font-bold bg-[#FF5A12] hover:bg-[#E04800] text-white shadow-xl shadow-[#FF5A12]/30 rounded-xl transition-all duration-200 border-none cursor-pointer">
               {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </div>
-          <div className="mt-4 text-center text-sm">
+          <div className="mt-5 text-center text-sm text-[#13285A]/80">
             Already have an account?{" "}
-            <Link href="/login/carrier" className="underline">
+            <Link href="/login/carrier" className="font-bold text-[#FF5A12] hover:underline">
               Log In
             </Link>
           </div>

@@ -78,22 +78,23 @@ export default function VerifyEmailPage() {
     }
     
     return (
-        <div className="flex items-center justify-center py-12 px-4 bg-primary/10 min-h-[calc(100vh-152px)]">
-            <Card className="mx-auto w-full max-w-lg">
+        <div className="flex items-center justify-center py-16 px-4 bg-[#13285A] min-h-[calc(100vh-160px)] relative overflow-hidden">
+            <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#FF5A12]/15 blur-[120px] rounded-full" />
+            <Card className="mx-auto w-full max-w-lg border-2 border-[#ECE6DC] bg-[#ECE6DC] text-[#13285A] shadow-2xl rounded-2xl relative z-10">
                 <CardHeader className="text-center space-y-4">
                     <div className="flex justify-center">
-                        <MailCheck className="h-16 w-16 text-primary" />
+                        <MailCheck className="h-16 w-16 text-[#FF5A12]" />
                     </div>
-                    <CardTitle className="text-3xl font-bold font-headline">Verify Your Email</CardTitle>
-                    <CardDescription className="text-base">
-                        We've sent a verification link to <span className="font-semibold text-foreground">{user?.email}</span>. Please click the link to continue.
+                    <CardTitle className="text-3xl font-extrabold font-headline text-[#13285A]">Verify Your Email</CardTitle>
+                    <CardDescription className="text-base text-[#13285A]/80 font-medium">
+                        We&apos;ve sent a verification link to <span className="font-bold text-[#13285A]">{user?.email}</span>. Please click the link to continue.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
-                    <p className="text-muted-foreground mb-6">
-                        Once verified, you will be automatically redirected. If you don't see the email, please check your spam folder.
+                    <p className="text-[#13285A]/75 text-sm mb-6">
+                        Once verified, you will be automatically redirected. If you don&apos;t see the email, please check your spam folder.
                     </p>
-                    <Button onClick={handleResendVerification} disabled={isSending} className="w-full sm:w-auto">
+                    <Button onClick={handleResendVerification} disabled={isSending} className="w-full sm:w-auto h-12 px-6 font-bold bg-[#FF5A12] hover:bg-[#E04800] text-white shadow-xl shadow-[#FF5A12]/30 rounded-xl transition-all duration-200 border-none cursor-pointer">
                         {isSending ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

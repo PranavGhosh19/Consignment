@@ -319,7 +319,7 @@ export function ShipmentDetailsSection({ form }: ShipmentDetailsSectionProps) {
                 )}
               />
             </div>
-             <FormMessage>{form.formState.errors.dimensionL?.message}</FormMessage>
+             <FormMessage>{form.formState.errors.dimensionL?.message ? String(form.formState.errors.dimensionL.message) : null}</FormMessage>
           </div>
           <div className="flex items-center justify-end lg:col-span-3">
             <Badge variant="secondary">Calculated Volume: {calculatedCBM} CBM</Badge>

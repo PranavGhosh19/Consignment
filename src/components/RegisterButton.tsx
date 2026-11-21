@@ -22,6 +22,25 @@ interface RegisterButtonProps {
   onRegisterSuccess: (shipmentId: string) => void;
 }
 
+// Helper to ensure Razorpay checkout script is loaded
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(false);
+      return;
+    }
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user, onRegisterSuccess }) => {
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
@@ -67,6 +86,7 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
         const registerDocRef = doc(db, 'shipments', shipmentId, 'register', user.uid);
         await setDoc(registerDocRef, {
             carrierId: user.uid,
+            carrierName: userData?.name || user.displayName || 'Registered Carrier',
             registeredAt: Timestamp.now(),
             paymentId: paymentId,
         });
@@ -76,11 +96,13 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
     } catch (error) {
          console.error('Error saving registration:', error);
          toast({ title: "Registration Error", description: "Payment was successful, but failed to save your registration. Please contact support.", variant: "destructive" });
+    } finally {
+        setIsProcessing(false);
     }
   };
 
   const initiatePayment = async () => {
-    if (!user || !userData) {
+    if (!user) {
         toast({ title: "Error", description: "You must be logged in to register.", variant: "destructive" });
         return;
     }
@@ -89,6 +111,12 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
     const amount = 10; // 10 Rupees
 
     try {
+        // Ensure Razorpay SDK script is loaded
+        const isScriptLoaded = await loadRazorpayScript();
+        if (!isScriptLoaded || !(window as any).Razorpay) {
+            throw new Error("Razorpay SDK could not be loaded. Please check your internet connection.");
+        }
+
         const res = await fetch('/api/razorpay', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -105,50 +133,47 @@ export const RegisterButton: React.FC<RegisterButtonProps> = ({ shipmentId, user
 
         if (!res.ok) {
             const errorData = await res.json();
-            throw new Error(errorData.details || 'Failed to create Razorpay order.');
+            throw new Error(errorData.details || errorData.error || 'Failed to create Razorpay order.');
         }
         
         const order = await res.json();
 
         const options = {
-            key: "rzp_test_RuMOD23vC1ZlS8", // Using the same valid, public test key
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_U2RWuFM2YZo2RJ",
             amount: order.amount,
             currency: order.currency,
-            name: "Shipment Registration Fee",
+            name: "ShipCargo",
             description: `Fee to bid on shipment #${shipmentId.substring(0,6)}`,
             order_id: order.id,
             handler: function (response: any) {
                 // Payment is successful, now register the user
                 handleRegister(response.razorpay_payment_id);
             },
+            modal: {
+                ondismiss: function () {
+                    setIsProcessing(false);
+                }
+            },
             prefill: {
-                name: userData.name,
-                email: userData.email,
+                name: userData?.name || user.displayName || "Carrier",
+                email: userData?.email || user.email || "",
+                contact: userData?.phone || "",
             },
             theme: {
-                color: "#2563EB"
+                color: "#FF5A12"
             }
         };
 
-        const rzp = new window.Razorpay(options);
+        const rzp = new (window as any).Razorpay(options);
         rzp.on('payment.failed', function (response: any) {
             toast({
                 title: "Payment Failed",
-                description: `Error: ${response.error.description}`,
+                description: `Error: ${response?.error?.description || "Payment could not be processed"}`,
                 variant: "destructive"
             });
-            // Stop processing indicator on failure
             setIsProcessing(false);
         });
         rzp.open();
-        
-        // This is important: The processing state should be managed by the callback handlers.
-        // But if the user closes the modal without paying, we need to reset the state.
-        // Razorpay doesn't have a direct "onClose" that distinguishes between success/fail/close,
-        // so we will optimistically stop the loader once the modal opens. The fail handler will catch failures.
-        // A more advanced implementation might use a different state management strategy.
-        // For now, let's reset it here. If payment fails, it will be reset again.
-         setTimeout(() => setIsProcessing(false), 1000); // Give it a moment before resetting.
 
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";

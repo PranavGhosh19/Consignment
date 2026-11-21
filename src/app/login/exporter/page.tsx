@@ -79,21 +79,22 @@ export default function ExporterLoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center py-12 px-4 bg-primary/10 min-h-[calc(100vh-152px)]">
-      <Card className="mx-auto w-full max-w-md">
+    <div className="flex items-center justify-center py-16 px-4 bg-[#13285A] min-h-[calc(100vh-160px)] relative overflow-hidden">
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#FF5A12]/15 blur-[120px] rounded-full" />
+      <Card className="mx-auto w-full max-w-md border-2 border-[#ECE6DC] bg-[#ECE6DC] text-[#13285A] shadow-2xl rounded-2xl relative z-10">
         <CardHeader className="text-center space-y-2">
             <div className="flex justify-center">
-                <Anchor className="h-10 w-10 text-primary"/>
+                <Anchor className="h-10 w-10 text-[#FF5A12]"/>
             </div>
-          <CardTitle className="text-3xl font-bold font-headline">Exporter Login</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-3xl font-extrabold font-headline text-[#13285A]">Exporter Login</CardTitle>
+          <CardDescription className="text-sm font-medium text-[#13285A]/75">
             Enter your credentials to access your exporter dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email" className="text-xs font-bold text-[#13285A] uppercase tracking-wider">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -103,15 +104,15 @@ export default function ExporterLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                className="bg-secondary"
+                className="bg-white text-[#13285A] border-2 border-[#13285A]/15 focus-visible:ring-2 focus-visible:ring-[#FF5A12] rounded-xl h-12"
               />
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-xs font-bold text-[#13285A] uppercase tracking-wider">Password</Label>
                 <Link
                   href="#"
-                  className="ml-auto inline-block text-sm underline"
+                  className="ml-auto inline-block text-xs font-semibold text-[#FF5A12] hover:underline"
                 >
                   Forgot your password?
                 </Link>
@@ -124,16 +125,16 @@ export default function ExporterLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                className="bg-secondary"
+                className="bg-white text-[#13285A] border-2 border-[#13285A]/15 focus-visible:ring-2 focus-visible:ring-[#FF5A12] rounded-xl h-12"
               />
             </div>
-            <Button onClick={handleLogin} disabled={loading} className="w-full h-12 mt-2 text-lg">
+            <Button onClick={handleLogin} disabled={loading} className="w-full h-13 mt-2 text-base font-bold bg-[#FF5A12] hover:bg-[#E04800] text-white shadow-xl shadow-[#FF5A12]/30 rounded-xl transition-all duration-200 border-none cursor-pointer">
               {loading ? 'Logging in...' : 'Log In'}
             </Button>
           </div>
-          <div className="mt-4 text-center text-sm">
+          <div className="mt-5 text-center text-sm text-[#13285A]/80">
             Don&apos;t have an exporter account?{" "}
-            <Link href="/signup/exporter" className="underline">
+            <Link href="/signup/exporter" className="font-bold text-[#FF5A12] hover:underline">
               Sign up
             </Link>
           </div>

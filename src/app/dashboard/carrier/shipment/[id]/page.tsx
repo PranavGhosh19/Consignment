@@ -1,11 +1,12 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, addDoc, Timestamp, where } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { doc, collection, query, orderBy, onSnapshot, DocumentData, addDoc, updateDoc, Timestamp, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/auth-context";
+import { BiddingCountdown } from "@/components/BiddingCountdown";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,15 +19,15 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function CarrierShipmentDetailPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [carrierName, setCarrierName] = useState<string>("");
+  const { user, userName, userType, loading: authLoading } = useAuth();
+  const carrierName = userName || 'Anonymous Carrier';
   const [shipment, setShipment] = useState<DocumentData | null>(null);
   const [shipmentInternalId, setShipmentInternalId] = useState<string | null>(null);
   const [bids, setBids] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bidAmount, setBidAmount] = useState("");
-  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [isBiddingClosed, setIsBiddingClosed] = useState(false);
 
   const router = useRouter();
   const params = useParams();
@@ -34,22 +35,15 @@ export default function CarrierShipmentDetailPage() {
   const publicId = params.id as string;
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data()?.userType === 'carrier') {
-           setUser(currentUser);
-           setCarrierName(userDoc.data()?.name || 'Anonymous Carrier');
-        } else {
-            router.push('/dashboard');
-        }
-      } else {
-        router.push('/login');
-      }
-    });
-    return () => unsubscribeAuth();
-  }, [router]);
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (userType !== 'carrier') {
+      router.push('/dashboard');
+    }
+  }, [user, userType, authLoading, router]);
 
   useEffect(() => {
     if (!user || !publicId) return;
@@ -62,9 +56,13 @@ export default function CarrierShipmentDetailPage() {
        if (!snapshot.empty) {
         const docSnap = snapshot.docs[0];
         const shipmentData = docSnap.data();
-        if (shipmentData.status !== 'live' && shipmentData.status !== 'bidding_closed') {
-            toast({ title: "Info", description: "Bidding for this shipment is closed.", variant: "default" });
+        const isLive = shipmentData.status === 'live' ||
+          (shipmentData.status === 'scheduled' && shipmentData.goLiveAt && shipmentData.goLiveAt.toDate().getTime() <= Date.now());
+
+        if (!isLive && shipmentData.status !== 'bidding_closed') {
+            toast({ title: "Info", description: "Bidding for this shipment is not currently open.", variant: "default" });
             router.push(`/dashboard/carrier/registered-shipment/${publicId}`);
+            return;
         }
         setShipment({ id: docSnap.id, ...shipmentData });
         setShipmentInternalId(docSnap.id);
@@ -102,19 +100,6 @@ export default function CarrierShipmentDetailPage() {
         unsubscribeBids();
     };
   }, [shipmentInternalId, toast]);
-  
-  // Countdown for bidding close
-  useEffect(() => {
-    if (shipment?.status !== 'live' || !shipment?.biddingCloseAt) {
-      setTimeLeft(0);
-      return;
-    }
-    const interval = setInterval(() => {
-      const diff = shipment.biddingCloseAt.toDate().getTime() - Date.now();
-      setTimeLeft(diff > 0 ? diff : 0);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [shipment?.biddingCloseAt, shipment?.status]);
 
   const userBids = useMemo(() => {
     if (!user) return [];
@@ -122,6 +107,11 @@ export default function CarrierShipmentDetailPage() {
         .filter(b => b.carrierId === user.uid)
         .sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
   }, [bids, user]);
+
+  const userLowestBid = useMemo(() => {
+    if (!userBids || userBids.length === 0) return null;
+    return Math.min(...userBids.map(b => Number(b.bidAmount)));
+  }, [userBids]);
   
   const { userBidRank, isL1, userBidCount } = useMemo(() => {
     if (!user || bids.length === 0) {
@@ -156,10 +146,28 @@ export default function CarrierShipmentDetailPage() {
     };
   }, [bids, user, userBids]);
 
+  const isBiddingOpen = useMemo(() => {
+    if (!shipment || isBiddingClosed) return false;
+    const isLive = shipment.status === 'live' ||
+      (shipment.status === 'scheduled' && shipment.goLiveAt && shipment.goLiveAt.toDate().getTime() <= Date.now());
+    if (!isLive) return false;
+    const effectiveCloseAt = shipment.biddingCloseAt || 
+      (shipment.goLiveAt ? Timestamp.fromDate(new Date(shipment.goLiveAt.toDate().getTime() + 3 * 60 * 1000)) : null);
+    if (effectiveCloseAt) {
+      const closeTime = effectiveCloseAt.toDate ? effectiveCloseAt.toDate().getTime() : 0;
+      return closeTime > Date.now();
+    }
+    return true;
+  }, [shipment, isBiddingClosed]);
 
   const handlePlaceBid = async () => {
     if (!user || !shipmentInternalId || !bidAmount) {
       toast({ title: "Error", description: "Please enter a bid amount.", variant: "destructive" });
+      return;
+    }
+
+    if (!isBiddingOpen) {
+      toast({ title: "Bidding Closed", description: "The bidding window for this shipment has closed.", variant: "destructive" });
       return;
     }
 
@@ -174,12 +182,26 @@ export default function CarrierShipmentDetailPage() {
        return;
     }
 
-    if (shipment?.status !== 'live') {
-      toast({ title: "Info", description: "This shipment is not currently accepting bids.", variant: "default" });
+    if (userLowestBid !== null && newBidAmount >= userLowestBid) {
+      toast({ 
+        title: "Bid Amount Too High", 
+        description: `Your new bid ($${newBidAmount.toLocaleString()}) must be strictly less than your previous lowest bid of $${userLowestBid.toLocaleString()}.`, 
+        variant: "destructive" 
+      });
       return;
     }
+
     setIsSubmitting(true);
     try {
+      if (shipment?.status === 'scheduled' && shipment.goLiveAt) {
+        const effectiveCloseAt = shipment.biddingCloseAt || 
+          Timestamp.fromDate(new Date(shipment.goLiveAt.toDate().getTime() + 3 * 60 * 1000));
+        updateDoc(doc(db, "shipments", shipmentInternalId), {
+          status: 'live',
+          goLiveAt: shipment.goLiveAt,
+          biddingCloseAt: effectiveCloseAt
+        }).catch(console.error);
+      }
       await addDoc(collection(db, "shipments", shipmentInternalId, "bids"), {
         carrierId: user.uid,
         carrierName: carrierName,
@@ -215,9 +237,6 @@ export default function CarrierShipmentDetailPage() {
 
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
   const atBidLimit = userBidCount >= 3;
-  const countdownText = timeLeft > 0
-    ? `${String(Math.floor(timeLeft / 1000 / 60)).padStart(2, '0')}:${String(Math.floor((timeLeft / 1000) % 60)).padStart(2, '0')}`
-    : "Bidding closed";
 
   return (
     <div className="container py-6 md:py-10">
@@ -268,16 +287,16 @@ export default function CarrierShipmentDetailPage() {
         <div className="space-y-6 lg:sticky lg:top-24">
             <Card className="bg-white dark:bg-card">
               <CardHeader>
-                <CardTitle>{shipment.status === 'live' ? "Live Bidding" : "Bidding Closed"}</CardTitle>
+                <CardTitle>{isBiddingOpen ? "Live Bidding" : "Bidding Closed"}</CardTitle>
                 <CardDescription>
-                    {shipment.status === 'live' 
+                    {isBiddingOpen 
                         ? `Place your bid. (${userBidCount} of 3 bids placed)`
                         : "The bidding window for this shipment has closed."
                     }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                 <div className="flex flex-col items-center justify-center p-4 bg-[#1D283A] dark:bg-[#1D283A] text-white rounded-lg">
+                 <div className="flex flex-col items-center justify-center p-4 bg-[#13285A] text-[#ECE6DC] border border-[#ECE6DC]/20 rounded-xl">
                     {userBidRank ? (
                          <div className={cn(
                             "mt-2 text-base font-semibold text-white px-4 py-1 rounded-full flex items-center gap-2",
@@ -291,44 +310,67 @@ export default function CarrierShipmentDetailPage() {
                     )}
                 </div>
 
-                {shipment.status === 'live' && shipment.biddingCloseAt && (
+                {isBiddingOpen && (shipment.biddingCloseAt || shipment.goLiveAt) && (
                   <div className="mt-4 text-center">
                     <p className="text-sm text-muted-foreground">Bidding closes in:</p>
-                    <p className="text-2xl font-bold font-mono text-destructive">{countdownText}</p>
+                    <BiddingCountdown 
+                      closeAt={shipment.biddingCloseAt || (shipment.goLiveAt ? Timestamp.fromDate(new Date(shipment.goLiveAt.toDate().getTime() + 3 * 60 * 1000)) : null)}
+                      status="live"
+                      formatStyle="digital"
+                      onExpire={() => setIsBiddingClosed(true)}
+                    />
                   </div>
                 )}
 
-                {atBidLimit && shipment.status === 'live' ? (
+                {isBiddingOpen ? (
+                  atBidLimit ? (
                      <div className="text-center text-muted-foreground border-dashed border-2 p-4 rounded-md">
                         You have reached your bid limit for this shipment.
                     </div>
-                ) : shipment.status === 'live' && (
+                  ) : (
                     <>
                         <div className="grid gap-2">
-                            <Label htmlFor="bid-amount">Your Bid Amount (USD)</Label>
+                            <div className="flex justify-between items-center">
+                                <Label htmlFor="bid-amount">Your Bid Amount (USD)</Label>
+                                {userLowestBid !== null && (
+                                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                        Must be &lt; ${userLowestBid.toLocaleString()}
+                                    </span>
+                                )}
+                            </div>
                             <div className="flex items-center">
                                 <span className="bg-muted text-muted-foreground px-3 py-2 border border-r-0 rounded-l-md">$</span>
                                 <Input
                                 id="bid-amount"
                                 type="number"
-                                placeholder={"e.g., 2500"}
+                                placeholder={userLowestBid !== null ? `Must be less than $${userLowestBid.toLocaleString()}` : "e.g., 2500"}
                                 value={bidAmount}
                                 onChange={(e) => setBidAmount(e.target.value)}
                                 disabled={isSubmitting}
                                 className="rounded-l-none"
                                 />
                             </div>
+                            {userLowestBid !== null && (
+                                <p className="text-xs text-muted-foreground">
+                                    You cannot place a bid equal to or higher than your previous bid (${userLowestBid.toLocaleString()}).
+                                </p>
+                            )}
                         </div>
-                        <Button onClick={handlePlaceBid} disabled={isSubmitting} className="w-full">
+                        <Button 
+                            onClick={handlePlaceBid} 
+                            disabled={isSubmitting || (userLowestBid !== null && bidAmount !== "" && parseFloat(bidAmount) >= userLowestBid)} 
+                            className="w-full"
+                        >
                             <Send className="mr-2 h-4 w-4" />
                             {isSubmitting ? 'Placing Bid...' : 'Place Bid'}
                         </Button>
                     </>
-                )}
-                 {shipment.status === 'bidding_closed' && (
-                     <div className="text-center text-muted-foreground border-dashed border-2 p-4 rounded-md">
-                       Bidding is closed. The exporter is now reviewing the bids.
-                    </div>
+                  )
+                ) : (
+                  <div className="text-center text-muted-foreground border-dashed border-2 p-6 rounded-md bg-secondary/30">
+                    <p className="font-semibold text-foreground mb-1">Bidding is Closed</p>
+                    <p className="text-sm text-muted-foreground">The bidding window for this shipment has ended. The exporter is now reviewing the bids.</p>
+                  </div>
                 )}
               </CardContent>
             </Card>

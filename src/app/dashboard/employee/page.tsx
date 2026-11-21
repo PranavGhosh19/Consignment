@@ -1,11 +1,9 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/auth-context';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, ShieldCheck, Ship } from "lucide-react";
@@ -26,30 +24,20 @@ const DashboardCard = ({ title, description, href, icon: Icon }: { title: string
 );
 
 export default function EmployeeDashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [employeeName, setEmployeeName] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  
+  const { user, userName, userType, loading } = useAuth();
+  const employeeName = userName || 'Employee';
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data()?.userType === 'employee') {
-           setUser(currentUser);
-           setEmployeeName(userDoc.data()?.name || 'Employee');
-           setLoading(false);
-        } else {
-            router.push('/dashboard');
-        }
-      } else {
-        router.push('/login');
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (loading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (userType !== 'employee') {
+      router.push('/dashboard');
+    }
+  }, [user, userType, loading, router]);
   
   if (loading || !user) {
     return (

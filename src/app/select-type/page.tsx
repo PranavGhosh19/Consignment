@@ -189,8 +189,8 @@ export default function SelectTypePage() {
 
   if (loading) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-primary/10 p-4">
-            <Skeleton className="h-96 w-full max-w-2xl" />
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[#13285A] p-4">
+            <Skeleton className="h-96 w-full max-w-2xl bg-[#ECE6DC]/20" />
         </div>
     )
   }
@@ -199,13 +199,14 @@ export default function SelectTypePage() {
 
   return (
     <>
-        <div className="flex flex-col items-center justify-center min-h-screen bg-secondary p-4">
-        <Card className="mx-auto w-full max-w-2xl shadow-2xl">
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] bg-[#13285A] p-4 relative overflow-hidden py-16">
+        <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#FF5A12]/15 blur-[120px] rounded-full" />
+        <Card className="mx-auto w-full max-w-2xl border-2 border-[#ECE6DC] bg-[#ECE6DC] text-[#13285A] shadow-2xl rounded-2xl relative z-10">
             <CardHeader className="text-center space-y-2">
-            <CardTitle className="text-3xl font-bold font-headline">
+            <CardTitle className="text-3xl font-extrabold font-headline text-[#13285A]">
                 One Last Step!
             </CardTitle>
-            <CardDescription className="text-lg">
+            <CardDescription className="text-base text-[#13285A]/75 font-medium">
                 Tell us who you are to personalize your experience.
             </CardDescription>
             </CardHeader>
@@ -213,27 +214,27 @@ export default function SelectTypePage() {
             <div className="grid md:grid-cols-2 gap-6">
                 <div
                 className={cn(
-                    "rounded-lg border-2 p-6 text-center cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center h-48",
-                    selectedType === "carrier" ? "border-primary bg-primary/5" : "border-border"
+                    "rounded-xl border-2 p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center h-48",
+                    selectedType === "carrier" ? "border-[#FF5A12] bg-white text-[#13285A] shadow-lg scale-102" : "border-[#13285A]/20 bg-white/70 hover:bg-white text-[#13285A]"
                 )}
                 onClick={() => setSelectedType("carrier")}
                 >
-                <Truck className="w-12 h-12 mb-4 text-primary" />
-                <h3 className="text-xl font-bold mb-2 font-headline">Carrier Provider</h3>
-                <p className="text-muted-foreground">
+                <Truck className="w-12 h-12 mb-3 text-[#FF5A12]" />
+                <h3 className="text-xl font-bold mb-1 font-headline text-[#13285A]">Carrier Provider</h3>
+                <p className="text-xs text-[#13285A]/80 font-medium">
                     I own/operate vehicles and want to bid on shipments.
                 </p>
                 </div>
                 <div
                 className={cn(
-                    "rounded-lg border-2 p-6 text-center cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center h-48",
-                    selectedType === "exporter" ? "border-primary bg-primary/5" : "border-border"
+                    "rounded-xl border-2 p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center h-48",
+                    selectedType === "exporter" ? "border-[#FF5A12] bg-white text-[#13285A] shadow-lg scale-102" : "border-[#13285A]/20 bg-white/70 hover:bg-white text-[#13285A]"
                 )}
                 onClick={() => setSelectedType("exporter")}
                 >
-                <Anchor className="w-12 h-12 mb-4 text-primary" />
-                <h3 className="text-xl font-bold mb-2 font-headline">Exporter</h3>
-                <p className="text-muted-foreground">
+                <Anchor className="w-12 h-12 mb-3 text-[#FF5A12]" />
+                <h3 className="text-xl font-bold mb-1 font-headline text-[#13285A]">Exporter</h3>
+                <p className="text-xs text-[#13285A]/80 font-medium">
                     I need to ship goods and want to receive bids.
                 </p>
                 </div>
@@ -243,7 +244,7 @@ export default function SelectTypePage() {
             <Button
                 onClick={handleShowTerms}
                 disabled={!selectedType || isSubmitting}
-                className="w-full h-12 text-lg"
+                className="w-full h-13 text-base font-bold bg-[#FF5A12] hover:bg-[#E04800] text-white shadow-xl shadow-[#FF5A12]/30 rounded-xl transition-all duration-200 border-none cursor-pointer"
             >
                 {isSubmitting ? 'Saving...' : 'Continue'}
             </Button>

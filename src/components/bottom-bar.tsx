@@ -4,10 +4,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
-import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Truck, Gavel, Ship, Bell, PlusCircle } from "lucide-react";
 
@@ -16,7 +14,7 @@ type UserType = "carrier" | "exporter" | "employee" | null;
 const NavItem = ({ href, icon: Icon, label, isActive }: { href: string, icon: React.ElementType, label: string, isActive: boolean }) => (
     <Link href={href} className={cn(
         "relative flex flex-col items-center justify-center gap-1 w-full h-full rounded-lg transition-colors",
-        isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-secondary"
+        isActive ? "text-[#FF5A12] bg-[#13285A]/10 font-bold" : "text-[#13285A]/70 hover:text-[#FF5A12]"
     )}>
         <Icon className="h-6 w-6" />
         <span className="text-xs font-medium">{label}</span>
@@ -84,28 +82,8 @@ const ExporterBottomNav = () => {
 
 
 export function BottomBar() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userType, setUserType] = useState<UserType>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, userType, loading } = useAuth();
   const pathname = usePathname();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-            setUserType(userDoc.data()?.userType || null);
-        }
-      } else {
-        setUser(null);
-        setUserType(null);
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const hideOnPaths = ["/login", "/signup", "/gst-verification", "/select-type", "/how-it-works", "/support"];
   const isHidden = hideOnPaths.some(path => pathname.startsWith(path)) || pathname === '/';
@@ -131,7 +109,7 @@ export function BottomBar() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-20 bg-background border-t shadow-[0_-2px_4px_0_rgba(0,0,0,0.05)] p-2">
+    <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-20 bg-[#ECE6DC] text-[#13285A] border-t border-[#13285A]/15 shadow-[0_-2px_8px_0_rgba(19,40,90,0.1)] p-2">
         {renderNavForUser()}
     </div>
   );

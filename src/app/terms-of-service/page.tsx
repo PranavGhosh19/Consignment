@@ -1,37 +1,40 @@
 
 const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
     <div className="space-y-3">
-        <h2 className="text-2xl font-bold font-headline pt-6 border-t">{title}</h2>
-        <div className="space-y-4 text-muted-foreground">
+        <h2 className="text-2xl font-bold font-headline pt-6 border-t border-[#ECE6DC]/20 text-[#ECE6DC]">{title}</h2>
+        <div className="space-y-4 text-[#ECE6DC]/80 leading-relaxed text-sm sm:text-base">
             {children}
         </div>
     </div>
 );
 
 const SubSection = ({ title, children }: { title: string, children: React.ReactNode }) => (
-    <div className="space-y-2 pl-4">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <div className="space-y-2">{children}</div>
+    <div className="space-y-2 pl-4 border-l-2 border-[#FF5A12]/40">
+        <h3 className="text-lg font-bold text-[#ECE6DC]">{title}</h3>
+        <div className="space-y-2 text-[#ECE6DC]/80 text-sm sm:text-base">{children}</div>
     </div>
 );
 
 export default function TermsOfServicePage() {
     return (
-        <main className="flex-1">
+        <main className="flex-1 bg-[#13285A] text-[#ECE6DC] min-h-screen">
             <section className="w-full py-16 md:py-24">
                 <div className="container max-w-4xl px-4 md:px-6">
                     <div className="space-y-4 text-center mb-12">
-                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl font-headline">
+                        <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider border border-[#ECE6DC]/25 bg-[#ECE6DC]/10 text-[#ECE6DC]">
+                            Legal Agreement
+                        </span>
+                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl font-headline text-[#ECE6DC]">
                             Terms of Service
                         </h1>
-                        <p className="text-muted-foreground md:text-xl">
+                        <p className="text-[#ECE6DC]/70 text-sm md:text-base">
                             Effective Date: October 26, 2024
                         </p>
                     </div>
 
-                    <div className="space-y-8">
-                        <p className="text-muted-foreground">Welcome to **ShipCargo** ("Platform", "we", "our", "us"). These Terms of Service ("Terms") govern your access to and use of the ShipCargo website, applications, and services (collectively, the "Services"). By accessing or using ShipCargo, you agree to be bound by these Terms.</p>
-                        <p className="font-semibold">If you do not agree, do not use the Services.</p>
+                    <div className="space-y-8 bg-[#ECE6DC]/5 border-2 border-[#ECE6DC]/15 rounded-3xl p-6 sm:p-10 backdrop-blur-sm">
+                        <p className="text-[#ECE6DC]/85 leading-relaxed">Welcome to <strong className="text-white">ShipCargo</strong> (&quot;Platform&quot;, &quot;we&quot;, &quot;our&quot;, &quot;us&quot;). These Terms of Service (&quot;Terms&quot;) govern your access to and use of the ShipCargo website, applications, and services (collectively, the &quot;Services&quot;). By accessing or using ShipCargo, you agree to be bound by these Terms.</p>
+                        <p className="font-bold text-[#FF5A12]">If you do not agree, do not use the Services.</p>
 
                         <Section title="1. About ShipCargo">
                             <p>ShipCargo is a **digital freight and shipment bidding marketplace** that enables exporters, importers, freight forwarders, transporters, and logistics service providers (collectively, "Users") to post shipments and submit bids. **ShipCargo is a technology platform only** and does not provide transportation, freight forwarding, customs brokerage, or logistics services.</p>

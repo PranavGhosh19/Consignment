@@ -225,7 +225,7 @@ export default function SettingsPage() {
                                         )}
                                         <div className="grid sm:grid-cols-3 items-start gap-4">
                                             <Label>GSTIN</Label>
-                                            <p className="sm:col-span-2 text-sm text-muted-foreground">{userData.gstin || companyDetails.gstin}</p>
+                                            <p className="sm:col-span-2 text-sm text-muted-foreground">{userData?.gstin || companyDetails.gstin}</p>
                                         </div>
                                         <div className="grid sm:grid-cols-3 items-start gap-4">
                                             <Label>PAN</Label>

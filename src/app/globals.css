@@ -4,57 +4,51 @@
 
 @layer base {
   :root {
-    --background: 205 78% 95%;
-    --foreground: 224 71% 4%;
-    --card: 205 78% 95%;
-    --card-foreground: 224 71% 4%;
-    --popover: 205 78% 95%;
-    --popover-foreground: 224 71% 4%;
-    --primary: 205 97% 58%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 222 24% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 47 100% 70%;
-    --accent-foreground: 222 47% 11%;
+    /* Deep Sapphire #13285A (60%) */
+    --background: 222.3 65.1% 21.4%;
+    /* Pearl Shell #ECE6DC (30%) */
+    --foreground: 37.5 29.6% 89.4%;
+    --card: 37.5 29.6% 89.4%;
+    --card-foreground: 222.3 65.1% 21.4%;
+    --popover: 37.5 29.6% 89.4%;
+    --popover-foreground: 222.3 65.1% 21.4%;
+    /* Ember Orange #FF5A12 (10%) */
+    --primary: 18.2 100% 53.5%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 37.5 25% 82%;
+    --secondary-foreground: 222.3 65.1% 21.4%;
+    --muted: 222.3 45% 28%;
+    --muted-foreground: 37.5 20% 75%;
+    --accent: 18.2 100% 53.5%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 205 97% 58%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --destructive-foreground: 0 0% 100%;
+    --border: 37.5 20% 78%;
+    --input: 37.5 29.6% 89.4%;
+    --ring: 18.2 100% 53.5%;
+    --radius: 0.75rem;
   }
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 47 100% 70%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 47 100% 70%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 47 100% 70%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* Strict consistency across light & dark: Deep Sapphire 60%, Pearl Shell 30%, Ember Orange 10% */
+    --background: 222.3 65.1% 21.4%;
+    --foreground: 37.5 29.6% 89.4%;
+    --card: 37.5 29.6% 89.4%;
+    --card-foreground: 222.3 65.1% 21.4%;
+    --popover: 37.5 29.6% 89.4%;
+    --popover-foreground: 222.3 65.1% 21.4%;
+    --primary: 18.2 100% 53.5%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 37.5 25% 82%;
+    --secondary-foreground: 222.3 65.1% 21.4%;
+    --muted: 222.3 45% 28%;
+    --muted-foreground: 37.5 20% 75%;
+    --accent: 18.2 100% 53.5%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 37.5 20% 78%;
+    --input: 37.5 29.6% 89.4%;
+    --ring: 18.2 100% 53.5%;
   }
 }
 
@@ -63,6 +57,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#13285A] text-[#ECE6DC] min-h-screen;
   }
 }

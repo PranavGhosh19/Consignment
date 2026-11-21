@@ -3,13 +3,15 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyC3m0jvG-VnQDeLOuAKPPquhW-8Vnhgywg",
-  authDomain: "cargoflow-j35du.firebaseapp.com",
-  projectId: "cargoflow-j35du",
-  storageBucket: "cargoflow-j35du.firebasestorage.app",
-  messagingSenderId: "866863583313",
-  appId: "1:866863583313:web:8164df2f5bfab9aa7b6870"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyBOi5ip1jWn2WQngNUR3uUsroVGG63I7QU",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "shipcargo-f30a7.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "shipcargo-f30a7",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "shipcargo-f30a7.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "595078977526",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:595078977526:web:1bf6812bc19b200ce4d9d7",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-BLDTMQ6HQB"
 };
 
 // Initialize Firebase

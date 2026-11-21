@@ -11,10 +11,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Amount and currency are required" }, { status: 400 });
         }
 
-        // Using a valid, public test key for Razorpay.
-        // In a real application, these should come from environment variables.
-        const key_id = "rzp_test_RuMOD23vC1ZlS8";
-        const key_secret = "rgU8qsAjljO9hXdIyrckZL8T";
+        const key_id = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || "rzp_test_U2RWuFM2YZo2RJ";
+        const key_secret = process.env.RAZORPAY_KEY_SECRET || "mec9DCJ4kReQw9a1O6BLJqPm";
 
         const razorpay = new Razorpay({
             key_id: key_id,
@@ -32,24 +30,18 @@ export async function POST(request: Request) {
 
         return NextResponse.json(order, { status: 200 });
 
-    } catch (error: unknown) {
-        // More detailed server-side logging
-        const fullError = error instanceof Error 
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              } 
-            : { message: "An unknown error occurred" };
-            
-        console.error("Error creating Razorpay order:", JSON.stringify(fullError, null, 2));
+    } catch (error: any) {
+        // Detailed server-side logging that handles both Error instances and Razorpay API error objects
+        console.error("Error creating Razorpay order:", error);
+        
+        const errorMessage = error?.error?.description || error?.message || (typeof error === 'string' ? error : JSON.stringify(error));
 
         return NextResponse.json(
             { 
                 error: "Failed to create Razorpay order", 
-                details: fullError.message 
+                details: errorMessage 
             }, 
-            { status: 500 }
+            { status: error?.statusCode || 500 }
         );
     }
 }

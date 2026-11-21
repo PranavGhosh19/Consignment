@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, DocumentData, collection, query, where, getDocs } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/auth-context';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ship } from "lucide-react";
@@ -23,45 +23,39 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: string |
 );
 
 export default function ExporterDashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userData, setUserData] = useState<DocumentData | null>(null);
+  const { user, userData, userType, loading } = useAuth();
   const [shipmentCount, setShipmentCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loadingShipments, setLoadingShipments] = useState(true);
   
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
+    if (loading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (userType !== 'exporter') {
+      router.push('/dashboard');
+      return;
+    }
 
-        if (userDoc.exists()) {
-          const uData = userDoc.data();
-          if (uData.userType === 'exporter') {
-            setUser(currentUser);
-            setUserData(uData);
-
-            // Fetch shipment count
-            const shipmentsQuery = query(collection(db, 'shipments'), where('exporterId', '==', currentUser.uid));
-            const shipmentsSnapshot = await getDocs(shipmentsQuery);
-            setShipmentCount(shipmentsSnapshot.size);
-
-          } else {
-             router.push('/dashboard');
-          }
-        } else {
-           router.push('/login');
-        }
-      } else {
-        router.push('/login');
+    const fetchShipmentCount = async () => {
+      try {
+        const shipmentsQuery = query(collection(db, 'shipments'), where('exporterId', '==', user.uid));
+        const shipmentsSnapshot = await getDocs(shipmentsQuery);
+        setShipmentCount(shipmentsSnapshot.size);
+      } catch (err) {
+        console.error("Error fetching shipment count:", err);
+      } finally {
+        setLoadingShipments(false);
       }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [router]);
+    };
+
+    fetchShipmentCount();
+  }, [user, userType, loading, router]);
   
-  if (loading || !user) {
+  if (loading || loadingShipments || !user) {
     return (
         <div className="container py-6 md:py-10">
             <div className="flex justify-between items-center mb-8">

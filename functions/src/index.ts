@@ -26,7 +26,7 @@ const db = admin.firestore();
 // -----------------------------------------------------------------------------
 // Cloud Tasks Configuration
 // -----------------------------------------------------------------------------
-const PROJECT_ID = "cargoflow-j35du";
+const PROJECT_ID = "shipcargo-f30a7";
 const QUEUE_LOCATION = "us-central1";
 const GO_LIVE_QUEUE_ID = "shipment-go-live-queue";
 const CLOSE_BIDDING_QUEUE_ID = "shipment-go-live-queue";

@@ -3,9 +3,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, addDoc, where, collectionGroup, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/auth-context';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
@@ -21,8 +21,7 @@ import { cn } from "@/lib/utils";
 import { RegisterButton } from "@/components/RegisterButton";
 
 export default function FindShipmentsPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userData, setUserData] = useState<DocumentData | null>(null);
+  const { user, userData, userType, loading: authLoading } = useAuth();
   const [shipments, setShipments] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
@@ -34,22 +33,15 @@ export default function FindShipmentsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data()?.userType === 'carrier') {
-           setUser(currentUser);
-           setUserData(userDoc.data());
-        } else {
-            router.push('/dashboard');
-        }
-      } else {
-        router.push('/login');
-      }
-    });
-    return () => unsubscribeAuth();
-  }, [router]);
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (userType !== 'carrier') {
+      router.push('/dashboard');
+    }
+  }, [user, userType, authLoading, router]);
 
   useEffect(() => {
     if (!user) return; // Wait for user to be loaded
@@ -64,8 +56,8 @@ export default function FindShipmentsPage() {
 
         unsubscribeSnapshots = onSnapshot(shipmentsQuery, (snapshot) => {
             const shipmentsList = snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter(shipment => shipment.status === 'scheduled');
+                .map(doc => ({ id: doc.id, ...(doc.data() as any) }))
+                .filter((shipment: any) => shipment.status === 'scheduled');
 
             setShipments(shipmentsList);
             setLoading(false);
@@ -90,7 +82,10 @@ export default function FindShipmentsPage() {
   };
 
   const handleRowClick = (shipment: DocumentData) => {
-    if (shipment.status === 'live') {
+    const isLive = shipment.status === 'live' ||
+      (shipment.status === 'scheduled' && shipment.goLiveAt && shipment.goLiveAt.toDate().getTime() <= Date.now());
+
+    if (isLive) {
       router.push(`/dashboard/carrier/shipment/${shipment.publicId}`);
     } else {
       handleOpenBidDialog(shipment);
@@ -103,16 +98,41 @@ export default function FindShipmentsPage() {
       return;
     }
 
+    const newBidAmount = parseFloat(bidAmount);
+    if (isNaN(newBidAmount) || newBidAmount <= 0) {
+      toast({ title: "Invalid Bid", description: "Please enter a valid bid amount.", variant: "destructive" });
+      return;
+    }
+
     if (selectedShipment.status !== 'live') {
       toast({ title: "Info", description: "This shipment is not currently accepting bids.", variant: "default" });
       return;
     }
     setIsSubmittingBid(true);
     try {
+      // Validate that bid is strictly lower than previous bid(s) by this carrier
+      const existingBidsQuery = query(
+        collection(db, "shipments", selectedShipment.id, "bids"),
+        where("carrierId", "==", user.uid)
+      );
+      const existingBidsSnap = await getDocs(existingBidsQuery);
+      if (!existingBidsSnap.empty) {
+        const previousLowest = Math.min(...existingBidsSnap.docs.map(d => Number(d.data().bidAmount)));
+        if (newBidAmount >= previousLowest) {
+          toast({
+            title: "Bid Amount Too High",
+            description: `Your new bid ($${newBidAmount.toLocaleString()}) must be strictly lower than your previous bid of $${previousLowest.toLocaleString()}.`,
+            variant: "destructive",
+          });
+          setIsSubmittingBid(false);
+          return;
+        }
+      }
+
       await addDoc(collection(db, "shipments", selectedShipment.id, "bids"), {
         carrierId: user.uid,
         carrierName: userData?.name || 'Anonymous Carrier',
-        bidAmount: parseFloat(bidAmount),
+        bidAmount: newBidAmount,
         createdAt: new Date(),
       });
       toast({ title: "Success", description: "Your bid has been placed." });
@@ -287,7 +307,7 @@ export default function FindShipmentsPage() {
                           </CardContent>
                       </Card>
 
-                      {selectedShipment.status === 'live' ? (
+                      {selectedShipment.status === 'live' && (!selectedShipment.biddingCloseAt || selectedShipment.biddingCloseAt.toDate() > new Date()) ? (
                         <div className="grid gap-2">
                             <Label htmlFor="bid-amount">Your Bid Amount (USD)</Label>
                             <div className="flex items-center">
@@ -308,7 +328,9 @@ export default function FindShipmentsPage() {
                           <CardContent className="p-6 flex items-center justify-center gap-4">
                               <Info className="text-muted-foreground h-5 w-5" />
                               <p className="text-muted-foreground text-center">
-                                {renderStatusMessage()}
+                                {selectedShipment.status === 'live'
+                                  ? "The bidding window for this shipment has closed."
+                                  : renderStatusMessage()}
                               </p>
                           </CardContent>
                         </Card>
@@ -324,7 +346,7 @@ export default function FindShipmentsPage() {
                         onRegisterSuccess={onRegisterSuccess} 
                     />
                   )}
-                  {selectedShipment?.status === 'live' && (
+                  {selectedShipment?.status === 'live' && (!selectedShipment.biddingCloseAt || selectedShipment.biddingCloseAt.toDate() > new Date()) && (
                     <Button onClick={handlePlaceBid} disabled={isSubmittingBid}>
                         <Send className="mr-2 h-4 w-4" />
                         {isSubmittingBid ? 'Placing Bid...' : 'Place Bid'}

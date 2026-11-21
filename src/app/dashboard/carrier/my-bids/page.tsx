@@ -3,9 +3,9 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, getDocs, DocumentData, orderBy, doc, getDoc, collectionGroup, Timestamp, where } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/auth-context';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,7 +31,7 @@ const PageSkeleton = () => (
 );
 
 export default function MyBidsPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, userType, loading: authLoading } = useAuth();
   const [bidsWithShipments, setBidsWithShipments] = useState<BidWithShipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTab, setCurrentTab] = useState("all");
@@ -40,21 +40,15 @@ export default function MyBidsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data()?.userType === 'carrier') {
-           setUser(currentUser);
-        } else {
-            router.push('/dashboard');
-        }
-      } else {
-        router.push('/login');
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (userType !== 'carrier') {
+      router.push('/dashboard');
+    }
+  }, [user, userType, authLoading, router]);
 
   const fetchBidsAndShipments = useCallback(async (userId: string) => {
     setLoading(true);

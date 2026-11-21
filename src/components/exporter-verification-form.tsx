@@ -231,8 +231,8 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
-                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] bg-[#13285A] p-4">
+                 <Loader2 className="h-12 w-12 animate-spin text-[#FF5A12]" />
             </div>
         )
     }
@@ -240,14 +240,15 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
 
     return (
         <>
-            <div className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
-                <Card className="mx-auto w-full max-w-2xl shadow-xl">
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] bg-[#13285A] py-12 px-4 relative overflow-hidden">
+                <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-[#FF5A12]/15 blur-[120px] rounded-full" />
+                <Card className="mx-auto w-full max-w-2xl border-2 border-[#ECE6DC] bg-[#ECE6DC] text-[#13285A] shadow-2xl rounded-2xl relative z-10">
                     <CardHeader className="text-center space-y-2">
-                        <CardTitle className="text-3xl font-bold font-headline capitalize">
+                        <CardTitle className="text-3xl font-extrabold font-headline capitalize text-[#13285A]">
                             {userType} Business Verification
                         </CardTitle>
-                        <CardDescription className="text-base">
-                            Please provide your company's details for verification.
+                        <CardDescription className="text-base text-[#13285A]/75 font-medium">
+                            Please provide your company&apos;s details for verification.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -355,7 +356,7 @@ export function ExporterVerificationForm({ user, userType }: { user: User, userT
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button onClick={() => setIsConfirmOpen(true)} disabled={isSubmitting} className="w-full h-12 text-lg">
+                        <Button onClick={() => setIsConfirmOpen(true)} disabled={isSubmitting} className="w-full h-13 text-base font-bold bg-[#FF5A12] hover:bg-[#E04800] text-white shadow-xl shadow-[#FF5A12]/30 rounded-xl transition-all duration-200 border-none cursor-pointer">
                             {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Submitting...</> : 'Submit for Verification'}
                         </Button>
                     </CardFooter>

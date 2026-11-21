@@ -2,11 +2,12 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, Timestamp, updateDoc, deleteDoc, where, getDocs, setDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/auth-context";
+import { BiddingCountdown } from "@/components/BiddingCountdown";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,8 +51,7 @@ type AllCarriers = {
 }
 
 export default function ShipmentDetailPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userType, setUserType] = useState<string | null>(null);
+  const { user, userType, loading: authLoading } = useAuth();
   const [shipment, setShipment] = useState<DocumentData | null>(null);
   const [shipmentInternalId, setShipmentInternalId] = useState<string | null>(null);
   const [bids, setBids] = useState<DocumentData[]>([]);
@@ -74,9 +74,6 @@ export default function ShipmentDetailPage() {
   const [loadingCarriers, setLoadingCarriers] = useState(false);
   const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  
-  // Countdown state
-  const [timeLeft, setTimeLeft] = useState<number>(0);
 
   const router = useRouter();
   const params = useParams();
@@ -84,22 +81,11 @@ export default function ShipmentDetailPage() {
   const publicId = params.id as string;
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUserType(userDoc.data()?.userType || null);
-        } else {
-            router.push('/login');
-        }
-      } else {
-        router.push("/login");
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (authLoading) return;
+    if (!user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     if (!user || !publicId) return;
@@ -112,6 +98,29 @@ export default function ShipmentDetailPage() {
         
         setShipment({ id: docSnap.id, ...shipmentData });
         setShipmentInternalId(docSnap.id);
+
+        // Auto-transition to live with precision timer
+        if (shipmentData.status === 'scheduled' && shipmentData.goLiveAt) {
+          const msUntilLive = shipmentData.goLiveAt.toDate().getTime() - Date.now();
+          const triggerLiveTransition = () => {
+            if (user.uid === shipmentData.exporterId || userType === 'employee') {
+              const biddingCloseAt = shipmentData.biddingCloseAt || 
+                Timestamp.fromDate(new Date(shipmentData.goLiveAt.toDate().getTime() + 3 * 60 * 1000));
+              updateDoc(doc(db, "shipments", docSnap.id), {
+                status: 'live',
+                goLiveAt: shipmentData.goLiveAt,
+                biddingCloseAt: biddingCloseAt
+              }).catch(console.error);
+            }
+          };
+
+          if (msUntilLive <= 0) {
+            triggerLiveTransition();
+          } else {
+            const liveTimer = setTimeout(triggerLiveTransition, msUntilLive);
+            // Will run on the exact scheduled millisecond
+          }
+        }
 
         if (shipmentData.status === 'delivered') {
           setIsMarkedAsDelivered(true);
@@ -164,6 +173,11 @@ export default function ShipmentDetailPage() {
 
     return () => unsubscribeBids();
   }, [shipmentInternalId, shipment?.status, toast]);
+
+  const lowestBidAmount = useMemo(() => {
+    if (!bids || bids.length === 0) return null;
+    return Math.min(...bids.map((b) => Number(b.bidAmount)));
+  }, [bids]);
   
   useEffect(() => {
     if (!shipmentInternalId) return;
@@ -177,6 +191,14 @@ export default function ShipmentDetailPage() {
                 const carrierId = regDoc.id;
                 const registrationData = regDoc.data();
                 
+                if (registrationData.carrierName) {
+                    return {
+                        id: carrierId,
+                        legalName: registrationData.carrierName,
+                        registeredAt: registrationData.registeredAt
+                    };
+                }
+
                 const userDocRef = doc(db, 'users', carrierId);
                 const userDoc = await getDoc(userDocRef);
 
@@ -198,19 +220,6 @@ export default function ShipmentDetailPage() {
 
     return () => unsubscribeRegister();
 }, [shipmentInternalId, userType]);
-  
-  // Countdown for bidding close
-  useEffect(() => {
-    if (shipment?.status !== 'live' || !shipment?.biddingCloseAt) {
-      setTimeLeft(0);
-      return;
-    }
-    const interval = setInterval(() => {
-      const diff = shipment.biddingCloseAt.toDate().getTime() - Date.now();
-      setTimeLeft(diff > 0 ? diff : 0);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [shipment?.biddingCloseAt, shipment?.status]);
   
   const fetchAllCarriers = useCallback(async () => {
     setLoadingCarriers(true);
@@ -421,7 +430,10 @@ export default function ShipmentDetailPage() {
   const canSubmitFeedback = (isOwner || isEmployee) && !feedbackData;
 
   const getStatusInfo = () => {
-    switch(shipment.status) {
+    const isLive = shipment.status === 'live' ||
+      (shipment.status === 'scheduled' && shipment.goLiveAt && shipment.goLiveAt.toDate().getTime() <= Date.now());
+
+    switch(isLive ? 'live' : shipment.status) {
         case 'draft':
             return { text: "Draft", description: "This shipment is not yet live." };
         case 'scheduled':
@@ -450,10 +462,6 @@ export default function ShipmentDetailPage() {
   const hasDimensions = shipment.cargo?.dimensions?.length && shipment.cargo?.dimensions?.width && shipment.cargo?.dimensions?.height;
 
   const filteredCarriers = allCarriers.filter(c => c.name.toLowerCase().includes(carrierSearchTerm.toLowerCase()));
-
-  const countdownText = timeLeft > 0
-    ? `${Math.floor(timeLeft / 1000 / 60)}m ${Math.floor((timeLeft / 1000) % 60)}s`
-    : "Bidding closed";
 
   return (
     <div className="container py-6 md:py-10">
@@ -558,29 +566,46 @@ export default function ShipmentDetailPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {bids.map((bid) => (
-                                            <TableRow key={bid.id} className={shipment.winningBidId === bid.id ? "bg-green-100 dark:bg-green-900" : ""}>
-                                                <TableCell className="font-medium">{bid.carrierName}</TableCell>
-                                                <TableCell>${bid.bidAmount.toLocaleString()}</TableCell>
-                                                <TableCell className="hidden sm:table-cell">{bid.createdAt ? format(bid.createdAt.toDate(), "PPpp") : 'N/A'}</TableCell>
-                                                <TableCell className="text-right">
-                                                    {shipment.status === 'awarded' ? (
-                                                        shipment.winningBidId === bid.id && <Badge variant="success">Awarded</Badge>
-                                                    ) : (
-                                                        <Button 
-                                                            size="sm" 
-                                                            onClick={() => handleAcceptBid(bid)} 
-                                                            disabled={isSubmitting || !canAcceptBid}
-                                                            className={cn({
-                                                                'hover:bg-green-600 hover:text-white': canAcceptBid
-                                                            })}
-                                                        >
-                                                            Accept Bid
-                                                        </Button>
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                        {bids.map((bid) => {
+                                            const isLowest = lowestBidAmount !== null && Number(bid.bidAmount) === lowestBidAmount;
+                                            const isAwarded = shipment.winningBidId === bid.id;
+
+                                            return (
+                                                <TableRow key={bid.id} className={isAwarded ? "bg-green-100 dark:bg-green-900" : (isLowest && shipment.status !== 'awarded' ? "bg-green-50/40 dark:bg-green-950/20" : "")}>
+                                                    <TableCell className="font-medium">
+                                                        <div className="flex items-center gap-2">
+                                                            {bid.carrierName}
+                                                            {isLowest && shipment.status !== 'awarded' && (
+                                                                <Badge variant="outline" className="border-green-600 text-green-700 dark:text-green-400 text-xs py-0">
+                                                                    Lowest (L1)
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className={cn(isLowest && shipment.status !== 'awarded' && "font-semibold text-green-700 dark:text-green-400")}>
+                                                        ${bid.bidAmount.toLocaleString()}
+                                                    </TableCell>
+                                                    <TableCell className="hidden sm:table-cell">{bid.createdAt ? format(bid.createdAt.toDate(), "PPpp") : 'N/A'}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        {shipment.status === 'awarded' ? (
+                                                            isAwarded && <Badge variant="success">Awarded</Badge>
+                                                        ) : (
+                                                            <Button 
+                                                                size="sm" 
+                                                                onClick={() => handleAcceptBid(bid)} 
+                                                                disabled={isSubmitting || !canAcceptBid || !isLowest}
+                                                                title={!isLowest ? "Only the lowest bid can be accepted" : "Accept lowest bid"}
+                                                                className={cn({
+                                                                    'hover:bg-green-600 hover:text-white': canAcceptBid && isLowest
+                                                                })}
+                                                            >
+                                                                Accept Bid
+                                                            </Button>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             ) : (
@@ -633,10 +658,14 @@ export default function ShipmentDetailPage() {
                                 <p className="text-2xl font-bold font-headline text-accent-foreground capitalize">{statusInfo.text}</p>
                             )}
 
-                            {shipment.status === 'live' && shipment.biddingCloseAt && (
+                            {(shipment.status === 'live' || (shipment.status === 'scheduled' && shipment.goLiveAt && shipment.goLiveAt.toDate().getTime() <= Date.now())) && (shipment.biddingCloseAt || shipment.goLiveAt) && (
                                 <div className="mt-4 text-center">
                                     <p className="text-sm text-muted-foreground">Bidding closes in:</p>
-                                    <p className="text-2xl font-bold font-mono text-destructive">{countdownText}</p>
+                                    <BiddingCountdown
+                                        closeAt={shipment.biddingCloseAt || (shipment.goLiveAt ? Timestamp.fromDate(new Date(shipment.goLiveAt.toDate().getTime() + 3 * 60 * 1000)) : null)}
+                                        status="live"
+                                        formatStyle="verbose"
+                                    />
                                 </div>
                             )}
                         

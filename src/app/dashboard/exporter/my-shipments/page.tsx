@@ -39,7 +39,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
-import { CbmCalculatorDialog } from "@/components/cbm-calculator-dialog";
+import dynamic from "next/dynamic";
+import { useAuth } from "@/contexts/auth-context";
+
+const CbmCalculatorDialog = dynamic(
+  () => import("@/components/cbm-calculator-dialog").then((mod) => mod.CbmCalculatorDialog),
+  { ssr: false }
+);
 import { MODES_OF_SHIPMENT, CARGO_TYPES_BY_MODE, PACKAGE_TYPES, DIMENSION_UNITS, INCOTERMS, FOREIGN_SEA_PORTS, ATTACHMENT_TYPES } from "@/lib/constants";
 import { Combobox } from "@/components/ui/combobox";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -67,8 +73,7 @@ export default function MyShipmentsPageWrapper() {
 }
 
 function MyShipmentsPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userData, setUserData] = useState<DocumentData | null>(null);
+  const { user, userData, userType, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -160,27 +165,15 @@ function MyShipmentsPage() {
 
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const uData = userDoc.data();
-          if (uData.userType === 'exporter') {
-            setUser(currentUser);
-            setUserData(uData);
-          } else {
-             router.push('/dashboard');
-          }
-        } else {
-           router.push('/login');
-        }
-      } else {
-        router.push('/login');
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (userType !== 'exporter') {
+      router.push('/dashboard');
+    }
+  }, [user, userType, authLoading, router]);
   
   const fetchProducts = useCallback(async (uid: string) => {
     setLoading(true);
@@ -188,7 +181,7 @@ function MyShipmentsPage() {
       const shipmentsCollectionRef = collection(db, 'shipments');
       const q = query(shipmentsCollectionRef, where('exporterId', '==', uid));
       const querySnapshot = await getDocs(q);
-      const productsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const productsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any[];
       
       productsList.sort((a, b) => {
         const timeA = a.createdAt?.toDate().getTime() || 0;
@@ -377,7 +370,7 @@ function MyShipmentsPage() {
     return result;
   }
 
-  const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft', goLiveTimestamp?: Timestamp | null, payment?: object) => {
+  const handleSubmit = async (status: 'draft' | 'scheduled' = 'draft', goLiveTimestamp?: Timestamp | null, payment?: object, biddingCloseTimestamp?: Timestamp | null) => {
     if (!handleValidation() || !user) return;
 
     setIsSubmitting(true);
@@ -430,6 +423,7 @@ function MyShipmentsPage() {
       specialInstructions,
       status: status,
       ...(goLiveTimestamp && { goLiveAt: goLiveTimestamp }),
+      ...(biddingCloseTimestamp && { biddingCloseAt: biddingCloseTimestamp }),
       ...(payment && { listingPayment: payment })
     };
     
@@ -491,7 +485,9 @@ function MyShipmentsPage() {
     // If editing a shipment that already has a payment, skip payment
     if (editingShipment && editingShipment.listingPayment) {
       const goLiveTimestamp = Timestamp.fromDate(goLiveDate);
-      handleSubmit('scheduled', goLiveTimestamp);
+      const biddingCloseDate = new Date(goLiveDate.getTime() + 3 * 60 * 1000);
+      const biddingCloseTimestamp = Timestamp.fromDate(biddingCloseDate);
+      handleSubmit('scheduled', goLiveTimestamp, undefined, biddingCloseTimestamp);
     } else {
       initiatePayment();
     }
@@ -500,6 +496,8 @@ function MyShipmentsPage() {
   const handlePaymentSuccess = (paymentId: string) => {
     if (goLiveDate) {
       const goLiveTimestamp = Timestamp.fromDate(goLiveDate);
+      const biddingCloseDate = new Date(goLiveDate.getTime() + 3 * 60 * 1000);
+      const biddingCloseTimestamp = Timestamp.fromDate(biddingCloseDate);
       const paymentData = {
           id: paymentId,
           amount: 1000,
@@ -507,9 +505,18 @@ function MyShipmentsPage() {
           paidAt: Timestamp.now(),
           provider: "razorpay"
       };
-      handleSubmit('scheduled', goLiveTimestamp, paymentData);
+      handleSubmit('scheduled', goLiveTimestamp, paymentData, biddingCloseTimestamp);
     }
   }
+
+  const handlePaymentFailure = async (reason?: string) => {
+    toast({
+      title: "Payment Not Completed",
+      description: `${reason ? reason + ". " : ""}Shipment was saved as a Draft.`,
+      variant: "destructive",
+    });
+    await handleSubmit('draft');
+  };
 
   const initiatePayment = async () => {
     if (!user || !userData) {
@@ -519,6 +526,13 @@ function MyShipmentsPage() {
     
     setIsSubmitting(true);
     const amount = 1000; // 1000 Rupees
+    let paymentSettled = false;
+
+    const onPaymentFailed = async (reason?: string) => {
+      if (paymentSettled) return;
+      paymentSettled = true;
+      await handlePaymentFailure(reason);
+    };
 
     try {
         const res = await fetch('/api/razorpay', {
@@ -542,44 +556,41 @@ function MyShipmentsPage() {
         const order = await res.json();
 
         const options = {
-            key: "rzp_test_RuMOD23vC1ZlS8", 
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_U2RWuFM2YZo2RJ", 
             amount: order.amount,
             currency: order.currency,
             name: "Shipment Listing Fee",
             description: `Fee to list shipment: ${productName}`,
             order_id: order.id,
             handler: function (response: any) {
+                paymentSettled = true;
                 // Payment is successful, now schedule the shipment
                 handlePaymentSuccess(response.razorpay_payment_id);
+            },
+            modal: {
+                ondismiss: function () {
+                    onPaymentFailed("Payment cancelled or popup closed");
+                }
             },
             prefill: {
                 name: userData.name,
                 email: userData.email,
             },
             theme: {
-                color: "#2563EB"
+                color: "#FF5A12"
             }
         };
 
         const rzp = new (window as any).Razorpay(options);
         rzp.on('payment.failed', function (response: any) {
-            toast({
-                title: "Payment Failed",
-                description: `Error: ${response.error.description}`,
-                variant: "destructive"
-            });
-            setIsSubmitting(false);
+            const errorDesc = response?.error?.description || "Payment failed";
+            onPaymentFailed(errorDesc);
         });
         rzp.open();
         
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-        toast({
-            title: "Error",
-            description: `Could not initiate payment. ${errorMessage}`,
-            variant: "destructive",
-        });
-        setIsSubmitting(false);
+        await onPaymentFailed(errorMessage);
     }
   };
   

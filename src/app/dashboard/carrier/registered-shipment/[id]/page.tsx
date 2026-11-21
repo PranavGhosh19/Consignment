@@ -1,21 +1,22 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, collection, query, orderBy, onSnapshot, DocumentData, addDoc, Timestamp, where } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Clock, FileText, Award, Star } from "lucide-react";
+import { ArrowLeft, Check, Clock, FileText, Award, Star, RadioTower } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { BiddingCountdown } from "@/components/BiddingCountdown";
 
 export default function RegisteredShipmentDetailPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, userType, loading: authLoading } = useAuth();
   const [shipment, setShipment] = useState<DocumentData | null>(null);
   const [userBids, setUserBids] = useState<DocumentData[]>([]);
   const [feedbackData, setFeedbackData] = useState<DocumentData | null>(null);
@@ -27,21 +28,15 @@ export default function RegisteredShipmentDetailPage() {
   const publicId = params.id as string; 
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data()?.userType === 'carrier') {
-           setUser(currentUser);
-        } else {
-            router.push('/dashboard');
-        }
-      } else {
-        router.push('/login');
-      }
-    });
-    return () => unsubscribeAuth();
-  }, [router]);
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (userType !== 'carrier') {
+      router.push('/dashboard');
+    }
+  }, [user, userType, authLoading, router]);
 
   useEffect(() => {
     if (!user || !publicId) return;
@@ -49,6 +44,7 @@ export default function RegisteredShipmentDetailPage() {
     let unsubscribeShipment: () => void = () => {};
     let unsubscribeFeedback: (() => void) | null = null;
     let unsubscribeBids: (() => void) | null = null;
+    let liveTimer: NodeJS.Timeout | null = null;
     
     const shipmentQuery = query(collection(db, "shipments"), where("publicId", "==", publicId));
 
@@ -58,11 +54,30 @@ export default function RegisteredShipmentDetailPage() {
         const shipmentData = docSnap.data();
         const shipmentInternalId = docSnap.id;
 
-        // A carrier should only see this page for scheduled, awarded, or delivered shipments.
-        // If it's live, they should be on the bidding page.
-        if (shipmentData.status === 'live') {
+        // Deterministic check: if status is live OR scheduled time has arrived/passed, go to bidding room immediately
+        const isLiveNow = shipmentData.status === 'live' ||
+          (shipmentData.status === 'scheduled' && shipmentData.goLiveAt && shipmentData.goLiveAt.toDate().getTime() <= Date.now());
+
+        if (isLiveNow) {
             router.replace(`/dashboard/carrier/shipment/${shipmentData.publicId}`);
             return;
+        }
+
+        // Precision timer for scheduled shipment
+        if (shipmentData.status === 'scheduled' && shipmentData.goLiveAt) {
+          const msUntilLive = shipmentData.goLiveAt.toDate().getTime() - Date.now();
+          if (msUntilLive <= 0) {
+            router.replace(`/dashboard/carrier/shipment/${shipmentData.publicId}`);
+            return;
+          }
+
+          // Pre-fetch live bidding route so page switch happens in 0ms
+          router.prefetch(`/dashboard/carrier/shipment/${shipmentData.publicId}`);
+
+          if (liveTimer) clearTimeout(liveTimer);
+          liveTimer = setTimeout(() => {
+            router.replace(`/dashboard/carrier/shipment/${shipmentData.publicId}`);
+          }, msUntilLive);
         }
 
         setShipment({ id: shipmentInternalId, ...shipmentData });
@@ -105,6 +120,7 @@ export default function RegisteredShipmentDetailPage() {
         unsubscribeShipment();
         if (unsubscribeFeedback) unsubscribeFeedback();
         if (unsubscribeBids) unsubscribeBids();
+        if (liveTimer) clearTimeout(liveTimer);
     };
 
   }, [user, publicId, router, toast]);
@@ -232,7 +248,22 @@ export default function RegisteredShipmentDetailPage() {
                     </div>
                 )}
                 
-                {shipment.status === 'scheduled' && (
+                {shipment.status === 'scheduled' && shipment.goLiveAt && (
+                    <div className="text-center p-3 border rounded-md bg-primary/5 space-y-1">
+                        <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                            <RadioTower className="h-3.5 w-3.5 text-primary animate-pulse" />
+                            Live bidding starts in:
+                        </p>
+                        <BiddingCountdown 
+                            closeAt={shipment.goLiveAt}
+                            status="live"
+                            formatStyle="digital"
+                            className="text-2xl font-bold font-mono text-primary"
+                            onExpire={() => router.replace(`/dashboard/carrier/shipment/${publicId}`)}
+                        />
+                    </div>
+                )}
+                {shipment.status === 'scheduled' && !shipment.goLiveAt && (
                     <p className="text-center text-sm text-muted-foreground">You will be notified when this shipment goes live for bidding.</p>
                 )}
                 {shipment.status === 'awarded' && isWinningCarrier && (

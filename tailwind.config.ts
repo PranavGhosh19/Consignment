@@ -23,6 +23,24 @@ export default {
         code: ['monospace'],
       },
       colors: {
+        sapphire: {
+          DEFAULT: '#13285A',
+          deep: '#13285A',
+          dark: '#0B1736',
+          light: '#1C3A7E',
+        },
+        pearl: {
+          DEFAULT: '#ECE6DC',
+          shell: '#ECE6DC',
+          light: '#F5F1EB',
+          dark: '#D8CFBF',
+        },
+        ember: {
+          DEFAULT: '#FF5A12',
+          orange: '#FF5A12',
+          hover: '#E04800',
+          light: '#FF7B3D',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

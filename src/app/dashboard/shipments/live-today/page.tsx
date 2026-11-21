@@ -118,7 +118,7 @@ export default function LiveTodayPage() {
                   <TableCell className="hidden md:table-cell">{shipment.destination?.portOfDelivery || 'N/A'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{shipment.goLiveAt ? format(shipment.goLiveAt.toDate(), "p") : 'N/A'}</TableCell>
                   <TableCell className="text-center">
-                    <Badge className="capitalize bg-[#1D283A] text-[#F8FAFC]">
+                    <Badge className="capitalize bg-[#13285A] text-[#ECE6DC] border border-[#ECE6DC]/20 font-bold">
                         {shipment.status}
                     </Badge>
                   </TableCell>

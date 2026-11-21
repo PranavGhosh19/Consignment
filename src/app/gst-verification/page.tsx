@@ -23,8 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ExporterVerificationForm } from "@/components/exporter-verification-form";
 
 const PageSkeleton = () => (
-     <div className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
-        <Skeleton className="h-[450px] w-full max-w-lg" />
+     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] bg-[#13285A] p-4">
+        <Skeleton className="h-[450px] w-full max-w-lg bg-[#ECE6DC]/20" />
     </div>
 )
 

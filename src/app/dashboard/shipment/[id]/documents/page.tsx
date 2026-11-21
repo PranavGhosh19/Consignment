@@ -167,16 +167,37 @@ export default function ShipmentDocumentsPage() {
   const handlePocUpdate = (pocUserType: 'exporter' | 'carrier') => {
     if (!shipmentInternalId || !user) return;
 
+    const rawPhone = pocUserType === 'exporter' ? exporterPhoneNumber : carrierPhoneNumber;
+    const cleanPhone = rawPhone.replace(/\D/g, '');
+
+    if (!cleanPhone) {
+        toast({
+            title: "Missing Phone Number",
+            description: "Please enter a phone number.",
+            variant: "destructive"
+        });
+        return;
+    }
+
+    if (cleanPhone.length !== 10) {
+        toast({
+            title: "Invalid Phone Number",
+            description: "Phone number must be exactly 10 digits.",
+            variant: "destructive"
+        });
+        return;
+    }
+
     let dataToUpdate;
     let pocStateSetter: React.Dispatch<React.SetStateAction<boolean>>;
     let successMessage: string;
 
     if (pocUserType === 'exporter') {
-        dataToUpdate = { exporterFullName, exporterPhoneNumber };
+        dataToUpdate = { exporterFullName, exporterPhoneNumber: cleanPhone };
         pocStateSetter = setIsSavingExporter;
         successMessage = "Exporter's contact details updated.";
     } else {
-        dataToUpdate = { carrierFullName, carrierPhoneNumber };
+        dataToUpdate = { carrierFullName, carrierPhoneNumber: cleanPhone };
         pocStateSetter = setIsSavingCarrier;
         successMessage = "Carrier's contact details updated.";
     }
@@ -203,6 +224,13 @@ export default function ShipmentDocumentsPage() {
         toast({ title: "Missing file", description: "Please select a file to upload.", variant: "destructive"});
         return;
     }
+
+    const isPdf = fileToUpload.type === "application/pdf" || fileToUpload.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+        toast({ title: "Invalid File Type", description: "Only PDF documents (.pdf) can be uploaded.", variant: "destructive" });
+        return;
+    }
+
     if (!user || !userData || !shipmentInternalId) return;
 
     let finalDocumentName = documentName || fileToUpload.name;
@@ -217,7 +245,9 @@ export default function ShipmentDocumentsPage() {
         const storagePath = `shipments/${shipmentInternalId}/contacts/${user.uid}/${Date.now()}_${fileToUpload.name}`;
         const storageRef = ref(storage, storagePath);
 
-        const uploadResult = await uploadBytes(storageRef, fileToUpload);
+        const uploadResult = await uploadBytes(storageRef, fileToUpload, {
+            contentType: "application/pdf",
+        });
         const downloadUrl = await getDownloadURL(uploadResult.ref);
 
         const documentsRef = collection(db, "shipments", shipmentInternalId, "documents");
@@ -229,7 +259,7 @@ export default function ShipmentDocumentsPage() {
             uploaderName: userData.name,
             uploaderType: userData.userType,
             uploadedAt: serverTimestamp(),
-            fileType: fileToUpload.type,
+            fileType: "application/pdf",
         };
 
         if (userType === 'exporter') {
@@ -237,17 +267,9 @@ export default function ShipmentDocumentsPage() {
         }
         
         const newDocRef = doc(documentsRef);
-        setDoc(newDocRef, newDocumentPayload).catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: newDocRef.path,
-                operation: 'create',
-                requestResourceData: newDocumentPayload,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
+        await setDoc(newDocRef, newDocumentPayload);
 
-
-        toast({ title: "Success", description: "Document uploaded successfully." });
+        toast({ title: "Success", description: "PDF document uploaded successfully." });
         setDocumentName("");
         setFileToUpload(null);
         setDocumentType("other");
@@ -339,12 +361,14 @@ export default function ShipmentDocumentsPage() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="exporter-poc-phone">Phone</Label>
+                        <Label htmlFor="exporter-poc-phone">Phone (10 digits)</Label>
                         <Input 
                             id="exporter-poc-phone" 
+                            type="tel"
+                            maxLength={10}
                             value={exporterPhoneNumber} 
-                            onChange={(e) => setExporterPhoneNumber(e.target.value)} 
-                            placeholder="Enter phone number"
+                            onChange={(e) => setExporterPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} 
+                            placeholder="Enter 10-digit phone number"
                             disabled={!canEditExporterInfo || isSavingExporter}
                         />
                     </div>
@@ -374,12 +398,14 @@ export default function ShipmentDocumentsPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="vendor-poc-phone">Phone</Label>
+                            <Label htmlFor="vendor-poc-phone">Phone (10 digits)</Label>
                             <Input 
                                 id="vendor-poc-phone" 
+                                type="tel"
+                                maxLength={10}
                                 value={carrierPhoneNumber} 
-                                onChange={(e) => setCarrierPhoneNumber(e.target.value)} 
-                                placeholder="Enter phone number"
+                                onChange={(e) => setCarrierPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} 
+                                placeholder="Enter 10-digit phone number"
                                 disabled={!canEditCarrierInfo || isSavingCarrier}
                             />
                         </div>
@@ -439,8 +465,28 @@ export default function ShipmentDocumentsPage() {
                                     </div>
                                 )}
                                 <div className="grid gap-2">
-                                    <Label htmlFor="doc-file">File</Label>
-                                    <Input id="doc-file" type="file" onChange={e => setFileToUpload(e.target.files ? e.target.files[0] : null)} />
+                                    <Label htmlFor="doc-file">PDF File</Label>
+                                    <Input 
+                                        id="doc-file" 
+                                        type="file" 
+                                        accept="application/pdf,.pdf" 
+                                        onChange={(e) => {
+                                            const file = e.target.files ? e.target.files[0] : null;
+                                            if (file) {
+                                                const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+                                                if (!isPdf) {
+                                                    toast({ title: "Invalid File Type", description: "Only PDF files (.pdf) are allowed.", variant: "destructive" });
+                                                    e.target.value = "";
+                                                    setFileToUpload(null);
+                                                    return;
+                                                }
+                                                setFileToUpload(file);
+                                            } else {
+                                                setFileToUpload(null);
+                                            }
+                                        }} 
+                                    />
+                                    <p className="text-xs text-muted-foreground">Only PDF documents are supported.</p>
                                 </div>
                             </div>
                             <DialogFooter>

@@ -3,9 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, DocumentData } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/auth-context';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { RecentActivities } from "@/components/RecentActivities";
+import type { DocumentData } from "firebase/firestore";
 
 const DashboardCard = ({ title, description, href, icon: Icon }: { title: string, description: string, href: string, icon: React.ElementType }) => (
     <Link href={href}>
@@ -59,35 +58,19 @@ const VerificationStatus = ({ userData }: { userData: DocumentData | null }) => 
 
 
 export default function CarrierDashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userData, setUserData] = useState<DocumentData | null>(null);
-  const [loading, setLoading] = useState(true);
-  
+  const { user, userData, userType, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const uData = userDoc.data();
-          if (uData.userType === 'carrier') {
-            setUser(currentUser);
-            setUserData(uData);
-          } else {
-            router.push('/dashboard');
-          }
-        } else {
-           router.push('/login');
-        }
-      } else {
-        router.push('/login');
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (loading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (userType !== 'carrier') {
+      router.push('/dashboard');
+    }
+  }, [user, userType, loading, router]);
   
   if (loading || !user) {
     return (

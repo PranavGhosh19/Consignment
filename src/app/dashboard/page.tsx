@@ -3,50 +3,41 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardRedirectPage() {
   const router = useRouter();
+  const { user, userType, verificationStatus, loading } = useAuth();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        if (!user.emailVerified) {
-          router.replace('/verify-email');
-          return;
-        }
+    if (loading) return;
 
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        if (userDoc.exists() && userDoc.data()?.userType) {
-          const { userType, verificationStatus } = userDoc.data();
-          if (verificationStatus === 'unsubmitted' || verificationStatus === 'rejected') {
-            router.replace('/gst-verification');
-          } else {
-            if (userType === 'exporter') {
-              router.replace('/dashboard/exporter');
-            } else if (userType === 'carrier') {
-              router.replace('/dashboard/carrier');
-            } else if (userType === 'employee') {
-              router.replace('/dashboard/employee');
-            } else {
-              router.replace('/select-type');
-            }
-          }
-        } else {
-          router.replace('/select-type');
-        }
-      } else {
-        router.replace('/login');
-      }
-    });
+    if (!user) {
+      router.replace('/login');
+      return;
+    }
 
-    return () => unsubscribe();
-  }, [router]);
+    if (!user.emailVerified) {
+      router.replace('/verify-email');
+      return;
+    }
+
+    if (verificationStatus === 'unsubmitted' || verificationStatus === 'rejected') {
+      router.replace('/gst-verification');
+      return;
+    }
+
+    if (userType === 'exporter') {
+      router.replace('/dashboard/exporter');
+    } else if (userType === 'carrier') {
+      router.replace('/dashboard/carrier');
+    } else if (userType === 'employee') {
+      router.replace('/dashboard/employee');
+    } else {
+      router.replace('/select-type');
+    }
+  }, [user, userType, verificationStatus, loading, router]);
 
   return (
     <div className="container py-10">

@@ -22,6 +22,16 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/shipments/$(shipmentId));
     }
 
+    function isShipmentBiddingActive(shipmentData) {
+      return shipmentData.status == 'live' ||
+        (
+          shipmentData.status == 'scheduled' &&
+          shipmentData.goLiveAt != null &&
+          request.time >= shipmentData.goLiveAt &&
+          (shipmentData.biddingCloseAt == null || request.time <= shipmentData.biddingCloseAt)
+        );
+    }
+
     function isRegistered(shipmentId, userId) {
       return exists(/databases/$(database)/documents/shipments/$(shipmentId)/register/$(userId));
     }
@@ -250,13 +260,13 @@ service cloud.firestore {
           (isExporter(request.auth.uid) &&
            getShipment(shipmentId).data.exporterId == request.auth.uid) ||
           (isCarrier(request.auth.uid) &&
-          (getShipment(shipmentId).data.status == 'live' || getShipment(shipmentId).data.status == 'reviewing'))
+           (isShipmentBiddingActive(getShipment(shipmentId).data) || getShipment(shipmentId).data.status == 'reviewing'))
         );
 
         allow create: if request.auth.uid != null &&
           isCarrier(request.auth.uid) &&
           request.resource.data.carrierId == request.auth.uid &&
-          getShipment(shipmentId).data.status == 'live';
+          isShipmentBiddingActive(getShipment(shipmentId).data);
       }
 
       // ───── REGISTER SUBCOLLECTION ─────

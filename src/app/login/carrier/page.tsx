@@ -29,9 +29,9 @@ export default function CarrierLoginPage() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-            router.push('/dashboard');
-        }
+      if (user) {
+        router.push('/dashboard');
+      }
     });
     return () => unsubscribe();
   }, [router]);
@@ -49,7 +49,7 @@ export default function CarrierLoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
+
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -66,7 +66,7 @@ export default function CarrierLoginPage() {
         // This case handles users who signed up but didn't select a type
         router.push("/select-type");
       }
-      
+
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -83,9 +83,9 @@ export default function CarrierLoginPage() {
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#FF5A12]/15 blur-[120px] rounded-full" />
       <Card className="mx-auto w-full max-w-md border-2 border-[#ECE6DC] bg-[#ECE6DC] text-[#13285A] shadow-2xl rounded-2xl relative z-10">
         <CardHeader className="text-center space-y-2">
-           <div className="flex justify-center">
-                <Truck className="h-10 w-10 text-[#FF5A12]"/>
-            </div>
+          <div className="flex justify-center">
+            <Truck className="h-10 w-10 text-[#FF5A12]" />
+          </div>
           <CardTitle className="text-3xl font-extrabold font-headline text-[#13285A]">Carrier Login</CardTitle>
           <CardDescription className="text-sm font-medium text-[#13285A]/75">
             Enter your credentials to access your carrier dashboard.

@@ -159,10 +159,9 @@ function TiltCard({
             ? "perspective(1000px) rotateY(-18deg) rotateX(8deg) translate3d(-40px, 30px, 0)"
             : "perspective(1000px) rotateY(18deg) rotateX(8deg) translate3d(40px, 30px, 0)",
         opacity: inView ? 1 : 0,
-        filter: inView ? "blur(0px)" : "blur(8px)",
         boxShadow: isCenter ? "0 0 35px 2px rgba(255, 90, 18, 0.55), 0 20px 40px rgba(0,0,0,0.35)" : undefined,
         borderColor: isCenter ? "#FF5A12" : undefined,
-        transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${staggerDelay}ms, opacity 0.75s ease-out ${staggerDelay}ms, filter 0.75s ease-out ${staggerDelay}ms, box-shadow 0.35s ease, border-color 0.35s ease`
+        transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${staggerDelay}ms, opacity 0.75s ease-out ${staggerDelay}ms, box-shadow 0.35s ease, border-color 0.35s ease`
       }}
     >
       {children}
@@ -345,14 +344,6 @@ export default function Home() {
   const [activeLaneKey, setActiveLaneKey] = useState<string>("jnpt");
   const activeShipment = DEMO_SHIPMENTS[activeLaneKey] || DEMO_SHIPMENTS.jnpt;
 
-  // Window scroll tracking for hero parallax & moving blueprint grid
-  const [scrollY, setScrollY] = useState(0);
-  useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   // Visual simulation countdown
   const [countdownSeconds, setCountdownSeconds] = useState(260);
   useEffect(() => {
@@ -377,66 +368,35 @@ export default function Home() {
   // Auction board table rows in view
   const [auctionRef, auctionInView] = useInView(0.15);
 
-  // Hero fade-out calculations
-  const heroProgress = Math.min(1, Math.max(0, scrollY / 460));
-  const headlineTranslateY = -(scrollY * 0.32);
-  const headlineOpacity = Math.max(0, 1 - heroProgress * 1.35);
-  const headlineBlur = Math.min(10, heroProgress * 10);
-  const captainCargoDriftY = scrollY * 0.16; // Drifts down more slowly
-  const glowTopDriftY = scrollY * 0.26;
-  const glowSideDriftY = scrollY * 0.12;
-
   return (
     <>
       <AuthRedirect />
 
       <main className="relative flex-1 overflow-hidden bg-[#13285A] text-[#ECE6DC]">
         
-        {/* Moving Blueprint Grid behind the whole page (slides upward as you scroll) */}
+        {/* Subtle Blueprint Grid behind the whole page */}
         <div className="pointer-events-none fixed inset-0 -z-20 overflow-hidden">
-          <div 
-            className="absolute inset-0 bg-[radial-gradient(#ECE6DC_1px,transparent_1px)] [background-size:28px_28px] opacity-[0.07]"
-            style={{
-              transform: `translate3d(0, -${(scrollY * 0.22) % 28}px, 0)`
-            }}
-          />
+          <div className="absolute inset-0 bg-[radial-gradient(#ECE6DC_1px,transparent_1px)] [background-size:28px_28px] opacity-[0.07]" />
         </div>
 
-        {/* Ambient Glowing Auras Moving at Differential Speeds */}
+        {/* Ambient Glowing Auras */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           {/* Glow 1: Top Center Aura */}
-          <div 
-            className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1100px] h-[600px] bg-gradient-to-b from-[#1C3A7E]/50 via-[#FF5A12]/12 to-transparent blur-[140px] rounded-full will-change-transform"
-            style={{
-              transform: `translate3d(-50%, ${glowTopDriftY}px, 0)`
-            }}
-          />
+          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1100px] h-[600px] bg-gradient-to-b from-[#1C3A7E]/50 via-[#FF5A12]/12 to-transparent blur-[140px] rounded-full" />
           {/* Glow 2: Lateral Aura */}
-          <div 
-            className="absolute top-[850px] -left-40 w-[650px] h-[650px] bg-gradient-to-tr from-[#183472]/45 to-transparent blur-[150px] rounded-full will-change-transform"
-            style={{
-              transform: `translate3d(0, ${glowSideDriftY}px, 0)`
-            }}
-          />
+          <div className="absolute top-[850px] -left-40 w-[650px] h-[650px] bg-gradient-to-tr from-[#183472]/45 to-transparent blur-[150px] rounded-full" />
           <div className="absolute top-[1500px] -right-40 w-[700px] h-[700px] bg-gradient-to-bl from-[#FF5A12]/15 via-[#183472]/30 to-transparent blur-[150px] rounded-full" />
         </div>
 
-        {/* 1. HERO SECTION WITH FADE-OUT PARALLAX */}
+        {/* 1. HERO SECTION: Clean Synchronous Scroll without Blur */}
         <section className="relative pt-10 pb-16 md:pt-16 md:pb-24">
           <div className="container px-4 md:px-6">
 
-            {/* Main Hero Grid: Left Content, Right Captain Cargo */}
+            {/* Main Hero Grid: Left Content and Right Mascot scroll together */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
               
-              {/* Left Column: Headline, CTAs, Trust Badges (Blurs and fades while sliding up) */}
-              <div 
-                className="lg:col-span-7 xl:col-span-7 text-left space-y-7 will-change-transform"
-                style={{
-                  transform: `translate3d(0, ${headlineTranslateY}px, 0)`,
-                  opacity: headlineOpacity,
-                  filter: `blur(${headlineBlur}px)`
-                }}
-              >
+              {/* Left Column: Headline, CTAs, Trust Badges */}
+              <div className="lg:col-span-7 xl:col-span-7 text-left space-y-7">
                 <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl xl:text-7xl font-headline leading-[1.12] text-[#ECE6DC]">
                   Get The Best Freight Rates Through{" "}
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#FF5A12] via-[#FF8544] to-[#FFAE7A]">
@@ -484,13 +444,8 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Right Column: Captain Cargo (Drifts down more slowly) */}
-              <div 
-                className="lg:col-span-5 xl:col-span-5 flex flex-col items-center justify-center relative mt-6 lg:mt-0 will-change-transform"
-                style={{
-                  transform: `translate3d(0, ${captainCargoDriftY}px, 0)`
-                }}
-              >
+              {/* Right Column: Captain Cargo & Vessel Showcase (Scrolls synchronously with left column) */}
+              <div className="lg:col-span-5 xl:col-span-5 flex flex-col items-center justify-center relative mt-6 lg:mt-0">
                 {/* Glowing radiant aura */}
                 <div className="absolute w-80 h-80 sm:w-96 sm:h-96 bg-gradient-to-tr from-[#FF5A12]/20 via-[#1C3A7E]/50 to-[#ECE6DC]/10 rounded-full blur-3xl -z-10 pointer-events-none" />
 

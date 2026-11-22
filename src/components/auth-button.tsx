@@ -45,6 +45,7 @@ export const publicRoleNavLinks = [
   { href: "/for-importers", label: "Importer / Buyer" },
   { href: "/for-exporters", label: "Exporter / Shipper" },
   { href: "/for-carriers", label: "Carrier / Vendor" },
+  { href: "/contact", label: "Contact Us" },
 ];
 
 export function NavLinks() {

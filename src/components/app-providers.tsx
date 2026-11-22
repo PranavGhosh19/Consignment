@@ -228,8 +228,9 @@ const Footer = () => (
           </h4>
           <ul className="space-y-2.5 text-[#13285A]/80 text-xs sm:text-sm">
             <li><Link href="/about" className="hover:text-[#FF5A12] transition-colors font-medium">About ShipCargo</Link></li>
+            <li><Link href="/contact" className="hover:text-[#FF5A12] transition-colors font-medium text-[#FF5A12]">Contact Us &amp; Advisor</Link></li>
+            <li><Link href="/support" className="hover:text-[#FF5A12] transition-colors">Help Center &amp; FAQ</Link></li>
             <li><Link href="/editorial-policy" className="hover:text-[#FF5A12] transition-colors">Editorial Policy</Link></li>
-            <li><Link href="/support" className="hover:text-[#FF5A12] transition-colors">Contact & Support</Link></li>
             <li><Link href="/terms" className="hover:text-[#FF5A12] transition-colors">Terms of Service</Link></li>
             <li><Link href="/privacy" className="hover:text-[#FF5A12] transition-colors">Privacy Policy</Link></li>
           </ul>

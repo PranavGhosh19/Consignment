@@ -20,6 +20,7 @@ export async function GET() {
     { url: "/tools/freight-rate-calculator", lastmod: "2026-11-21", changefreq: "weekly", priority: "0.8" },
     { url: "/tools/incoterms-selector", lastmod: "2026-11-21", changefreq: "monthly", priority: "0.8" },
     { url: "/glossary", lastmod: "2026-11-21", changefreq: "monthly", priority: "0.7" },
+    { url: "/contact", lastmod: "2026-11-22", changefreq: "weekly", priority: "0.8" },
     { url: "/support", lastmod: "2026-11-21", changefreq: "monthly", priority: "0.6" },
     { url: "/terms", lastmod: "2026-11-20", changefreq: "monthly", priority: "0.4" },
     { url: "/privacy", lastmod: "2026-11-20", changefreq: "monthly", priority: "0.4" },

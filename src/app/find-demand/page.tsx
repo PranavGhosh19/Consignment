@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import {
   Compass,
   Ship,
-  Truck,
   ArrowRight,
   TrendingDown,
   Clock,
@@ -951,65 +950,6 @@ export default function FindDemandPage() {
                 </button>
               );
             })}
-
-            {/* Floating Live In-Transit Telemetry HUD Card (Matching user reference) */}
-            <div className="absolute top-3 left-3 sm:top-5 sm:left-5 z-20 pointer-events-none max-w-[280px] sm:max-w-[320px] w-full">
-              <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0A1636]/90 border border-[#ECE6DC]/20 shadow-2xl backdrop-blur-xl space-y-2 pointer-events-auto transition-all">
-
-                {/* Header: Unit identifier & status badge */}
-                <div className="flex items-center justify-between border-b border-[#ECE6DC]/10 pb-2">
-                  <div className="flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-[#FF5A12]" />
-                    <span className="font-mono text-xs sm:text-sm font-bold text-white tracking-wide">
-                      {activeNode.telemetry.unit}
-                    </span>
-                  </div>
-                  <span className={cn(
-                    "text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider",
-                    activeNode.telemetry.status === "ON TIME"
-                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                      : "bg-[#FF5A12]/15 text-[#FF5A12] border-[#FF5A12]/30"
-                  )}>
-                    {activeNode.telemetry.status}
-                  </span>
-                </div>
-
-                {/* Grid details */}
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between items-center text-[#AEB8D6]">
-                    <span>Reference</span>
-                    <span className="font-mono font-semibold text-white">{activeNode.telemetry.reference}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[#AEB8D6]">
-                    <span>Transporter</span>
-                    <span className="font-medium text-white truncate max-w-[170px]">{activeNode.telemetry.transporter}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[#AEB8D6]">
-                    <span>Load</span>
-                    <span className="font-medium text-white truncate max-w-[170px]">{activeNode.telemetry.load}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[#AEB8D6]">
-                    <span>Contract Rate</span>
-                    <span className="font-mono font-bold text-[#FF5A12]">{activeNode.telemetry.rate}</span>
-                  </div>
-                </div>
-
-                {/* Route progress bar */}
-                <div className="pt-2 border-t border-[#ECE6DC]/10 space-y-1.5">
-                  <div className="w-full bg-[#13285A] h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-[#5E7FD8] to-[#FF5A12] h-full rounded-full transition-all duration-500"
-                      style={{ width: `${activeNode.telemetry.progress}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center font-mono text-[11px]">
-                    <span className="text-[#AEB8D6] truncate max-w-[180px]">{activeNode.telemetry.corridor}</span>
-                    <span className="text-white font-bold">{activeNode.telemetry.progress}%</span>
-                  </div>
-                </div>
-
-              </div>
-            </div>
 
           </div>
 

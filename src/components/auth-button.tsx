@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User as UserIcon, LogOut, Settings, LifeBuoy, Menu, Shield, Users, FileText, Search, ShieldCheck, Bell, CreditCard, Compass } from "lucide-react";
+import { User as UserIcon, LogOut, Settings, LifeBuoy, Menu, Shield, Users, FileText, Search, ShieldCheck, Bell, CreditCard, Compass, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -206,6 +206,20 @@ export function MobileNavLinks() {
                         </button>
                       );
                     })}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpen(false);
+                        if (typeof window !== "undefined") {
+                          window.dispatchEvent(new CustomEvent("open-pwa-install"));
+                        }
+                      }}
+                      className="text-left px-3.5 py-2.5 rounded-xl font-headline font-bold text-base transition-all flex items-center gap-2 text-[#FF5A12] bg-[#FF5A12]/10 hover:bg-[#FF5A12]/20 border border-[#FF5A12]/20 mt-1 cursor-pointer"
+                    >
+                      <Download className="w-4 h-4 text-[#FF5A12]" />
+                      <span>Install App (Mobile / Desktop)</span>
+                    </button>
                 </div>
 
                 {/* Logged in Dashboard Links */}

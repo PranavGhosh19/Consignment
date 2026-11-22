@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,6 +7,7 @@ import { Poppins, PT_Sans } from "next/font/google";
 import { AppProviders } from "@/components/app-providers";
 import { SITE_CONFIG } from "@/lib/seo-config";
 import { generateOrganizationSchema, generateWebSiteSchema } from "@/lib/seo-schema";
+import { PwaInstaller } from "@/components/pwa-installer";
 
 const fontPoppins = Poppins({
   subsets: ["latin"],
@@ -22,8 +23,27 @@ const fontPtSans = PT_Sans({
   weight: ["400", "700"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#13285A",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_CONFIG.url),
+  applicationName: "ShipCargo",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ShipCargo",
+    startupImage: ["/captain-cargo.png"],
+  },
+  formatDetection: {
+    telephone: true,
+  },
   title: {
     default: "ShipCargo | India's Trade Ecosystem & Freight Bidding Platform",
     template: "%s | ShipCargo",
@@ -58,7 +78,14 @@ export const metadata: Metadata = {
     images: ["/captain-cargo.png"],
   },
   icons: {
-    icon: "/icon.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
     shortcut: "/favicon.ico",
   },
   robots: {
@@ -103,6 +130,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AppProviders>{children}</AppProviders>
+          <PwaInstaller />
           <Toaster />
         </ThemeProvider>
         <Script

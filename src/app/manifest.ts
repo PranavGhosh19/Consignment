@@ -1,0 +1,80 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "ShipCargo — India's Trade Ecosystem & Freight Bidding",
+    short_name: "ShipCargo",
+    description:
+      "India's digital cross-border trade ecosystem connecting verified exporters with global importers, live reverse container bidding, and tamper-evident Document Room management.",
+    start_url: "/",
+    id: "/",
+    scope: "/",
+    display: "standalone",
+    display_override: ["window-controls-overlay", "standalone", "minimal-ui"],
+    background_color: "#13285A",
+    theme_color: "#13285A",
+    orientation: "any",
+    categories: ["business", "logistics", "productivity", "utilities"],
+    icons: [
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-maskable-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+    shortcuts: [
+      {
+        name: "Find Demand Radar",
+        short_name: "Demand Radar",
+        description: "Browse live global commodity purchase requirements",
+        url: "/find-demand",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Document Room",
+        short_name: "Doc Room",
+        description: "Tamper-evident Bill of Lading and export document vault",
+        url: "/document-room",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Export Advisor Desk",
+        short_name: "Advisor",
+        description: "Direct contact with Mr. Lijo Augustine (+91 8089720725)",
+        url: "/contact",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Freight Rate Calculator",
+        short_name: "Calculator",
+        description: "Estimate ocean container freight rates and target reverse auction savings",
+        url: "/tools/freight-rate-calculator",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+      },
+    ],
+  };
+}

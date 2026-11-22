@@ -12,7 +12,7 @@ import { Clock } from "@/components/clock";
 import { FirebaseErrorListener } from "./FirebaseErrorListener";
 import { ShipmentLifecycleSweeper } from "./ShipmentLifecycleSweeper";
 import { AuthProvider } from "@/contexts/auth-context";
-import { Linkedin, Anchor } from "lucide-react";
+import { Linkedin, Anchor, Download } from "lucide-react";
 
 const LogoIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -170,6 +170,20 @@ const Footer = () => (
             <li><Link href="/for-exporters" className="hover:text-[#FF5A12] transition-colors">For Exporters</Link></li>
             <li><Link href="/for-importers" className="hover:text-[#FF5A12] transition-colors">For Importers</Link></li>
             <li><Link href="/for-carriers" className="hover:text-[#FF5A12] transition-colors">For Carriers</Link></li>
+            <li className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("open-pwa-install"));
+                  }
+                }}
+                className="hover:text-[#FF5A12] transition-colors flex items-center gap-1.5 cursor-pointer text-left text-xs font-bold text-[#FF5A12]"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Install ShipCargo App</span>
+              </button>
+            </li>
           </ul>
         </div>
 

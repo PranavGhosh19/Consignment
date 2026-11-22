@@ -98,6 +98,23 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
+      {
         // Cache static assets and images aggressively
         source: '/(.*).(png|jpg|jpeg|webp|avif|ico|svg)',
         headers: [
